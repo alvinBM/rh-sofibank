@@ -25,6 +25,7 @@ export default function Login() {
             setError(null);
             setLoading(true);
             const response = await login(username, password);
+            console.log("Reponse LOGIN", response);
             if (response.status == 200) {
                 if (response.user?.account?.status == 4) {
                     return router.push("/auth/setup?redirect=true");
