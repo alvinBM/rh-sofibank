@@ -1,32 +1,105 @@
-import api from "../axios";
-import qs from "qs";
+import { supabase } from "../../lib/supabase-client";
 
 export const fetchAccountRoles = async ({ offset, limit, query }) => {
-    const requestUrl = query ? `main/roles/search?offset=${offset}&limit=${limit}&query=${query}` : `main/roles?offset=${offset}&limit=${limit}`;
+    try {
+        let queryBuilder = supabase
+            .from('roles')
+            .select('*', { count: 'exact' })
+            .range(offset, offset + limit - 1)
+            .order('name', { ascending: true });
 
-    const { data } = await api.get(requestUrl);
+        if (query) {
+            queryBuilder = queryBuilder.or(`name.ilike.%${query}%,code.ilike.%${query}%`);
+        }
 
-    if (data.status === 200) {
+        const { data, error, count } = await queryBuilder;
+
+        if (error) throw error;
+
         return {
-            roles: data.roles,
-            total: data.total,
+            roles: data || [],
+            total: count || 0,
         };
-    } else {
-        throw new Error("Erreur du serveur: " + data.message);
+    } catch (error) {
+        console.error('Fetch roles error:', error);
+        throw error;
     }
 };
 
 export const fetchAccountPayments = async ({ offset, limit, query }) => {
-    const requestUrl = `payments?offset=${offset}&limit=${limit}`;
+    try {
+        let queryBuilder = supabase
+            .from('payments')
+            .select('*', { count: 'exact' })
+            .range(offset, offset + limit - 1)
+            .order('created_at', { ascending: false });
 
-    const { data } = await api.get(requestUrl);
+        const { data, error, count } = await queryBuilder;
 
-    if (data.status === 200) {
+        if (error) throw error;
+
         return {
-            payments: data.payments,
-            total: data.total,
+            payments: data || [],
+            total: count || 0,
         };
-    } else {
-        throw new Error("Erreur du serveur: " + data.message);
+    } catch (error) {
+        console.error('Fetch payments error:', error);
+        throw error;
+    }
+};
+
+export const fetchDirections = async ({ offset = 0, limit = 100, query = "" }) => {
+    try {
+        let queryBuilder = supabase
+            .from('directions')
+            .select('*', { count: 'exact' })
+            .range(offset, offset + limit - 1)
+            .order('name', { ascending: true });
+
+        if (query) {
+            queryBuilder = queryBuilder.ilike('name', `%${query}%`);
+        }
+
+        const { data, error, count } = await queryBuilder;
+
+        if (error) throw error;
+
+        return {
+            directions: data || [],
+            total: count || 0,
+        };
+    } catch (error) {
+        console.error('Fetch directions error:', error);
+        throw error;
+    }
+};
+
+export const fetchServices = async ({ offset = 0, limit = 100, query = "", direction_id = "" }) => {
+    try {
+        let queryBuilder = supabase
+            .from('services')
+            .select('*, direction:directions(id, name)', { count: 'exact' })
+            .range(offset, offset + limit - 1)
+            .order('name', { ascending: true });
+
+        if (query) {
+            queryBuilder = queryBuilder.ilike('name', `%${query}%`);
+        }
+
+        if (direction_id) {
+            queryBuilder = queryBuilder.eq('direction_id', direction_id);
+        }
+
+        const { data, error, count } = await queryBuilder;
+
+        if (error) throw error;
+
+        return {
+            services: data || [],
+            total: count || 0,
+        };
+    } catch (error) {
+        console.error('Fetch services error:', error);
+        throw error;
     }
 };

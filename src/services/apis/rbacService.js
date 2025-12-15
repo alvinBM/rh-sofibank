@@ -1,70 +1,224 @@
-import api from "../axios";
+import { supabase } from "../../lib/supabase-client";
 
 export const fetchRoles = async ({ offset = 0, limit = 100, query = "" }) => {
-  const { data } = await api.get(`/rbac/roles?offset=${offset}&limit=${limit}&query=${query}`);
-  if (data.status === 200) {
-    return { roles: data.roles || [], total: data.total || 0 };
+  try {
+    let queryBuilder = supabase
+      .from('roles')
+      .select('*', { count: 'exact' })
+      .range(offset, offset + limit - 1)
+      .order('name', { ascending: true });
+
+    if (query) {
+      queryBuilder = queryBuilder.or(`name.ilike.%${query}%,code.ilike.%${query}%`);
+    }
+
+    const { data, error, count } = await queryBuilder;
+
+    if (error) throw error;
+
+    return {
+      roles: data || [],
+      total: count || 0,
+    };
+  } catch (error) {
+    console.error('Fetch roles error:', error);
+    throw error;
   }
-  throw new Error(data.message || "Erreur lors de la récupération des rôles");
 };
 
 export const fetchPermissions = async ({ offset = 0, limit = 100, module = "" }) => {
-  const { data } = await api.get(`/rbac/permissions?offset=${offset}&limit=${limit}&module=${module}`);
-  if (data.status === 200) {
-    return { permissions: data.permissions || [], total: data.total || 0 };
+  try {
+    let queryBuilder = supabase
+      .from('permissions')
+      .select('*', { count: 'exact' })
+      .range(offset, offset + limit - 1)
+      .order('module', { ascending: true });
+
+    if (module) {
+      queryBuilder = queryBuilder.eq('module', module);
+    }
+
+    const { data, error, count } = await queryBuilder;
+
+    if (error) throw error;
+
+    return {
+      permissions: data || [],
+      total: count || 0,
+    };
+  } catch (error) {
+    console.error('Fetch permissions error:', error);
+    throw error;
   }
-  throw new Error(data.message || "Erreur lors de la récupération des permissions");
 };
 
 export const fetchRolePermissions = async (roleId) => {
-  const { data } = await api.get(`/rbac/roles/${roleId}/permissions`);
-  return data;
+  try {
+    const { data, error } = await supabase
+      .from('role_permissions')
+      .select('permission_id, permissions(id, code, name, module, description)')
+      .eq('role_id', roleId);
+
+    if (error) throw error;
+    return data?.map(rp => rp.permissions) || [];
+  } catch (error) {
+    console.error('Fetch role permissions error:', error);
+    throw error;
+  }
 };
 
 export const fetchUserRoles = async (userId) => {
-  const { data } = await api.get(`/rbac/users/${userId}/roles`);
-  return data;
+  try {
+    const { data, error } = await supabase
+      .from('user_roles')
+      .select('id, role_id, roles(id, code, name, description)')
+      .eq('user_id', userId);
+
+    if (error) throw error;
+    return data || [];
+  } catch (error) {
+    console.error('Fetch user roles error:', error);
+    throw error;
+  }
 };
 
 export const assignRoleToUser = async (payload) => {
-  const { data } = await api.post("/rbac/user-roles", payload);
-  return data;
+  try {
+    const { data, error } = await supabase
+      .from('user_roles')
+      .insert([payload])
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    console.error('Assign role to user error:', error);
+    throw error;
+  }
 };
 
 export const removeRoleFromUser = async (userRoleId) => {
-  const { data } = await api.delete(`/rbac/user-roles/${userRoleId}`);
-  return data;
+  try {
+    const { error } = await supabase
+      .from('user_roles')
+      .delete()
+      .eq('id', userRoleId);
+
+    if (error) throw error;
+    return { success: true };
+  } catch (error) {
+    console.error('Remove role from user error:', error);
+    throw error;
+  }
 };
 
 export const createRole = async (payload) => {
-  const { data } = await api.post("/rbac/roles", payload);
-  return data;
+  try {
+    const { data, error } = await supabase
+      .from('roles')
+      .insert([payload])
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    console.error('Create role error:', error);
+    throw error;
+  }
 };
 
 export const updateRole = async (roleId, payload) => {
-  const { data } = await api.put(`/rbac/roles/${roleId}`, payload);
-  return data;
+  try {
+    const { data, error } = await supabase
+      .from('roles')
+      .update(payload)
+      .eq('id', roleId)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    console.error('Update role error:', error);
+    throw error;
+  }
 };
 
 export const updateRolePermissions = async (roleId, permissionIds) => {
-  const { data } = await api.put(`/rbac/roles/${roleId}/permissions`, { permissionIds });
-  return data;
+  try {
+    await supabase
+      .from('role_permissions')
+      .delete()
+      .eq('role_id', roleId);
+
+    if (permissionIds && permissionIds.length > 0) {
+      const inserts = permissionIds.map(permissionId => ({
+        role_id: roleId,
+        permission_id: permissionId,
+      }));
+
+      const { error } = await supabase
+        .from('role_permissions')
+        .insert(inserts);
+
+      if (error) throw error;
+    }
+
+    return { success: true };
+  } catch (error) {
+    console.error('Update role permissions error:', error);
+    throw error;
+  }
 };
 
 export const checkUserPermission = async (permissionCode) => {
   try {
-    const { data } = await api.get(`/rbac/check-permission?code=${permissionCode}`);
-    return data.hasPermission || false;
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return false;
+
+    const { data, error } = await supabase
+      .from('user_roles')
+      .select(`
+        roles (
+          role_permissions (
+            permissions (code)
+          )
+        )
+      `)
+      .eq('user_id', user.id);
+
+    if (error) throw error;
+
+    const userPermissions = data?.flatMap(ur =>
+      ur.roles?.role_permissions?.map(rp => rp.permissions?.code)
+    ).filter(Boolean) || [];
+
+    return userPermissions.includes(permissionCode);
   } catch (error) {
+    console.error('Check user permission error:', error);
     return false;
   }
 };
 
 export const checkUserRole = async (roleCode) => {
   try {
-    const { data } = await api.get(`/rbac/check-role?code=${roleCode}`);
-    return data.hasRole || false;
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return false;
+
+    const { data, error } = await supabase
+      .from('user_roles')
+      .select('roles(code)')
+      .eq('user_id', user.id);
+
+    if (error) throw error;
+
+    const userRoles = data?.map(ur => ur.roles?.code).filter(Boolean) || [];
+
+    return userRoles.includes(roleCode);
   } catch (error) {
+    console.error('Check user role error:', error);
     return false;
   }
 };
