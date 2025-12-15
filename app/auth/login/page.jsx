@@ -29,7 +29,7 @@ export default function Login() {
             if (response.status == 200) {
                 if (response.user?.account?.status == 4) {
                     return router.push("/auth/setup?redirect=true");
-                } else if (response.user?.account?.status == 1) {
+                } else {
                     return router.push("/dashboard");
                 }
             } else {
