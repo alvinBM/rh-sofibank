@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { fetchAccountPayments, fetchAccountRoles, fetchDirections, fetchServices } from "../services/apis/mainService";
+import { fetchAccountPayments, fetchAccountRoles, fetchDirections, fetchServices, fetchGrades, fetchJobPositions } from "../services/apis/mainService";
 
 export const useGetRolesByAccount = ({ page, rowsPerPage, filterValue }) => {
     const offset = (page - 1) * rowsPerPage;
@@ -37,6 +37,26 @@ export const useGetServices = ({ page = 1, rowsPerPage = 100, query = "", direct
     return useQuery({
         queryKey: ["services", { page, rowsPerPage, query, direction_id }],
         queryFn: () => fetchServices({ offset, limit: rowsPerPage, query, direction_id }),
+        keepPreviousData: true,
+    });
+};
+
+export const useGetGrades = ({ page = 1, rowsPerPage = 100, query = "" }) => {
+    const offset = (page - 1) * rowsPerPage;
+
+    return useQuery({
+        queryKey: ["grades", { page, rowsPerPage, query }],
+        queryFn: () => fetchGrades({ offset, limit: rowsPerPage, query }),
+        keepPreviousData: true,
+    });
+};
+
+export const useGetJobPositions = ({ page = 1, rowsPerPage = 100, query = "" }) => {
+    const offset = (page - 1) * rowsPerPage;
+
+    return useQuery({
+        queryKey: ["job_positions", { page, rowsPerPage, query }],
+        queryFn: () => fetchJobPositions({ offset, limit: rowsPerPage, query }),
         keepPreviousData: true,
     });
 };

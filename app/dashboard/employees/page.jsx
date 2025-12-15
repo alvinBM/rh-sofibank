@@ -1,7 +1,9 @@
 "use client";
 
 import React, { useState, useMemo, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import PermissionGuard from "@/app/ui/dashboard/PermissionGuard";
+import AddEmployeeModal from "@/app/ui/dashboard/forms/AddEmployeeModal";
 import {
   Table,
   TableHeader,
@@ -50,6 +52,7 @@ const EMPLOYMENT_STATUS_COLORS = {
 };
 
 export default function EmployeesPage() {
+  const router = useRouter();
   const [page, setPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [searchQuery, setSearchQuery] = useState("");
@@ -60,6 +63,7 @@ export default function EmployeesPage() {
   });
   const [selectedEmployee, setSelectedEmployee] = useState(null);
   const { isOpen, onOpen, onClose } = useDisclosure();
+  const { isOpen: isAddOpen, onOpen: onAddOpen, onClose: onAddClose } = useDisclosure();
 
   const { data: directionsData } = useGetDirections({ page: 1, rowsPerPage: 100 });
   const { data: servicesData } = useGetServices({ page: 1, rowsPerPage: 100 });
@@ -165,6 +169,7 @@ export default function EmployeesPage() {
               <DropdownItem
                 key="edit"
                 startContent={<FiEdit />}
+                onPress={() => router.push(`/dashboard/employees/${employee.id}/edit`)}
               >
                 Modifier
               </DropdownItem>
@@ -191,6 +196,7 @@ export default function EmployeesPage() {
         <Button
           color="primary"
           startContent={<FiPlus />}
+          onPress={onAddOpen}
         >
           Nouvel Employé
         </Button>
@@ -414,6 +420,15 @@ export default function EmployeesPage() {
           )}
         </ModalContent>
       </Modal>
+
+      <AddEmployeeModal
+        isOpen={isAddOpen}
+        onClose={onAddClose}
+        onSuccess={() => {
+          // Refresh the employees list
+          toast.success("Employé ajouté avec succès");
+        }}
+      />
       </div>
     </PermissionGuard>
   );

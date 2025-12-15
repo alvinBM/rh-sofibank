@@ -103,3 +103,55 @@ export const fetchServices = async ({ offset = 0, limit = 100, query = "", direc
         throw error;
     }
 };
+
+export const fetchGrades = async ({ offset = 0, limit = 100, query = "" }) => {
+    try {
+        let queryBuilder = supabase
+            .from('grades')
+            .select('*', { count: 'exact' })
+            .range(offset, offset + limit - 1)
+            .order('level', { ascending: true });
+
+        if (query) {
+            queryBuilder = queryBuilder.or(`name.ilike.%${query}%,code.ilike.%${query}%`);
+        }
+
+        const { data, error, count } = await queryBuilder;
+
+        if (error) throw error;
+
+        return {
+            grades: data || [],
+            total: count || 0,
+        };
+    } catch (error) {
+        console.error('Fetch grades error:', error);
+        throw error;
+    }
+};
+
+export const fetchJobPositions = async ({ offset = 0, limit = 100, query = "" }) => {
+    try {
+        let queryBuilder = supabase
+            .from('job_positions')
+            .select('*, grade:grades(id, name, code)', { count: 'exact' })
+            .range(offset, offset + limit - 1)
+            .order('title', { ascending: true });
+
+        if (query) {
+            queryBuilder = queryBuilder.or(`title.ilike.%${query}%,code.ilike.%${query}%`);
+        }
+
+        const { data, error, count } = await queryBuilder;
+
+        if (error) throw error;
+
+        return {
+            job_positions: data || [],
+            total: count || 0,
+        };
+    } catch (error) {
+        console.error('Fetch job positions error:', error);
+        throw error;
+    }
+};
