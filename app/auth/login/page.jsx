@@ -39,7 +39,11 @@ export default function Login() {
                 });
             }
         } catch (error) {
-            console.error(error);
+              setError({
+                  type: "danger",
+                  message: response.message,
+              });
+            console.log(error);
         } finally {
             setLoading(false);
         }
