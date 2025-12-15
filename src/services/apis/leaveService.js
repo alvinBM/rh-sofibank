@@ -1,4 +1,5 @@
 import { supabase } from "../../lib/supabase-client";
+import { calculateWorkingDays, formatDateToISO } from "../../utils/dateUtils";
 
 export const fetchLeaveTypes = async () => {
   try {
@@ -392,21 +393,498 @@ export const updateLeavePlanning = async (id, payload) => {
   }
 };
 
-export const calculateWorkingDays = async (startDate, endDate) => {
+export const calculateWorkingDaysFromDB = async (startDate, endDate) => {
   try {
-    const { data, error } = await supabase.rpc('calculate_working_days', {
-      p_start_date: startDate,
-      p_end_date: endDate
-    });
+    // Récupérer les jours fériés
+    const { data: holidays, error: holidaysError } = await supabase
+      .from('holidays')
+      .select('date')
+      .gte('date', startDate)
+      .lte('date', endDate);
 
-    if (error) throw error;
-    return { working_days: data };
+    if (holidaysError) throw holidaysError;
+
+    // Utiliser la fonction utilitaire pour calculer les jours ouvrables
+    const holidayDates = (holidays || []).map(h => h.date);
+    const workingDays = calculateWorkingDays(startDate, endDate, holidayDates);
+
+    return { working_days: workingDays };
   } catch (error) {
     console.error('Calculate working days error:', error);
     throw error;
   }
 };
 
+/**
+ * Approuve une demande par le collaborateur backup
+ */
+export const approveByBackup = async (id, backupId, comments = '') => {
+  try {
+    const { data, error } = await supabase
+      .from('leave_requests')
+      .update({
+        status: 'backup_confirmed',
+        workflow_status: 'backup_confirmed',
+        backup_confirmed_at: new Date().toISOString()
+      })
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    // Créer l'entrée d'approbation
+    await supabase
+      .from('leave_approvals')
+      .insert([{
+        leave_request_id: id,
+        approver_id: backupId,
+        level: 'backup',
+        status: 'approved',
+        comments: comments,
+        approved_at: new Date().toISOString(),
+      }]);
+
+    return data;
+  } catch (error) {
+    console.error('Approve by backup error:', error);
+    throw error;
+  }
+};
+
+/**
+ * Approuve une demande par le supérieur hiérarchique
+ */
+export const approveBySupervisor = async (id, supervisorId, comments = '') => {
+  try {
+    const { data, error } = await supabase
+      .from('leave_requests')
+      .update({
+        status: 'pending_hr',
+        workflow_status: 'pending_hr',
+        supervisor_approved_at: new Date().toISOString(),
+        supervisor_comments: comments
+      })
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    // Créer l'entrée d'approbation
+    await supabase
+      .from('leave_approvals')
+      .insert([{
+        leave_request_id: id,
+        approver_id: supervisorId,
+        level: 'supervisor',
+        status: 'approved',
+        comments: comments,
+        approved_at: new Date().toISOString(),
+      }]);
+
+    return data;
+  } catch (error) {
+    console.error('Approve by supervisor error:', error);
+    throw error;
+  }
+};
+
+/**
+ * Approuve une demande par la DRH (validation finale)
+ */
+export const approveByHR = async (id, hrUserId, comments = '') => {
+  try {
+    const { data, error } = await supabase
+      .from('leave_requests')
+      .update({
+        status: 'approved',
+        workflow_status: 'approved',
+        hr_approved_by: hrUserId,
+        hr_approved_at: new Date().toISOString(),
+        hr_comments: comments
+      })
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    // Créer l'entrée d'approbation
+    await supabase
+      .from('leave_approvals')
+      .insert([{
+        leave_request_id: id,
+        approver_id: hrUserId,
+        level: 'hr',
+        status: 'approved',
+        comments: comments,
+        approved_at: new Date().toISOString(),
+      }]);
+
+    // Mettre à jour le solde de congés
+    await updateLeaveBalance(data.employee_id, data.leave_type_id, data.duration);
+
+    return data;
+  } catch (error) {
+    console.error('Approve by HR error:', error);
+    throw error;
+  }
+};
+
+/**
+ * Approuve une demande par la Direction Générale (pour responsables)
+ */
+export const approveByDG = async (id, dgUserId, comments = '') => {
+  try {
+    const { data, error } = await supabase
+      .from('leave_requests')
+      .update({
+        status: 'approved',
+        workflow_status: 'approved',
+        hr_approved_by: dgUserId, // Même colonne mais approuvé par DG
+        hr_approved_at: new Date().toISOString(),
+        hr_comments: comments
+      })
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    // Créer l'entrée d'approbation
+    await supabase
+      .from('leave_approvals')
+      .insert([{
+        leave_request_id: id,
+        approver_id: dgUserId,
+        level: 'dg',
+        status: 'approved',
+        comments: comments,
+        approved_at: new Date().toISOString(),
+      }]);
+
+    // Mettre à jour le solde de congés
+    await updateLeaveBalance(data.employee_id, data.leave_type_id, data.duration);
+
+    return data;
+  } catch (error) {
+    console.error('Approve by DG error:', error);
+    throw error;
+  }
+};
+
+/**
+ * Met à jour le solde de congés après validation
+ */
+const updateLeaveBalance = async (employeeId, leaveTypeId, duration) => {
+  try {
+    const currentYear = new Date().getFullYear();
+
+    // Récupérer le solde actuel
+    const { data: balance } = await supabase
+      .from('leave_balances')
+      .select('*')
+      .eq('employee_id', employeeId)
+      .eq('leave_type_id', leaveTypeId)
+      .eq('year', currentYear)
+      .single();
+
+    if (balance) {
+      // Mettre à jour le solde
+      await supabase
+        .from('leave_balances')
+        .update({
+          used_days: (balance.used_days || 0) + duration,
+          pending_days: Math.max((balance.pending_days || 0) - duration, 0)
+        })
+        .eq('id', balance.id);
+    }
+  } catch (error) {
+    console.error('Update leave balance error:', error);
+  }
+};
+
+/**
+ * Upload d'un document de Remise-Reprise
+ */
+export const uploadHandoverDocument = async (leaveRequestId, file) => {
+  try {
+    const fileName = `handover_${leaveRequestId}_${Date.now()}_${file.name}`;
+    const filePath = `handover-documents/${fileName}`;
+
+    const { data: uploadData, error: uploadError } = await supabase.storage
+      .from('leave-documents')
+      .upload(filePath, file);
+
+    if (uploadError) throw uploadError;
+
+    // Récupérer l'URL publique
+    const { data: urlData } = supabase.storage
+      .from('leave-documents')
+      .getPublicUrl(filePath);
+
+    // Mettre à jour la demande avec l'URL du document
+    const { data, error } = await supabase
+      .from('leave_requests')
+      .update({
+        handover_document_url: urlData.publicUrl
+      })
+      .eq('id', leaveRequestId)
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    return { url: urlData.publicUrl, data };
+  } catch (error) {
+    console.error('Upload handover document error:', error);
+    throw error;
+  }
+};
+
+/**
+ * Récupère toutes les demandes de congés pour la planification
+ */
+export const fetchAllApprovedLeaveRequests = async (year, departmentId = null) => {
+  try {
+    let queryBuilder = supabase
+      .from('leave_requests')
+      .select(`
+        *,
+        employee:employees(id, first_name, last_name, department_id, departments(id, name)),
+        leave_type:leave_types(id, name, code, color)
+      `)
+      .eq('status', 'approved')
+      .gte('start_date', `${year}-01-01`)
+      .lte('end_date', `${year}-12-31`)
+      .order('start_date', { ascending: true });
+
+    if (departmentId) {
+      queryBuilder = queryBuilder.eq('employee.department_id', departmentId);
+    }
+
+    const { data, error } = await queryBuilder;
+
+    if (error) throw error;
+    return data || [];
+  } catch (error) {
+    console.error('Fetch all approved leave requests error:', error);
+    throw error;
+  }
+};
+
+/**
+ * Détecte les conflits de congés (trop d'absences simultanées)
+ */
+export const detectLeaveConflicts = async (departmentId, startDate, endDate) => {
+  try {
+    const { data, error } = await supabase
+      .from('leave_requests')
+      .select(`
+        *,
+        employee:employees(id, first_name, last_name, department_id)
+      `)
+      .eq('status', 'approved')
+      .eq('employee.department_id', departmentId)
+      .or(`start_date.lte.${endDate},end_date.gte.${startDate}`);
+
+    if (error) throw error;
+
+    // Compter le nombre d'employés absents par jour
+    const conflicts = [];
+    const currentDate = new Date(startDate);
+    const lastDate = new Date(endDate);
+
+    while (currentDate <= lastDate) {
+      const dateStr = formatDateToISO(currentDate);
+      const absentCount = (data || []).filter(req => {
+        return dateStr >= req.start_date && dateStr <= req.end_date;
+      }).length;
+
+      if (absentCount > 3) { // Seuil de 3 personnes absentes
+        conflicts.push({
+          date: dateStr,
+          absentCount: absentCount,
+          employees: data.filter(req =>
+            dateStr >= req.start_date && dateStr <= req.end_date
+          ).map(req => req.employee)
+        });
+      }
+
+      currentDate.setDate(currentDate.getDate() + 1);
+    }
+
+    return conflicts;
+  } catch (error) {
+    console.error('Detect leave conflicts error:', error);
+    throw error;
+  }
+};
+
+/**
+ * Récupère les statistiques de congés par département
+ */
+export const fetchLeaveStatsByDepartment = async (year) => {
+  try {
+    const { data, error } = await supabase
+      .from('leave_requests')
+      .select(`
+        *,
+        employee:employees(department_id, departments(id, name)),
+        leave_type:leave_types(id, name)
+      `)
+      .eq('status', 'approved')
+      .gte('start_date', `${year}-01-01`)
+      .lte('end_date', `${year}-12-31`);
+
+    if (error) throw error;
+
+    // Grouper par département
+    const statsByDept = {};
+    (data || []).forEach(req => {
+      const deptId = req.employee?.department_id;
+      const deptName = req.employee?.departments?.name || 'Non assigné';
+
+      if (!statsByDept[deptId]) {
+        statsByDept[deptId] = {
+          departmentId: deptId,
+          departmentName: deptName,
+          totalDays: 0,
+          requestCount: 0,
+          byLeaveType: {}
+        };
+      }
+
+      statsByDept[deptId].totalDays += req.duration || 0;
+      statsByDept[deptId].requestCount += 1;
+
+      const leaveTypeName = req.leave_type?.name || 'Autre';
+      if (!statsByDept[deptId].byLeaveType[leaveTypeName]) {
+        statsByDept[deptId].byLeaveType[leaveTypeName] = 0;
+      }
+      statsByDept[deptId].byLeaveType[leaveTypeName] += req.duration || 0;
+    });
+
+    return Object.values(statsByDept);
+  } catch (error) {
+    console.error('Fetch leave stats by department error:', error);
+    throw error;
+  }
+};
+
+/**
+ * Ajuste manuellement le solde de congés (pour RH)
+ */
+export const adjustLeaveBalance = async (balanceId, adjustment, reason, adjustedBy) => {
+  try {
+    // Récupérer le solde actuel
+    const { data: currentBalance } = await supabase
+      .from('leave_balances')
+      .select('*')
+      .eq('id', balanceId)
+      .single();
+
+    if (!currentBalance) {
+      throw new Error('Solde non trouvé');
+    }
+
+    // Calculer le nouveau total
+    const newTotal = (currentBalance.total_days || 0) + adjustment;
+
+    // Mettre à jour le solde
+    const { data, error } = await supabase
+      .from('leave_balances')
+      .update({
+        total_days: newTotal
+      })
+      .eq('id', balanceId)
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    // Créer un historique d'ajustement
+    await supabase
+      .from('leave_balance_adjustments')
+      .insert([{
+        leave_balance_id: balanceId,
+        adjustment: adjustment,
+        reason: reason,
+        adjusted_by: adjustedBy,
+        adjusted_at: new Date().toISOString()
+      }]);
+
+    return data;
+  } catch (error) {
+    console.error('Adjust leave balance error:', error);
+    throw error;
+  }
+};
+
+/**
+ * Récupère l'historique des ajustements de solde
+ */
+export const fetchBalanceAdjustmentHistory = async (balanceId) => {
+  try {
+    const { data, error } = await supabase
+      .from('leave_balance_adjustments')
+      .select(`
+        *,
+        adjusted_by_user:adjusted_by(id, email, first_name, last_name)
+      `)
+      .eq('leave_balance_id', balanceId)
+      .order('adjusted_at', { ascending: false });
+
+    if (error) throw error;
+    return data || [];
+  } catch (error) {
+    console.error('Fetch balance adjustment history error:', error);
+    throw error;
+  }
+};
+
+/**
+ * Récupère tous les soldes de congés avec filtres
+ */
+export const fetchAllLeaveBalances = async (year, departmentId = null, employeeId = null) => {
+  try {
+    let queryBuilder = supabase
+      .from('leave_balances')
+      .select(`
+        *,
+        employee:employees(id, first_name, last_name, employee_number, department_id, departments(id, name)),
+        leave_type:leave_types(id, name, code, color)
+      `)
+      .eq('year', year)
+      .order('employee_id', { ascending: true });
+
+    if (employeeId) {
+      queryBuilder = queryBuilder.eq('employee_id', employeeId);
+    }
+
+    const { data, error } = await queryBuilder;
+
+    if (error) throw error;
+
+    // Filtrer par département si nécessaire (côté client car jointure complexe)
+    let results = data || [];
+    if (departmentId && !employeeId) {
+      results = results.filter(balance =>
+        balance.employee?.department_id === departmentId
+      );
+    }
+
+    return results;
+  } catch (error) {
+    console.error('Fetch all leave balances error:', error);
+    throw error;
+  }
+};
+
+/**
+ * Génère un numéro de demande de congé unique
+ */
 const generateLeaveRequestNumber = async () => {
   const { data } = await supabase.rpc('generate_leave_request_number');
   return data || `LV${Date.now()}`;

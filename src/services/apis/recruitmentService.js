@@ -292,6 +292,27 @@ export const deleteCandidate = async (id) => {
 
 // ==================== CANDIDATE INTERVIEWS ====================
 
+export const getAllInterviews = async (filters = {}) => {
+  let query = supabase
+    .from('candidate_interviews')
+    .select(`
+      *,
+      candidate:candidates(id, first_name, last_name, candidate_number, email, phone, job_opening:job_openings(id, title, job_number))
+    `)
+    .order('scheduled_date', { ascending: true });
+
+  if (filters.status) {
+    query = query.eq('status', filters.status);
+  }
+  if (filters.interview_type) {
+    query = query.eq('interview_type', filters.interview_type);
+  }
+
+  const { data, error } = await query;
+  if (error) throw error;
+  return data;
+};
+
 export const getInterviews = async (candidateId) => {
   const { data, error } = await supabase
     .from('candidate_interviews')

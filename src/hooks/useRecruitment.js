@@ -190,6 +190,13 @@ export const useDeleteCandidate = () => {
 
 // ==================== CANDIDATE INTERVIEWS ====================
 
+export const useGetAllInterviews = (filters = {}) => {
+  return useQuery({
+    queryKey: ['all-interviews', filters],
+    queryFn: () => recruitmentService.getAllInterviews(filters),
+  });
+};
+
 export const useGetInterviews = (candidateId) => {
   return useQuery({
     queryKey: ['interviews', candidateId],

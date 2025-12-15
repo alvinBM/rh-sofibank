@@ -17,7 +17,18 @@ import {
   fetchLeavePlanning,
   createLeavePlanning,
   updateLeavePlanning,
-  calculateWorkingDays,
+  calculateWorkingDaysFromDB,
+  approveByBackup,
+  approveBySupervisor,
+  approveByHR,
+  approveByDG,
+  uploadHandoverDocument,
+  fetchAllApprovedLeaveRequests,
+  detectLeaveConflicts,
+  fetchLeaveStatsByDepartment,
+  adjustLeaveBalance,
+  fetchBalanceAdjustmentHistory,
+  fetchAllLeaveBalances,
 } from "../services/apis/leaveService";
 import queryClient from "../lib/react-query-client";
 
@@ -176,6 +187,113 @@ export const useUpdateLeavePlanning = () => {
 
 export const useCalculateWorkingDays = () => {
   return useMutation({
-    mutationFn: ({ startDate, endDate }) => calculateWorkingDays(startDate, endDate),
+    mutationFn: ({ startDate, endDate }) => calculateWorkingDaysFromDB(startDate, endDate),
+  });
+};
+
+// Nouveaux hooks pour le workflow d'approbation
+
+export const useApproveByBackup = () => {
+  return useMutation({
+    mutationFn: ({ id, backupId, comments }) => approveByBackup(id, backupId, comments),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["leave-requests"] });
+      queryClient.invalidateQueries({ queryKey: ["leave-request"] });
+    },
+  });
+};
+
+export const useApproveBySupervisor = () => {
+  return useMutation({
+    mutationFn: ({ id, supervisorId, comments }) => approveBySupervisor(id, supervisorId, comments),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["leave-requests"] });
+      queryClient.invalidateQueries({ queryKey: ["leave-request"] });
+    },
+  });
+};
+
+export const useApproveByHR = () => {
+  return useMutation({
+    mutationFn: ({ id, hrUserId, comments }) => approveByHR(id, hrUserId, comments),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["leave-requests"] });
+      queryClient.invalidateQueries({ queryKey: ["leave-request"] });
+      queryClient.invalidateQueries({ queryKey: ["leave-balances"] });
+    },
+  });
+};
+
+export const useApproveByDG = () => {
+  return useMutation({
+    mutationFn: ({ id, dgUserId, comments }) => approveByDG(id, dgUserId, comments),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["leave-requests"] });
+      queryClient.invalidateQueries({ queryKey: ["leave-request"] });
+      queryClient.invalidateQueries({ queryKey: ["leave-balances"] });
+    },
+  });
+};
+
+export const useUploadHandoverDocument = () => {
+  return useMutation({
+    mutationFn: ({ leaveRequestId, file }) => uploadHandoverDocument(leaveRequestId, file),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["leave-request", variables.leaveRequestId] });
+    },
+  });
+};
+
+// Hooks pour la planification et les statistiques
+
+export const useGetAllApprovedLeaveRequests = (year, departmentId = null) => {
+  return useQuery({
+    queryKey: ["approved-leave-requests", year, departmentId],
+    queryFn: () => fetchAllApprovedLeaveRequests(year, departmentId),
+    enabled: !!year,
+  });
+};
+
+export const useDetectLeaveConflicts = () => {
+  return useMutation({
+    mutationFn: ({ departmentId, startDate, endDate }) =>
+      detectLeaveConflicts(departmentId, startDate, endDate),
+  });
+};
+
+export const useGetLeaveStatsByDepartment = (year) => {
+  return useQuery({
+    queryKey: ["leave-stats-by-department", year],
+    queryFn: () => fetchLeaveStatsByDepartment(year),
+    enabled: !!year,
+  });
+};
+
+// Hooks pour la gestion des soldes
+
+export const useGetAllLeaveBalances = (year, departmentId = null, employeeId = null) => {
+  return useQuery({
+    queryKey: ["all-leave-balances", year, departmentId, employeeId],
+    queryFn: () => fetchAllLeaveBalances(year, departmentId, employeeId),
+    enabled: !!year,
+  });
+};
+
+export const useAdjustLeaveBalance = () => {
+  return useMutation({
+    mutationFn: ({ balanceId, adjustment, reason, adjustedBy }) =>
+      adjustLeaveBalance(balanceId, adjustment, reason, adjustedBy),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["leave-balances"] });
+      queryClient.invalidateQueries({ queryKey: ["all-leave-balances"] });
+    },
+  });
+};
+
+export const useGetBalanceAdjustmentHistory = (balanceId) => {
+  return useQuery({
+    queryKey: ["balance-adjustment-history", balanceId],
+    queryFn: () => fetchBalanceAdjustmentHistory(balanceId),
+    enabled: !!balanceId,
   });
 };
