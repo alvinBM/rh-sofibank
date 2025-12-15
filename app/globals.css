@@ -1,0 +1,46 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+.scrollbar::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+    border-radius: 8px;
+}
+
+.scrollbar::-webkit-scrollbar-track {
+    width: 8px;
+    border-radius: 8px;
+    background-color: #d9ddff;
+}
+
+.scrollbar-dark::-webkit-scrollbar-track {
+    width: 8px;
+    border-radius: 8px;
+    background-color: #282828 !important;
+}
+
+.scrollbar::-webkit-scrollbar-thumb {
+    background-color: #151a49;
+    border-radius: 3px;
+}
+
+.h-screen-pos {
+    height: calc(100vh - 140px) !important;
+}
+
+.h-screen-pos-products {
+    height: calc(100vh - 310px) !important;
+}
+
+.h-sreen-pos-panier {
+    height: calc(100vh - 440px) !important;
+}
+
+.h-screen-document {
+    height: calc(100vh - 240px) !important;
+}
+
+.h-min-screen {
+    min-height: calc(100vh - 140px) !important;
+}

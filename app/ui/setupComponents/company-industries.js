@@ -1,0 +1,28 @@
+const secteursActivite = [
+    { title: "Usine de production", value: 1 },
+    { title: "Commerce de gros", value: 2 },
+    { title: "Commerce de détail", value: 3 },
+    { title: "Pharmacie", value: 4 },
+    { title: "Vente de biens et services", value: 5 },
+    { title: "Supermarché", value: 6 },
+    { title: "Boulangerie", value: 7 },
+    { title: "Industrie alimentaire", value: 8 },
+    { title: "Boutique de vêtements", value: 9 },
+    { title: "Électroménager", value: 10 },
+    { title: "Station-service", value: 11 },
+    { title: "Transport et logistique", value: 12 },
+    { title: "Fournitures de bureau", value: 13 },
+    { title: "Fruits et légumes", value: 14 },
+    { title: "Produits de beauté et soins", value: 15 },
+    { title: "Matériaux de construction", value: 16 },
+    { title: "Vente d'équipements informatiques", value: 17 },
+    { title: "Bijouterie", value: 18 },
+    { title: "Automobile (vente et réparation)", value: 19 },
+    { title: "Magasin de meubles", value: 20 },
+    { title: "Hôtel et restaurant", value: 21 },
+    { title: "Quincaillerie", value: 22 },
+    { title: "Bar / Boite de nuit", value: 23 },
+    { title: "Autres", value: 100 },
+];
+
+export default secteursActivite;
