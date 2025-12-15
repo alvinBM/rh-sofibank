@@ -41,7 +41,7 @@ export default function Login() {
         } catch (error) {
               setError({
                   type: "danger",
-                  message: response.message,
+                  message: error?.message || "Erreur du servuer",
               });
             console.log(error);
         } finally {
