@@ -30,14 +30,15 @@ const PermissionGuard = ({
     const permissions = useSelector(selectUserPermissions);
     const user = useSelector(selectUserData);
     const router = useRouter();
+    console.log("PermissionGuard - User:", user?.main_roles);
 
     // Récupérer le plan d'abonnement et la date d'expiration
     const { billing_plan, expired_at } = user?.account || {};
     const isAccountExpired = expired_at && new Date(expired_at) < new Date();
     const { features } = getPlanDetails(billing_plan);
 
-    // Vérifier si l'utilisateur est DRH (bypass toutes les permissions)
-    const isDRH = user?.main_roles?.some((role) => role.code === "drh");
+    // Vérifier si l'utilisateur est RH ou DRH ou SUPER_ADMIN
+    const isDRH = user?.main_roles?.some((role) => role.role_code === "RH") || user?.main_roles?.some((role) => role.role_code === "DRH") || user?.main_roles?.some((role) => role.role_code === "SUPER_ADMIN");
 
     // Si le compte est expiré, afficher un message
     if (isAccountExpired) {
