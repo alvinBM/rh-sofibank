@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useMemo, useCallback } from "react";
+import PermissionGuard from "@/app/ui/dashboard/PermissionGuard";
 import {
   Table,
   TableHeader,
@@ -311,8 +312,9 @@ export default function EmployeesPage() {
   }
 
   return (
-    <div className="p-6">
-      <Table
+    <PermissionGuard requiredPermission="employees_view">
+      <div className="p-6">
+        <Table
         aria-label="Table des employés"
         topContent={topContent}
         bottomContent={bottomContent}
@@ -412,6 +414,7 @@ export default function EmployeesPage() {
           )}
         </ModalContent>
       </Modal>
-    </div>
+      </div>
+    </PermissionGuard>
   );
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useMemo, useCallback } from "react";
+import PermissionGuard from "@/app/ui/dashboard/PermissionGuard";
 import {
   Table,
   TableHeader,
@@ -331,8 +332,9 @@ export default function LeaveRequestsPage() {
   }
 
   return (
-    <div className="p-6">
-      <Table
+    <PermissionGuard requiredPermission={["leave_requests_view", "ess_access"]}>
+      <div className="p-6">
+        <Table
         aria-label="Table des demandes de congés"
         topContent={topContent}
         bottomContent={bottomContent}
@@ -441,6 +443,7 @@ export default function LeaveRequestsPage() {
           )}
         </ModalContent>
       </Modal>
-    </div>
+      </div>
+    </PermissionGuard>
   );
 }
