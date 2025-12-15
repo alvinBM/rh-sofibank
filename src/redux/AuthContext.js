@@ -34,25 +34,6 @@ export const AuthProvider = ({ children }) => {
         };
 
         initializeAuth();
-
-        const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
-            if (event === 'SIGNED_OUT') {
-                removeCookie("token");
-                dispatch(clearUserSession());
-            } else if (event === 'SIGNED_IN' && session) {
-                const response = await getCurrentUser();
-                if (response && response.user) {
-                    setCookie("token", response.token);
-                    dispatch(setUser({ user: response.user, token: response.token }));
-                }
-            } else if (event === 'TOKEN_REFRESHED' && session) {
-                setCookie("token", session.access_token);
-            }
-        });
-
-        return () => {
-            authListener?.subscription?.unsubscribe();
-        };
     }, [dispatch]);
 
     const login = async (emailOrPhone, password) => {
@@ -64,6 +45,7 @@ export const AuthProvider = ({ children }) => {
             if (response.status === 200) {
                 const { user, token } = response;
                 setCookie("token", token);
+                localStorage.setItem("token", token);
                 dispatch(setUser({ user, token }));
             }
 
@@ -82,6 +64,8 @@ export const AuthProvider = ({ children }) => {
         try {
             await signOut();
             removeCookie("token");
+            localStorage.removeItem("token");
+            sessionStorage.removeItem("token");
             dispatch(clearUserSession());
         } catch (error) {
             console.error("Logout error:", error);

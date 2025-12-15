@@ -2,92 +2,83 @@ import { supabase } from '../lib/supabase-client';
 
 export const signIn = async (email, password) => {
   try {
-    const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
+    const { data: authResult, error: authError } = await supabase
+      .rpc('authenticate_user', {
+        user_email: email,
+        user_password: password
+      });
 
-    if (authError) throw authError;
-
-    const session = authData.session;
-    const authUser = authData.user;
-
-    const { data: userProfile, error: profileError } = await supabase
-      .from('user_profiles')
-      .select(`
-        *,
-        account:accounts(*),
-        main_store:stores(*)
-      `)
-      .eq('user_id', authUser.id)
-      .single();
-
-    if (profileError && profileError.code !== 'PGRST116') {
-      console.error('Profile error:', profileError);
+    if (authError) {
+      throw new Error(authError.message || 'Email ou mot de passe incorrect');
     }
 
-    const { data: userRoles, error: rolesError } = await supabase
-      .from('user_roles')
-      .select(`
-        *,
-        role:roles(
-          id,
-          name,
-          code,
-          permissions:role_permissions(
-            permission:permissions(*)
-          )
-        )
-      `)
-      .eq('user_id', authUser.id);
-
-    if (rolesError) {
-      console.error('Roles error:', rolesError);
+    if (!authResult || authResult.length === 0) {
+      throw new Error('Email ou mot de passe incorrect');
     }
 
-    const mainRoles = (userRoles || []).map(ur => ({
-      role_name: ur.role?.name || 'Unknown',
-      role_code: ur.role?.code || '',
-      main_permissions: ur.role?.permissions?.map(rp => rp.permission) || [],
-      main_users_roles: {
-        id: ur.id,
-        user_id: authUser.id,
-        role_id: ur.role_id,
-      },
+    const authenticatedUser = authResult[0];
+
+    const { data: account } = await supabase
+      .from('accounts')
+      .select('*')
+      .eq('id', authenticatedUser.account_id)
+      .maybeSingle();
+
+    const { data: employee } = await supabase
+      .from('employees')
+      .select('*')
+      .eq('email', authenticatedUser.email)
+      .maybeSingle();
+
+    const token = btoa(JSON.stringify({
+      id: authenticatedUser.id,
+      email: authenticatedUser.email,
+      role: authenticatedUser.role,
+      timestamp: Date.now()
     }));
 
     const user = {
-      id: userProfile?.id || authUser.id,
-      created: authUser.created_at,
-      modified: authUser.updated_at || authUser.created_at,
+      id: authenticatedUser.id,
+      created: authenticatedUser.created_at || new Date().toISOString(),
+      modified: authenticatedUser.updated_at || new Date().toISOString(),
       deleted: null,
-      status: userProfile?.status || 1,
+      status: authenticatedUser.is_active ? 1 : 0,
       created_by: 0,
-      account_id: userProfile?.account_id,
-      firstname: userProfile?.firstname || authUser.user_metadata?.firstname || '',
-      lastname: userProfile?.lastname || authUser.user_metadata?.lastname || '',
-      username: userProfile?.username,
-      phone: userProfile?.phone || authUser.phone || '',
-      email: authUser.email,
-      last_activity: userProfile?.last_activity || new Date().toISOString(),
-      otp: userProfile?.otp,
-      country: userProfile?.country || 'CD',
-      city: userProfile?.city || '',
-      profile: userProfile?.profile,
-      root_store: userProfile?.root_store,
-      public_token: userProfile?.public_token,
-      ip_address: userProfile?.ip_address,
-      main_roles: mainRoles,
-      account: userProfile?.account || null,
-      main_store: userProfile?.main_store || null,
+      account_id: authenticatedUser.account_id,
+      firstname: authenticatedUser.firstname,
+      lastname: authenticatedUser.lastname,
+      username: authenticatedUser.email,
+      phone: authenticatedUser.phone,
+      email: authenticatedUser.email,
+      last_activity: new Date().toISOString(),
+      otp: null,
+      country: account?.country || 'FR',
+      city: account?.city || '',
+      profile: authenticatedUser.role,
+      root_store: null,
+      public_token: token,
+      ip_address: null,
+      main_roles: [{
+        role_name: getRoleName(authenticatedUser.role),
+        role_code: authenticatedUser.role,
+        main_permissions: getPermissionsForRole(authenticatedUser.role),
+        main_users_roles: {
+          id: authenticatedUser.id,
+          user_id: authenticatedUser.id,
+          role_id: authenticatedUser.role,
+        },
+      }],
+      account: account || null,
+      main_store: null,
+      employee: employee || null,
     };
 
     return {
       status: 200,
       logged: true,
-      token: session.access_token,
+      token: token,
       user,
-      session,
+      session: { access_token: token, user: authenticatedUser },
       message: 'Utilisateur connecté avec succès',
     };
   } catch (error) {
@@ -95,6 +86,61 @@ export const signIn = async (email, password) => {
     throw error;
   }
 };
+
+function getRoleName(roleCode) {
+  const roleNames = {
+    'RH': 'Administrateur RH',
+    'MANAGER': 'Manager/Responsable',
+    'EMPLOYEE': 'Employé',
+    'ADMIN': 'Administrateur',
+    'SUPER_ADMIN': 'Super Administrateur',
+    'FINANCE': 'Finance/Paie',
+    'RECRUITER': 'Recruteur',
+    'DG': 'Direction Générale',
+  };
+  return roleNames[roleCode] || 'Utilisateur';
+}
+
+function getPermissionsForRole(roleCode) {
+  const basePermissions = [
+    { code: 'view_dashboard', name: 'Voir le tableau de bord' },
+    { code: 'view_profile', name: 'Voir son profil' },
+  ];
+
+  const rolePermissions = {
+    'RH': [
+      ...basePermissions,
+      { code: 'manage_employees', name: 'Gérer les employés' },
+      { code: 'manage_leave', name: 'Gérer les congés' },
+      { code: 'manage_attendance', name: 'Gérer les présences' },
+      { code: 'manage_payroll', name: 'Gérer la paie' },
+      { code: 'manage_recruitment', name: 'Gérer le recrutement' },
+      { code: 'manage_performance', name: 'Gérer les évaluations' },
+      { code: 'view_reports', name: 'Voir les rapports' },
+    ],
+    'MANAGER': [
+      ...basePermissions,
+      { code: 'view_team', name: 'Voir son équipe' },
+      { code: 'approve_leave', name: 'Approuver les congés' },
+      { code: 'view_team_attendance', name: 'Voir les présences de l\'équipe' },
+      { code: 'conduct_evaluations', name: 'Conduire les évaluations' },
+    ],
+    'EMPLOYEE': [
+      ...basePermissions,
+      { code: 'request_leave', name: 'Demander des congés' },
+      { code: 'view_payslips', name: 'Voir ses bulletins de paie' },
+      { code: 'view_attendance', name: 'Voir ses présences' },
+    ],
+    'ADMIN': [
+      ...basePermissions,
+      { code: 'manage_system', name: 'Gérer le système' },
+      { code: 'manage_users', name: 'Gérer les utilisateurs' },
+      { code: 'manage_roles', name: 'Gérer les rôles' },
+    ],
+  };
+
+  return rolePermissions[roleCode] || basePermissions;
+}
 
 export const signUp = async (email, password, userData = {}) => {
   try {
@@ -125,9 +171,6 @@ export const signUp = async (email, password, userData = {}) => {
 
 export const signOut = async () => {
   try {
-    const { error } = await supabase.auth.signOut();
-    if (error) throw error;
-
     return {
       status: 200,
       message: 'Déconnexion réussie',
@@ -140,82 +183,85 @@ export const signOut = async () => {
 
 export const getCurrentUser = async () => {
   try {
-    const { data: { session } } = await supabase.auth.getSession();
+    const token = localStorage.getItem('token') || sessionStorage.getItem('token');
 
-    if (!session) {
+    if (!token) {
       return null;
     }
 
-    const authUser = session.user;
+    let decodedToken;
+    try {
+      decodedToken = JSON.parse(atob(token));
+    } catch (e) {
+      console.error('Invalid token format:', e);
+      return null;
+    }
 
-    const { data: userProfile } = await supabase
-      .from('user_profiles')
-      .select(`
-        *,
-        account:accounts(*),
-        main_store:stores(*)
-      `)
-      .eq('user_id', authUser.id)
-      .single();
+    const { data: authenticatedUser, error } = await supabase
+      .from('users')
+      .select('*')
+      .eq('id', decodedToken.id)
+      .eq('is_active', true)
+      .maybeSingle();
 
-    const { data: userRoles } = await supabase
-      .from('user_roles')
-      .select(`
-        *,
-        role:roles(
-          id,
-          name,
-          code,
-          permissions:role_permissions(
-            permission:permissions(*)
-          )
-        )
-      `)
-      .eq('user_id', authUser.id);
+    if (error || !authenticatedUser) {
+      return null;
+    }
 
-    const mainRoles = (userRoles || []).map(ur => ({
-      role_name: ur.role?.name || 'Unknown',
-      role_code: ur.role?.code || '',
-      main_permissions: ur.role?.permissions?.map(rp => rp.permission) || [],
-      main_users_roles: {
-        id: ur.id,
-        user_id: authUser.id,
-        role_id: ur.role_id,
-      },
-    }));
+    const { data: account } = await supabase
+      .from('accounts')
+      .select('*')
+      .eq('id', authenticatedUser.account_id)
+      .maybeSingle();
+
+    const { data: employee } = await supabase
+      .from('employees')
+      .select('*')
+      .eq('email', authenticatedUser.email)
+      .maybeSingle();
 
     const user = {
-      id: userProfile?.id || authUser.id,
-      created: authUser.created_at,
-      modified: authUser.updated_at || authUser.created_at,
+      id: authenticatedUser.id,
+      created: authenticatedUser.created_at || new Date().toISOString(),
+      modified: authenticatedUser.updated_at || new Date().toISOString(),
       deleted: null,
-      status: userProfile?.status || 1,
+      status: authenticatedUser.is_active ? 1 : 0,
       created_by: 0,
-      account_id: userProfile?.account_id,
-      firstname: userProfile?.firstname || authUser.user_metadata?.firstname || '',
-      lastname: userProfile?.lastname || authUser.user_metadata?.lastname || '',
-      username: userProfile?.username,
-      phone: userProfile?.phone || authUser.phone || '',
-      email: authUser.email,
-      last_activity: userProfile?.last_activity || new Date().toISOString(),
-      otp: userProfile?.otp,
-      country: userProfile?.country || 'CD',
-      city: userProfile?.city || '',
-      profile: userProfile?.profile,
-      root_store: userProfile?.root_store,
-      public_token: userProfile?.public_token,
-      ip_address: userProfile?.ip_address,
-      main_roles: mainRoles,
-      account: userProfile?.account || null,
-      main_store: userProfile?.main_store || null,
+      account_id: authenticatedUser.account_id,
+      firstname: authenticatedUser.firstname,
+      lastname: authenticatedUser.lastname,
+      username: authenticatedUser.email,
+      phone: authenticatedUser.phone,
+      email: authenticatedUser.email,
+      last_activity: new Date().toISOString(),
+      otp: null,
+      country: account?.country || 'FR',
+      city: account?.city || '',
+      profile: authenticatedUser.role,
+      root_store: null,
+      public_token: token,
+      ip_address: null,
+      main_roles: [{
+        role_name: getRoleName(authenticatedUser.role),
+        role_code: authenticatedUser.role,
+        main_permissions: getPermissionsForRole(authenticatedUser.role),
+        main_users_roles: {
+          id: authenticatedUser.id,
+          user_id: authenticatedUser.id,
+          role_id: authenticatedUser.role,
+        },
+      }],
+      account: account || null,
+      main_store: null,
+      employee: employee || null,
     };
 
     return {
       status: 200,
       logged: true,
-      token: session.access_token,
+      token: token,
       user,
-      session,
+      session: { access_token: token, user: authenticatedUser },
     };
   } catch (error) {
     console.error('Get current user error:', error);
