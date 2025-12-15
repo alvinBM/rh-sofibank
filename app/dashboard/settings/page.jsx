@@ -49,7 +49,7 @@ const Settings = () => {
     useEffect(() => {
         if (user.account) {
             reset({
-                business_name: user.account.business_name ?? "",
+                business_name: user?.account?.business_name ?? "",
                 description: user.account.description ?? "",
                 category: user.account.category ?? "",
                 country: user.account.country ?? "",

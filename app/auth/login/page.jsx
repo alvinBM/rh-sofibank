@@ -27,11 +27,7 @@ export default function Login() {
             const response = await login(username, password);
             console.log("Reponse LOGIN", response);
             if (response.status == 200) {
-                if (response.user?.account?.status == 4) {
-                    return router.push("/auth/setup?redirect=true");
-                } else {
-                    return router.push("/dashboard");
-                }
+                router.push("/dashboard");
             } else {
                 setError({
                     type: "danger",
@@ -39,10 +35,10 @@ export default function Login() {
                 });
             }
         } catch (error) {
-              setError({
-                  type: "danger",
-                  message: error?.message || "Erreur du servuer",
-              });
+            setError({
+                type: "danger",
+                message: error?.message || "Erreur du servuer",
+            });
             console.log(error);
         } finally {
             setLoading(false);

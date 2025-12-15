@@ -32,7 +32,7 @@ const TicketCaisse = React.forwardRef(function TicketCaisse({ products = [] }, r
                     margin: "0",
                 }}
             >
-                {user.account.business_name}
+                SIRH
             </h2>
             <p style={{ textAlign: "center", margin: "0" }}>
                 {user.main_store.city}, {user.main_store.address}

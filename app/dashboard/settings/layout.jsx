@@ -43,9 +43,9 @@ const LayoutSettings = ({ children }) => {
                                 <div className="flex gap-3">
                                     <Image className="mt-1" alt="nextui logo" height={40} radius="sm" src="https://avatars.githubusercontent.com/u/86160567?s=200&v=4" width={40} />
                                     <div className="flex flex-col">
-                                        <b className="text-md">{user.account.business_name}</b>
-                                        <p className="text-small text-default-500">Plan : {user.account.billing_plan}</p>
-                                        <p className="text-small text-default-500">Expire : {formatDateFullText(user.account.expired)}</p>
+                                        <b className="text-md">SOFIBANQUE</b>
+                                        <p className="text-small text-default-500">Plan : --</p>
+                                        <p className="text-small text-default-500">Expire : --</p>
                                     </div>
                                 </div>
                                 <Button isIconOnly variant="light" onPress={toggleShowSidebar}>
@@ -60,9 +60,9 @@ const LayoutSettings = ({ children }) => {
                             <CardHeader className="flex gap-3 items-start">
                                 <Image className="mt-1" alt="nextui logo" height={40} radius="sm" src="https://avatars.githubusercontent.com/u/86160567?s=200&v=4" width={40} />
                                 <div className="flex flex-col">
-                                    <b className="text-md">{user.account.business_name}</b>
-                                    <p className="text-small text-default-500">Plan : {user.account.billing_plan}</p>
-                                    <p className="text-small text-default-500">Expire : {formatDateFullText(user.account.expired)}</p>
+                                    <b className="text-md">SOFIBANQUE</b>
+                                    <p className="text-small text-default-500">Plan : --</p>
+                                    <p className="text-small text-default-500">Expire : --</p>
                                 </div>
                             </CardHeader>
                         </Card>

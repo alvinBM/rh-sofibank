@@ -69,7 +69,7 @@ const PermissionGuard = ({
 
     // Vérifier si la permission requise est accordée
     if (!isDRH && requiredPermission) {
-        const permissionCodes = permissions?.map(p => p.code) || [];
+        const permissionCodes = permissions?.map(p => p?.code) || [];
         const requiredPermissions = Array.isArray(requiredPermission) ? requiredPermission : [requiredPermission];
 
         let hasPermission = false;

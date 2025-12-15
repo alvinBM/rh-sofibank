@@ -121,8 +121,8 @@ const Profile = (props) => {
                             <p className="font-bold text-xl">
                                 {user.firstname} {user.lastname}
                             </p>
-                            <span className="text-small text-default-500">Compte : {user.account.business_name}</span>
-                            <span className="text-small text-default-500">Branche : {user.main_store.name}</span>
+                            <span className="text-small text-default-500">SOFI BANK</span>
+                            <span className="text-small text-default-500">Département : --</span>
                         </div>
                     </div>
                 </CardHeader>

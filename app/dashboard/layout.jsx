@@ -63,32 +63,12 @@ const Layout = ({ children }) => {
     const { logout } = useAuth();
     const router = useRouter();
     const currentPage = useSelector(selectCurrentPage) ?? router.pathname;
-    const [selectedBranch, setSelectedBranch] = useState([user?.root_store]);
     const [selectedBranchData, setSelectedBranchData] = useState(null);
     const isAdmin = user?.main_roles?.some((role) => role.role_name === "Admin");
     const { data: dataBranches, isError: isErrorBranch, error: errorBranch, isLoading: isLoadingGetBranches } = useGetBranches({ page: 1, rowsPerPage: 1000 });
     const branches = dataBranches && dataBranches?.branches.length > 0 ? dataBranches?.branches : [user?.main_store];
     const { theme, setTheme } = useTheme();
     const [isAccountExpired, setIsAccountExpired] = useState(false);
-
-    useEffect(() => {
-        if (selectedBranch) {
-            const branch = branches.find((branch) => branch?.id == Array.from(selectedBranch)[0]);
-            setSelectedBranchData(branch);
-        } else {
-            setSelectedBranchData(branches.find((branch) => branch.id == user?.root_store));
-        }
-    }, [selectedBranch, user, branches]);
-
-    useEffect(() => {
-        if (user) {
-            setSelectedBranch([user?.root_store.toString()]);
-            setSelectedBranchData(branches.find((branch) => branch.id == user?.root_store));
-            setIsAccountExpired(new Date(user.account.expired) < new Date());
-        }
-        console.log("user ##### ", user);
-        console.log("branches ######", branches);
-    }, [user]);
 
     // Fonction pour récupérer les fonctionnalités et limites en fonction du `billing_plan`
     const getPlanDetails = (billing_plan) => {
@@ -180,57 +160,6 @@ const Layout = ({ children }) => {
                         <div className="w-full justify-center flex items-center mb-5">
                             <Image alt="LOGO" height={90} width={240} radius="sm" src={"/logo_sofibank.png"} />
                         </div>
-
-                        <Select
-                            disableSelectorIconRotation
-                            aria-label="Choisir une branche"
-                            className="px-1"
-                            classNames={{
-                                trigger: "min-h-14 bg-transparent border-small border-default-200 dark:border-default-100 data-[hover=true]:border-default-500 dark:data-[hover=true]:border-default-200 data-[hover=true]:bg-transparent",
-                            }}
-                            isLoading={isLoadingGetBranches}
-                            selectedKeys={selectedBranch}
-                            onSelectionChange={setSelectedBranch}
-                            defaultSelectedKeys={[user?.root_store.toString()]}
-                            items={branches}
-                            listboxProps={{
-                                bottomContent: (
-                                    <>
-                                        {user?.created_by == 0 && (
-                                            <Button onPress={() => router.push("/dashboard/settings/branches")} className="bg-default-100 text-center text-foreground" size="sm">
-                                                Voir les provinces
-                                            </Button>
-                                        )}
-                                    </>
-                                ),
-                            }}
-                            placeholder="Choisir une branche"
-                            renderValue={(items) => {
-                                return items.map((item) => (
-                                    <div key={item.id} className="ml-1 flex flex-col gap-y-0.5">
-                                        <span className="text-tiny leading-4 text-default-500">
-                                            <b>
-                                                {user?.firstname} {user?.lastname}
-                                            </b>
-                                        </span>
-                                        {/* Nom du compte */}
-                                        <span className="text-tiny text-default-800">{selectedBranchData?.name}</span>
-                                    </div>
-                                ));
-                            }}
-                            selectorIcon={<Icon color="hsl(var(--nextui-default-500))" icon="lucide:chevrons-up-down" />}
-                            startContent={
-                                <div className="relative">
-                                    <Avatar isBordered size="sm" src={user.profile ?? "/images/profile.png"} />
-                                </div>
-                            }
-                        >
-                            {branches.map((branch) => (
-                                <SelectItem key={branch.id} value={branch.id} label={branch.name}>
-                                    {`#${branch.id} ${branch.name}`}
-                                </SelectItem>
-                            ))}
-                        </Select>
                     </div>
 
                     <ScrollShadow size={3} className="h-full max-h-full px-3 scrollbar dark:scrollbar-dark">
@@ -299,7 +228,6 @@ const Layout = ({ children }) => {
 
                                 {/* Right Menu */}
                                 <NavbarContent className="ml-auto h-12 max-w-fit items-center gap-0" justify="end">
-                                    
                                     <NavbarItem className="flex">
                                         <ThemeSwitcher />
                                     </NavbarItem>
