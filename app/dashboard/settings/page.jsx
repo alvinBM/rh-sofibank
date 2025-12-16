@@ -24,7 +24,7 @@ const Settings = () => {
     const [loading, setLoading] = useState(false);
     const [loadingAccountLogo, setLoadingAccountLogo] = useState(false);
     const [accountPhoto, setAccountPhoto] = useState({
-        preview: user.account.logo ?? "/images/No-Image-Placeholder.png",
+        preview: user?.account?.logo ?? "/images/No-Image-Placeholder.png",
         raw: null,
     });
 
@@ -233,7 +233,7 @@ const Settings = () => {
                                                 variant={errors.country ? "bordered" : "flat"}
                                                 isInvalid={!!errors.country}
                                                 errorMessage={errors.country?.message}
-                                                defaultSelectedKey={user.account.country}
+                                                defaultSelectedKey={user?.account?.country}
                                                 className="col-span-12"
                                                 defaultItems={countries}
                                                 label={"Pays"}
