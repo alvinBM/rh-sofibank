@@ -40,10 +40,9 @@ export const fetchLeaveRequests = async ({ offset, limit, query, filters = {} })
       .from('leave_requests')
       .select(`
         *,
-        employee:employees(id, first_name, last_name, employee_number),
+        employee:employees!leave_requests_employee_id_fkey(id, first_name, last_name, employee_number),
         leave_type:leave_types(id, name, code),
-        backup_person:backup_person_id(id, first_name, last_name),
-        supervisor:supervisor_id(id, first_name, last_name)
+        backup_employee:employees!leave_requests_backup_employee_id_fkey(id, first_name, last_name)
       `, { count: 'exact' })
       .range(offset, offset + limit - 1)
       .order('created_at', { ascending: false });
@@ -92,11 +91,10 @@ export const fetchLeaveRequestById = async (id) => {
       .from('leave_requests')
       .select(`
         *,
-        employee:employees(*),
+        employee:employees!leave_requests_employee_id_fkey(*),
         leave_type:leave_types(*),
-        backup_person:backup_person_id(*),
-        supervisor:supervisor_id(*),
-        approvals:leave_approvals(*, approver:approver_id(id, first_name, last_name))
+        backup_employee:employees!leave_requests_backup_employee_id_fkey(*),
+        approvals:leave_approvals(*, approver_user:approver_id)
       `)
       .eq('id', id)
       .single();
@@ -193,10 +191,11 @@ export const approveLeaveRequest = async (id, approvalData) => {
       .from('leave_approvals')
       .insert([{
         leave_request_id: id,
-        approver_id: approvalData.approver_id,
-        level: approvalData.level,
-        status: 'approved',
+        approver_id: approvalData.approver_id, // auth.users.id
+        approver_role: approvalData.approver_role,
+        action: 'approved',
         comments: approvalData.comments,
+        approval_level: approvalData.approval_level,
         approved_at: new Date().toISOString(),
       }]);
 
@@ -226,8 +225,9 @@ export const rejectLeaveRequest = async (id, rejectionData) => {
       .insert([{
         leave_request_id: id,
         approver_id: rejectionData.approver_id,
-        level: rejectionData.level,
-        status: 'rejected',
+        approver_role: rejectionData.approver_role,
+        action: 'rejected',
+        approval_level: rejectionData.approval_level,
         comments: rejectionData.comments,
         approved_at: new Date().toISOString(),
       }]);
@@ -263,7 +263,7 @@ export const cancelLeaveRequest = async (id, reason) => {
 export const fetchHandoverSheet = async (leaveRequestId) => {
   try {
     const { data, error } = await supabase
-      .from('handover_sheets')
+      .from('leave_handover_sheets')
       .select('*, leave_request:leave_requests(*)')
       .eq('leave_request_id', leaveRequestId)
       .maybeSingle();
@@ -279,7 +279,7 @@ export const fetchHandoverSheet = async (leaveRequestId) => {
 export const createHandoverSheet = async (leaveRequestId, payload) => {
   try {
     const { data, error } = await supabase
-      .from('handover_sheets')
+      .from('leave_handover_sheets')
       .insert([{ ...payload, leave_request_id: leaveRequestId }])
       .select()
       .single();
@@ -295,7 +295,7 @@ export const createHandoverSheet = async (leaveRequestId, payload) => {
 export const updateHandoverSheet = async (leaveRequestId, payload) => {
   try {
     const { data, error } = await supabase
-      .from('handover_sheets')
+      .from('leave_handover_sheets')
       .update(payload)
       .eq('leave_request_id', leaveRequestId)
       .select()
@@ -313,18 +313,15 @@ export const signHandoverSheet = async (leaveRequestId, signatureType) => {
   try {
     const updateData = {};
     if (signatureType === 'employee') {
-      updateData.employee_signed = true;
-      updateData.employee_signed_at = new Date().toISOString();
+      updateData.employee_signature_date = new Date().toISOString();
     } else if (signatureType === 'backup') {
-      updateData.backup_signed = true;
-      updateData.backup_signed_at = new Date().toISOString();
+      updateData.backup_signature_date = new Date().toISOString();
     } else if (signatureType === 'supervisor') {
-      updateData.supervisor_signed = true;
-      updateData.supervisor_signed_at = new Date().toISOString();
+      updateData.supervisor_signature_date = new Date().toISOString();
     }
 
     const { data, error } = await supabase
-      .from('handover_sheets')
+      .from('leave_handover_sheets')
       .update(updateData)
       .eq('leave_request_id', leaveRequestId)
       .select()
@@ -342,7 +339,7 @@ export const fetchLeavePlanning = async (year, employeeId = null) => {
   try {
     let queryBuilder = supabase
       .from('leave_planning')
-      .select('*, employee:employees(id, first_name, last_name), leave_type:leave_types(*)')
+      .select('*, employee:employees!leave_planning_employee_id_fkey(id, first_name, last_name)')
       .eq('year', year)
       .order('planned_start_date', { ascending: true });
 
@@ -423,9 +420,10 @@ export const approveByBackup = async (id, backupId, comments = '') => {
     const { data, error } = await supabase
       .from('leave_requests')
       .update({
-        status: 'backup_confirmed',
-        workflow_status: 'backup_confirmed',
-        backup_confirmed_at: new Date().toISOString()
+        status: 'pending_supervisor',
+        backup_approved: true,
+        backup_approved_at: new Date().toISOString(),
+        backup_notes: comments
       })
       .eq('id', id)
       .select()
@@ -439,8 +437,9 @@ export const approveByBackup = async (id, backupId, comments = '') => {
       .insert([{
         leave_request_id: id,
         approver_id: backupId,
-        level: 'backup',
-        status: 'approved',
+        approver_role: 'backup',
+        action: 'approved',
+        approval_level: 1,
         comments: comments,
         approved_at: new Date().toISOString(),
       }]);
@@ -460,10 +459,7 @@ export const approveBySupervisor = async (id, supervisorId, comments = '') => {
     const { data, error } = await supabase
       .from('leave_requests')
       .update({
-        status: 'pending_hr',
-        workflow_status: 'pending_hr',
-        supervisor_approved_at: new Date().toISOString(),
-        supervisor_comments: comments
+        status: 'pending_hr'
       })
       .eq('id', id)
       .select()
@@ -477,8 +473,9 @@ export const approveBySupervisor = async (id, supervisorId, comments = '') => {
       .insert([{
         leave_request_id: id,
         approver_id: supervisorId,
-        level: 'supervisor',
-        status: 'approved',
+        approver_role: 'supervisor',
+        action: 'approved',
+        approval_level: 2,
         comments: comments,
         approved_at: new Date().toISOString(),
       }]);
@@ -499,10 +496,7 @@ export const approveByHR = async (id, hrUserId, comments = '') => {
       .from('leave_requests')
       .update({
         status: 'approved',
-        workflow_status: 'approved',
-        hr_approved_by: hrUserId,
-        hr_approved_at: new Date().toISOString(),
-        hr_comments: comments
+        updated_at: new Date().toISOString()
       })
       .eq('id', id)
       .select()
@@ -516,14 +510,15 @@ export const approveByHR = async (id, hrUserId, comments = '') => {
       .insert([{
         leave_request_id: id,
         approver_id: hrUserId,
-        level: 'hr',
-        status: 'approved',
+        approver_role: 'hr',
+        action: 'approved',
+        approval_level: 3,
         comments: comments,
         approved_at: new Date().toISOString(),
       }]);
 
-    // Mettre à jour le solde de congés
-    await updateLeaveBalance(data.employee_id, data.leave_type_id, data.duration);
+    // Mettre à jour le solde de congés (déclenché aussi par trigger)
+    await updateLeaveBalance(data.employee_id, data.leave_type_id, data.total_days);
 
     return data;
   } catch (error) {
@@ -541,10 +536,7 @@ export const approveByDG = async (id, dgUserId, comments = '') => {
       .from('leave_requests')
       .update({
         status: 'approved',
-        workflow_status: 'approved',
-        hr_approved_by: dgUserId, // Même colonne mais approuvé par DG
-        hr_approved_at: new Date().toISOString(),
-        hr_comments: comments
+        updated_at: new Date().toISOString()
       })
       .eq('id', id)
       .select()
@@ -558,14 +550,15 @@ export const approveByDG = async (id, dgUserId, comments = '') => {
       .insert([{
         leave_request_id: id,
         approver_id: dgUserId,
-        level: 'dg',
-        status: 'approved',
+        approver_role: 'dg',
+        action: 'approved',
+        approval_level: 4,
         comments: comments,
         approved_at: new Date().toISOString(),
       }]);
 
     // Mettre à jour le solde de congés
-    await updateLeaveBalance(data.employee_id, data.leave_type_id, data.duration);
+    await updateLeaveBalance(data.employee_id, data.leave_type_id, data.total_days);
 
     return data;
   } catch (error) {
@@ -577,7 +570,7 @@ export const approveByDG = async (id, dgUserId, comments = '') => {
 /**
  * Met à jour le solde de congés après validation
  */
-const updateLeaveBalance = async (employeeId, leaveTypeId, duration) => {
+const updateLeaveBalance = async (employeeId, leaveTypeId, totalDays) => {
   try {
     const currentYear = new Date().getFullYear();
 
@@ -595,8 +588,8 @@ const updateLeaveBalance = async (employeeId, leaveTypeId, duration) => {
       await supabase
         .from('leave_balances')
         .update({
-          used_days: (balance.used_days || 0) + duration,
-          pending_days: Math.max((balance.pending_days || 0) - duration, 0)
+          used_days: (balance.used_days || 0) + totalDays,
+          remaining_days: Math.max((balance.remaining_days || 0) - totalDays, 0)
         })
         .eq('id', balance.id);
     }
@@ -652,17 +645,15 @@ export const fetchAllApprovedLeaveRequests = async (year, departmentId = null) =
       .from('leave_requests')
       .select(`
         *,
-        employee:employees(id, first_name, last_name, department_id, departments(id, name)),
-        leave_type:leave_types(id, name, code, color)
+        employee:employees!leave_requests_employee_id_fkey(id, first_name, last_name, service_id, direction_id),
+        leave_type:leave_types(id, name, code)
       `)
       .eq('status', 'approved')
       .gte('start_date', `${year}-01-01`)
       .lte('end_date', `${year}-12-31`)
       .order('start_date', { ascending: true });
 
-    if (departmentId) {
-      queryBuilder = queryBuilder.eq('employee.department_id', departmentId);
-    }
+    // Filtrage côté client si departmentId est basé sur services/directions (pas de table departments)
 
     const { data, error } = await queryBuilder;
 
@@ -683,10 +674,9 @@ export const detectLeaveConflicts = async (departmentId, startDate, endDate) => 
       .from('leave_requests')
       .select(`
         *,
-        employee:employees(id, first_name, last_name, department_id)
+        employee:employees!leave_requests_employee_id_fkey(id, first_name, last_name)
       `)
       .eq('status', 'approved')
-      .eq('employee.department_id', departmentId)
       .or(`start_date.lte.${endDate},end_date.gte.${startDate}`);
 
     if (error) throw error;
@@ -731,7 +721,7 @@ export const fetchLeaveStatsByDepartment = async (year) => {
       .from('leave_requests')
       .select(`
         *,
-        employee:employees(department_id, departments(id, name)),
+        employee:employees!leave_requests_employee_id_fkey(service_id, direction_id),
         leave_type:leave_types(id, name)
       `)
       .eq('status', 'approved')
@@ -743,8 +733,8 @@ export const fetchLeaveStatsByDepartment = async (year) => {
     // Grouper par département
     const statsByDept = {};
     (data || []).forEach(req => {
-      const deptId = req.employee?.department_id;
-      const deptName = req.employee?.departments?.name || 'Non assigné';
+      const deptId = req.employee?.service_id || req.employee?.direction_id;
+      const deptName = req.employee?.service_id ? 'Service' : (req.employee?.direction_id ? 'Direction' : 'Non assigné');
 
       if (!statsByDept[deptId]) {
         statsByDept[deptId] = {
@@ -763,7 +753,7 @@ export const fetchLeaveStatsByDepartment = async (year) => {
       if (!statsByDept[deptId].byLeaveType[leaveTypeName]) {
         statsByDept[deptId].byLeaveType[leaveTypeName] = 0;
       }
-      statsByDept[deptId].byLeaveType[leaveTypeName] += req.duration || 0;
+      statsByDept[deptId].byLeaveType[leaveTypeName] += req.total_days || 0;
     });
 
     return Object.values(statsByDept);
@@ -853,8 +843,8 @@ export const fetchAllLeaveBalances = async (year, departmentId = null, employeeI
       .from('leave_balances')
       .select(`
         *,
-        employee:employees(id, first_name, last_name, employee_number, department_id, departments(id, name)),
-        leave_type:leave_types(id, name, code, color)
+        employee:employees!leave_balances_employee_id_fkey(id, first_name, last_name, employee_number, service_id, direction_id),
+        leave_type:leave_types(id, name, code)
       `)
       .eq('year', year)
       .order('employee_id', { ascending: true });
@@ -871,7 +861,7 @@ export const fetchAllLeaveBalances = async (year, departmentId = null, employeeI
     let results = data || [];
     if (departmentId && !employeeId) {
       results = results.filter(balance =>
-        balance.employee?.department_id === departmentId
+        balance.employee?.service_id === departmentId || balance.employee?.direction_id === departmentId
       );
     }
 
@@ -887,5 +877,5 @@ export const fetchAllLeaveBalances = async (year, departmentId = null, employeeI
  */
 const generateLeaveRequestNumber = async () => {
   const { data } = await supabase.rpc('generate_leave_request_number');
-  return data || `LV${Date.now()}`;
+  return data || `LEV${new Date().getFullYear()}${Date.now()}`;
 };

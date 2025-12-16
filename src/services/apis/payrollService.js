@@ -59,7 +59,7 @@ export const fetchPayrollRunById = async (id) => {
         *,
         payroll_details:payroll_details(
           *,
-          employee:employees(id, first_name, last_name, employee_number)
+          employee:employees!payroll_details_employee_id_fkey(id, first_name, last_name, employee_number)
         )
       `)
       .eq('id', id)
@@ -176,7 +176,7 @@ export const fetchPayrollDetails = async (runId) => {
       .from('payroll_details')
       .select(`
         *,
-        employee:employees(id, first_name, last_name, employee_number, base_salary, position, grade)
+        employee:employees!payroll_details_employee_id_fkey(id, first_name, last_name, employee_number)
       `)
       .eq('payroll_run_id', runId)
       .order('employee.last_name', { ascending: true });
@@ -220,7 +220,7 @@ export const fetchPayrollVariables = async ({ offset, limit, query, filters = {}
       .from('payroll_variables')
       .select(`
         *,
-        employee:employees(id, first_name, last_name, employee_number)
+        employee:employees!payroll_variables_employee_id_fkey(id, first_name, last_name, employee_number)
       `, { count: 'exact' })
       .range(offset, offset + limit - 1)
       .order('created_at', { ascending: false });

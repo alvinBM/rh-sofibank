@@ -115,6 +115,10 @@ export const removeRoleFromUser = async (userRoleId) => {
 
 export const createRole = async (payload) => {
   try {
+    const hasAdmin = await checkUserRole('SUPER_ADMIN') || await checkUserRole('ADMIN');
+    if (!hasAdmin) {
+      throw new Error('Action non autorisée: rôle requis ADMIN/SUPER_ADMIN');
+    }
     const { data, error } = await supabase
       .from('roles')
       .insert([payload])
@@ -131,6 +135,10 @@ export const createRole = async (payload) => {
 
 export const updateRole = async (roleId, payload) => {
   try {
+    const hasAdmin = await checkUserRole('SUPER_ADMIN') || await checkUserRole('ADMIN');
+    if (!hasAdmin) {
+      throw new Error('Action non autorisée: rôle requis ADMIN/SUPER_ADMIN');
+    }
     const { data, error } = await supabase
       .from('roles')
       .update(payload)

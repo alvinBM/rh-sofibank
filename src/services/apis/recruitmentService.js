@@ -8,9 +8,9 @@ export const getWorkforcePlannings = async (filters = {}) => {
     .select(`
       *,
       direction:directions(id, name, code),
-      submitted_by_user:submitted_by(id, email, firstname, lastname),
-      hr_reviewed_by_user:hr_reviewed_by(id, email, firstname, lastname),
-      dg_approved_by_user:dg_approved_by(id, email, firstname, lastname)
+      submitted_by_user:submitted_by(id, email),
+      hr_reviewed_by_user:hr_reviewed_by(id, email),
+      dg_approved_by_user:dg_approved_by(id, email)
     `)
     .order('created_at', { ascending: false });
 
@@ -40,7 +40,7 @@ export const getWorkforcePlanningById = async (id) => {
         job_position:job_positions(id, title, code),
         grade:grades(id, name, code, base_salary),
         service:services(id, name, code),
-        replacing_employee:employees(id, employee_number, first_name, last_name)
+        replacing_employee:employees!workforce_planning_items_replacing_employee_id_fkey(id, employee_number, first_name, last_name)
       )
     `)
     .eq('id', id)
@@ -127,7 +127,7 @@ export const getJobOpenings = async (filters = {}) => {
       direction:directions(id, name, code),
       service:services(id, name, code),
       grade:grades(id, name, code, base_salary),
-      created_by_user:created_by(id, email, firstname, lastname),
+      created_by_user:created_by(id, email),
       candidates:candidates(count)
     `)
     .order('created_at', { ascending: false });
@@ -220,7 +220,7 @@ export const getCandidates = async (filters = {}) => {
     .from('candidates')
     .select(`
       *,
-      job_opening:job_openings(id, title, job_number),
+      job_opening:job_openings!candidates_job_opening_id_fkey(id, title, job_number),
       interviews:candidate_interviews(count),
       evaluations:candidate_evaluations(count)
     `)
@@ -243,11 +243,11 @@ export const getCandidateById = async (id) => {
     .from('candidates')
     .select(`
       *,
-      job_opening:job_openings(*),
+      job_opening:job_openings!candidates_job_opening_id_fkey(*),
       interviews:candidate_interviews(*),
       evaluations:candidate_evaluations(
         *,
-        evaluator:evaluator_id(id, email, firstname, lastname)
+        evaluator:evaluator_id(id, email)
       ),
       job_offers:job_offers(*)
     `)

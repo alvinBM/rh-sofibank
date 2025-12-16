@@ -16,7 +16,7 @@ export const fetchAttendanceRecords = async ({ offset, limit, query, filters = {
       .from('attendance_records')
       .select(`
         *,
-        employee:employees(id, first_name, last_name, employee_number, department_id, departments(id, name))
+        employee:employees!attendance_records_employee_id_fkey(id, first_name, last_name, employee_number, service_id, direction_id)
       `, { count: 'exact' })
       .range(offset, offset + limit - 1)
       .order('date', { ascending: false });
@@ -33,8 +33,12 @@ export const fetchAttendanceRecords = async ({ offset, limit, query, filters = {
       queryBuilder = queryBuilder.lte('date', filters.date_to);
     }
 
-    if (filters.department_id) {
-      queryBuilder = queryBuilder.eq('employee.department_id', filters.department_id);
+    if (filters.service_id) {
+      queryBuilder = queryBuilder.eq('employee.service_id', filters.service_id);
+    }
+
+    if (filters.direction_id) {
+      queryBuilder = queryBuilder.eq('employee.direction_id', filters.direction_id);
     }
 
     if (filters.status) {
@@ -68,7 +72,7 @@ export const fetchAttendanceRecordById = async (id) => {
       .from('attendance_records')
       .select(`
         *,
-        employee:employees(*),
+        employee:employees!attendance_records_employee_id_fkey(*),
         terminal:biometric_terminals(id, name, location)
       `)
       .eq('id', id)
@@ -195,8 +199,8 @@ export const fetchExitAuthorizations = async ({ offset, limit, query, filters = 
       .from('exit_authorizations')
       .select(`
         *,
-        employee:employees(id, first_name, last_name, employee_number, department_id, departments(id, name)),
-        approver:approved_by(id, first_name, last_name)
+        employee:employees!exit_authorizations_employee_id_fkey(id, first_name, last_name, employee_number, service_id, direction_id),
+        approver:employees!exit_authorizations_approved_by_fkey(id, first_name, last_name)
       `, { count: 'exact' })
       .range(offset, offset + limit - 1)
       .order('created_at', { ascending: false });

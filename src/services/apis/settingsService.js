@@ -4,10 +4,10 @@ import { supabase } from "../../lib/supabase-client";
 export const fetchUsers = async ({ offset = 0, limit = 10, query = "" }) => {
     try {
         let queryBuilder = supabase
-            .from('users')
-            .select('*, roles:user_roles(role:roles(*))', { count: 'exact' })
+            .from('user_roles')
+            .select('id, user_id, role_id, assigned_at, role:roles(*)', { count: 'exact' })
             .range(offset, offset + limit - 1)
-            .order('created_at', { ascending: false });
+            .order('assigned_at', { ascending: false });
 
         if (query) {
             queryBuilder = queryBuilder.or(`full_name.ilike.%${query}%,email.ilike.%${query}%`);

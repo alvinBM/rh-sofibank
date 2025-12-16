@@ -10,7 +10,7 @@ export const fetchEmployees = async ({ offset, limit, query, filters = {} }) => 
         service:services(id, name),
         job_position:job_positions(id, title),
         grade:grades(id, name, code),
-        supervisor:direct_supervisor_id(id, first_name, last_name)
+        supervisor:employees!employees_direct_supervisor_id_fkey(id, first_name, last_name)
       `, { count: 'exact' })
       .range(offset, offset + limit - 1)
       .order('created_at', { ascending: false });
@@ -55,7 +55,7 @@ export const fetchEmployeeById = async (id) => {
         service:services(*),
         job_position:job_positions(*),
         grade:grades(*),
-        supervisor:direct_supervisor_id(*)
+        supervisor:employees!employees_direct_supervisor_id_fkey(*)
       `)
       .eq('id', id)
       .single();
@@ -259,7 +259,7 @@ export const fetchEmployeeRequests = async (employeeId, status = "") => {
   try {
     let query = supabase
       .from('employee_requests')
-      .select('*, request_type:request_types(*), employee:employees(id, first_name, last_name)')
+      .select('*, request_type:request_types(*), employee:employees!employee_requests_employee_id_fkey(id, first_name, last_name)')
       .eq('employee_id', employeeId)
       .order('created_at', { ascending: false });
 

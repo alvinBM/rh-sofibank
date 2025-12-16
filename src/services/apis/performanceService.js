@@ -16,8 +16,8 @@ export const fetchEvaluations = async ({ offset, limit, query, filters = {} }) =
       .from('evaluations')
       .select(`
         *,
-        employee:employees(id, first_name, last_name, employee_number, department_id, departments(id, name)),
-        evaluator:evaluator_id(id, first_name, last_name)
+        employee:employees!evaluations_employee_id_fkey(id, first_name, last_name, employee_number, service_id, direction_id),
+        evaluator:employees!evaluations_evaluator_id_fkey(id, first_name, last_name)
       `, { count: 'exact' })
       .range(offset, offset + limit - 1)
       .order('created_at', { ascending: false });
@@ -38,8 +38,12 @@ export const fetchEvaluations = async ({ offset, limit, query, filters = {} }) =
       queryBuilder = queryBuilder.eq('status', filters.status);
     }
 
-    if (filters.department_id) {
-      queryBuilder = queryBuilder.eq('employee.department_id', filters.department_id);
+    if (filters.service_id) {
+      queryBuilder = queryBuilder.eq('employee.service_id', filters.service_id);
+    }
+
+    if (filters.direction_id) {
+      queryBuilder = queryBuilder.eq('employee.direction_id', filters.direction_id);
     }
 
     if (filters.employee_id) {
@@ -69,13 +73,13 @@ export const fetchEvaluationById = async (id) => {
       .from('evaluations')
       .select(`
         *,
-        employee:employees(*),
-        evaluator:evaluator_id(*),
+        employee:employees!evaluations_employee_id_fkey(*),
+        evaluator:employees!evaluations_evaluator_id_fkey(*),
         self_evaluation:self_evaluations(*),
         supervisor_level1:supervisor_level1_evaluations(*),
         supervisor_level2:supervisor_level2_evaluations(*),
-        peer_evaluations:peer_evaluations(*, peer:peer_id(id, first_name, last_name)),
-        subordinate_evaluations:subordinate_evaluations(*, subordinate:subordinate_id(id, first_name, last_name)),
+        peer_evaluations:peer_evaluations(*, peer:employees!peer_evaluations_peer_id_fkey(id, first_name, last_name)),
+        subordinate_evaluations:subordinate_evaluations(*, subordinate:employees!subordinate_evaluations_subordinate_id_fkey(id, first_name, last_name)),
         hr_review:hr_reviews(*),
         kpi_scores:evaluation_kpi_scores(*, kpi:kpis(*))
       `)
@@ -444,9 +448,9 @@ export const fetchPIPs = async ({ offset, limit, query, filters = {} }) => {
       .from('performance_improvement_plans')
       .select(`
         *,
-        employee:employees(id, first_name, last_name, employee_number, department_id, departments(id, name)),
+        employee:employees!performance_improvement_plans_employee_id_fkey(id, first_name, last_name, employee_number, service_id, direction_id),
         evaluation:evaluations(id, year, quarter, final_score),
-        supervisor:supervisor_id(id, first_name, last_name)
+        supervisor:employees!performance_improvement_plans_supervisor_id_fkey(id, first_name, last_name)
       `, { count: 'exact' })
       .range(offset, offset + limit - 1)
       .order('created_at', { ascending: false });
@@ -486,10 +490,10 @@ export const fetchPIPById = async (id) => {
       .from('performance_improvement_plans')
       .select(`
         *,
-        employee:employees(*),
+        employee:employees!performance_improvement_plans_employee_id_fkey(*),
         evaluation:evaluations(*),
-        supervisor:supervisor_id(*),
-        follow_ups:pip_follow_ups(*, reviewer:reviewed_by(id, first_name, last_name))
+        supervisor:employees!performance_improvement_plans_supervisor_id_fkey(*),
+        follow_ups:pip_follow_ups(*, reviewer:employees!pip_follow_ups_reviewed_by_fkey(id, first_name, last_name))
       `)
       .eq('id', id)
       .single();
