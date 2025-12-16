@@ -9,6 +9,8 @@
 # testing
 /coverage
 
+/APIstock243
+
 # next.js
 /.next/
 /out/
