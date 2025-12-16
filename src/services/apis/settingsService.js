@@ -4,21 +4,35 @@ import { supabase } from "../../lib/supabase-client";
 export const fetchUsers = async ({ offset = 0, limit = 10, query = "" }) => {
     try {
         let queryBuilder = supabase
-            .from('user_roles')
-            .select('id, user_id, role_id, assigned_at, role:roles(*)', { count: 'exact' })
+            .from('users')
+            .select(`
+                *,
+                roles:user_roles(
+                    id,
+                    role_id,
+                    assigned_at,
+                    role:roles(*)
+                )
+            `, { count: 'exact' })
             .range(offset, offset + limit - 1)
-            .order('assigned_at', { ascending: false });
+            .order('created_at', { ascending: false });
 
         if (query) {
-            queryBuilder = queryBuilder.or(`full_name.ilike.%${query}%,email.ilike.%${query}%`);
+            queryBuilder = queryBuilder.or(`firstname.ilike.%${query}%,lastname.ilike.%${query}%,email.ilike.%${query}%`);
         }
 
         const { data, error, count } = await queryBuilder;
 
         if (error) throw error;
 
+        // Ajouter full_name pour la compatibilité avec le frontend
+        const usersWithFullName = (data || []).map(user => ({
+            ...user,
+            full_name: `${user.firstname} ${user.lastname}`
+        }));
+
         return {
-            users: data || [],
+            users: usersWithFullName,
             total: count || 0,
         };
     } catch (error) {
@@ -29,14 +43,30 @@ export const fetchUsers = async ({ offset = 0, limit = 10, query = "" }) => {
 
 export const createUser = async (userData) => {
     try {
+        // Séparer full_name en firstname et lastname si fourni
+        const { full_name, ...rest } = userData;
+        let dataToInsert = rest;
+
+        if (full_name) {
+            const names = full_name.trim().split(' ');
+            const firstname = names[0] || '';
+            const lastname = names.slice(1).join(' ') || '';
+            dataToInsert = { ...rest, firstname, lastname };
+        }
+
         const { data, error } = await supabase
             .from('users')
-            .insert(userData)
+            .insert(dataToInsert)
             .select()
             .single();
 
         if (error) throw error;
-        return data;
+
+        // Ajouter full_name pour la compatibilité
+        return {
+            ...data,
+            full_name: `${data.firstname} ${data.lastname}`
+        };
     } catch (error) {
         console.error('Create user error:', error);
         throw error;
@@ -45,15 +75,31 @@ export const createUser = async (userData) => {
 
 export const updateUser = async (userId, userData) => {
     try {
+        // Séparer full_name en firstname et lastname si fourni
+        const { full_name, ...rest } = userData;
+        let dataToUpdate = rest;
+
+        if (full_name) {
+            const names = full_name.trim().split(' ');
+            const firstname = names[0] || '';
+            const lastname = names.slice(1).join(' ') || '';
+            dataToUpdate = { ...rest, firstname, lastname };
+        }
+
         const { data, error } = await supabase
             .from('users')
-            .update(userData)
+            .update(dataToUpdate)
             .eq('id', userId)
             .select()
             .single();
 
         if (error) throw error;
-        return data;
+
+        // Ajouter full_name pour la compatibilité
+        return {
+            ...data,
+            full_name: `${data.firstname} ${data.lastname}`
+        };
     } catch (error) {
         console.error('Update user error:', error);
         throw error;
