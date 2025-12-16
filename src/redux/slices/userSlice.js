@@ -3,7 +3,7 @@ import { createSlice } from "@reduxjs/toolkit";
 
 const initialState = {
     userData: null,
-    isAuthenticated: null,
+    isAuthenticated: !!getCookieFromBrowser("token"),
     token: getCookieFromBrowser("token") || null,
     currentPage: "Dashboard",
     features: [],
@@ -24,12 +24,18 @@ const userSlice = createSlice({
             const features = new Set();
             const permissions = new Set();
 
-            user.main_roles.forEach((role) => {
-                role.main_permissions.forEach((permission) => {
-                    features.add(permission.feature);
-                    permissions.add(permission.permission_name);
+            if (user.main_roles && Array.isArray(user.main_roles)) {
+                user.main_roles.forEach((role) => {
+                    if (role.main_permissions && Array.isArray(role.main_permissions)) {
+                        role.main_permissions.forEach((permission) => {
+                            if (permission.feature) features.add(permission.feature);
+                            if (permission.permission_name) permissions.add(permission.permission_name);
+                            if (permission.code) permissions.add(permission.code);
+                            if (permission.name) permissions.add(permission.name);
+                        });
+                    }
                 });
-            });
+            }
 
             state.features = Array.from(features);
             state.permissions = Array.from(permissions);

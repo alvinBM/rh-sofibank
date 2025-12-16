@@ -25,9 +25,18 @@ export const AuthProvider = ({ children }) => {
                 if (response && response.user) {
                     setCookie("token", response.token);
                     dispatch(setUser({ user: response.user, token: response.token }));
+                } else {
+                    removeCookie("token");
+                    localStorage.removeItem("token");
+                    sessionStorage.removeItem("token");
+                    dispatch(clearUserSession());
                 }
             } catch (error) {
                 console.error("Auth initialization error:", error);
+                removeCookie("token");
+                localStorage.removeItem("token");
+                sessionStorage.removeItem("token");
+                dispatch(clearUserSession());
             } finally {
                 setLoading(false);
             }
