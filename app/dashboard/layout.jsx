@@ -262,7 +262,7 @@ const Layout = ({ children }) => {
                                             <DropdownTrigger>
                                                 <button className="mt-1 h-8 w-8 outline-none transition-transform">
                                                     <Badge color="success" content="" placement="bottom-right" shape="circle">
-                                                        <Avatar size="sm" src={user.profile ?? "/images/profile.png"} />
+                                                        <Avatar size="sm" src={user?.profile ?? "/images/profile.png"} />
                                                     </Badge>
                                                 </button>
                                             </DropdownTrigger>
@@ -270,7 +270,7 @@ const Layout = ({ children }) => {
                                                 <DropdownItem onPress={() => router.push("/dashboard/profile")} key="profile" className="h-14 gap-2">
                                                     <small className="font-light">Connecté en tant que</small>
                                                     <p className="font-semibold">
-                                                        {user.firstname} {user.lastname}
+                                                        {user?.firstname} {user?.lastname}
                                                     </p>
                                                 </DropdownItem>
                                                 {isAdmin && (
