@@ -108,7 +108,7 @@ export const getJobPostings = async ({ offset = 0, limit = 10, status, plan_id, 
     if (job_position_id) requestUrl += `&job_position_id=${job_position_id}`;
     if (query) requestUrl += `&query=${query}`;
 
-    const { data } = await apiClient.get(requestUrl);
+    const data = await apiClient.get(requestUrl);
 
     if (data.status === 200) {
         return {

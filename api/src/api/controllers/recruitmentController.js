@@ -410,6 +410,7 @@ export const getJobPostings = async (req, res) => {
                 { model: Direction, as: "direction" },
                 { model: Service, as: "service" },
                 { model: JobPosition, as: "job_position" },
+                { model: Grade, as: "grade" },
                 { model: User, as: "creator", attributes: ["id", "email"] },
                 {
                     model: JobApplication,
@@ -448,6 +449,7 @@ export const getJobPostingById = async (req, res) => {
                 { model: Direction, as: "direction" },
                 { model: Service, as: "service" },
                 { model: JobPosition, as: "job_position" },
+                { model: Grade, as: "grade" },
                 { model: User, as: "creator" },
                 {
                     model: RecruitmentPlanPosition,
@@ -499,6 +501,7 @@ export const createJobPosting = async (req, res) => {
                 { model: Direction, as: "direction" },
                 { model: Service, as: "service" },
                 { model: JobPosition, as: "job_position" },
+                { model: Grade, as: "grade" },
                 { model: User, as: "creator" },
             ],
         });
@@ -530,6 +533,7 @@ export const updateJobPosting = async (req, res) => {
                 { model: Direction, as: "direction" },
                 { model: Service, as: "service" },
                 { model: JobPosition, as: "job_position" },
+                { model: Grade, as: "grade" },
                 { model: User, as: "creator" },
             ],
         });

@@ -389,6 +389,11 @@ JobPosting.belongsTo(JobPosition, {
     as: 'job_position'
 });
 
+JobPosting.belongsTo(Grade, {
+    foreignKey: 'grade_id',
+    as: 'grade'
+});
+
 JobPosting.belongsTo(User, {
     foreignKey: 'created_by',
     as: 'creator'
