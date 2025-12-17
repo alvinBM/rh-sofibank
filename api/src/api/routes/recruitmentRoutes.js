@@ -109,6 +109,9 @@ router.post("/applications/:id/assign", checkPermission("recruitment.edit"), rec
 // Rate application
 router.post("/applications/:id/rate", checkPermission("recruitment.edit"), recruitmentController.rateApplication);
 
+// Convert candidate to employee
+router.post("/applications/:id/convert-to-employee", checkPermission("recruitment.edit"), recruitmentController.convertCandidateToEmployee);
+
 // ========================================
 // INTERVIEW ROUTES (Stage 3)
 // ========================================

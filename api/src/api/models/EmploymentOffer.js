@@ -122,29 +122,9 @@ const EmploymentOffer = sequelize.define(
                 key: "id",
             },
         },
-        candidate_comments: {
+        candidate_response_notes: {
             type: DataTypes.TEXT,
             allowNull: true,
-        },
-        approved_by: {
-            type: DataTypes.UUID,
-            allowNull: true,
-            references: {
-                model: "users",
-                key: "id",
-            },
-        },
-        approved_date: {
-            type: DataTypes.DATE,
-            allowNull: true,
-        },
-        created_by: {
-            type: DataTypes.UUID,
-            allowNull: true,
-            references: {
-                model: "users",
-                key: "id",
-            },
         },
         notes: {
             type: DataTypes.TEXT,

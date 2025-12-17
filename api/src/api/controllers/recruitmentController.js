@@ -995,6 +995,145 @@ export const rateApplication = async (req, res) => {
     }
 };
 
+/**
+ * Convert candidate to employee
+ */
+export const convertCandidateToEmployee = async (req, res) => {
+    try {
+        const { id } = req.params; // application_id
+        const offerData = req.body;
+
+        // Get application details
+        const application = await JobApplication.findByPk(id, {
+            include: [
+                {
+                    model: JobPosting,
+                    as: "job_posting",
+                    include: [
+                        { model: Direction, as: "direction" },
+                        { model: Service, as: "service" },
+                        { model: JobPosition, as: "job_position" },
+                        { model: Grade, as: "grade" },
+                    ],
+                },
+            ],
+        });
+
+        if (!application) {
+            return res.status(404).json({ error: "Application not found" });
+        }
+
+        if (application.status === "hired") {
+            return res.status(400).json({ error: "Candidate already hired" });
+        }
+
+        // Check if employee already exists
+        const existingEmployee = await Employee.findOne({
+            where: { email: application.email },
+        });
+
+        if (existingEmployee) {
+            return res.status(400).json({ error: "Employee with this email already exists" });
+        }
+
+        // Generate employee number: EMP-YYYY-XXXX
+        const year = new Date().getFullYear();
+        const lastEmployee = await Employee.findOne({
+            where: {
+                employee_number: {
+                    [Op.like]: `EMP-${year}-%`,
+                },
+            },
+            order: [["employee_number", "DESC"]],
+        });
+
+        let nextNumber = 1;
+        if (lastEmployee) {
+            const lastNumber = parseInt(lastEmployee.employee_number.split("-")[2]);
+            nextNumber = lastNumber + 1;
+        }
+        const employee_number = `EMP-${year}-${String(nextNumber).padStart(4, "0")}`;
+
+        // Generate email: firstname.lastname@sofibanque.com
+        const email = `${application.first_name.toLowerCase()}.${application.last_name.toLowerCase()}@sofibanque.com`;
+
+        // Generate temporary password (16 characters)
+        const tempPassword = Math.random().toString(36).slice(-8) + Math.random().toString(36).slice(-8).toUpperCase();
+        const hashedPassword = await bcrypt.hash(tempPassword, 10);
+
+        // Create user account
+        const newUser = await User.create({
+            email: email,
+            password: hashedPassword,
+            role: "employee",
+            is_active: true,
+        });
+
+        console.log(`✅ Created user account for ${application.first_name} ${application.last_name}`);
+        console.log(`📧 Email: ${email}`);
+        console.log(`🔑 Temporary Password: ${tempPassword}`);
+
+        // Create employee record
+        const newEmployee = await Employee.create({
+            employee_number: employee_number,
+            user_id: newUser.id,
+            first_name: application.first_name,
+            last_name: application.last_name,
+            email: email,
+            phone: application.phone,
+            date_of_birth: application.date_of_birth || null,
+            gender: application.gender || null,
+            nationality: application.nationality || null,
+            address_line1: application.address || null,
+            city: application.city || null,
+            province: application.province || null,
+            postal_code: application.postal_code || null,
+            country: application.country || "RDC",
+            job_position_id: offerData.job_position_id || application.job_posting?.job_position_id,
+            grade_id: offerData.grade_id || application.job_posting?.grade_id,
+            service_id: offerData.service_id || application.job_posting?.service_id,
+            direction_id: offerData.direction_id || application.job_posting?.direction_id,
+            contract_type: offerData.contract_type || "permanent",
+            hire_date: offerData.start_date || new Date(),
+            basic_salary: offerData.salary || application.expected_salary || 0,
+            employment_status: "active",
+            work_schedule: offerData.work_schedule || "full_time",
+            probation_end_date: offerData.probation_end_date || null,
+            created_at: new Date(),
+            updated_at: new Date(),
+        });
+
+        // Update application status
+        await application.update({
+            status: "hired",
+        });
+
+        // Create status history
+        if (req.user?.id) {
+            await ApplicationStatusHistory.create({
+                application_id: application.id,
+                previous_status: application.status,
+                new_status: "hired",
+                changed_by: req.user.id,
+                reason: "Candidate converted to employee",
+            });
+        }
+
+        res.status(201).json({
+            message: "Candidate successfully converted to employee",
+            employee: newEmployee,
+            user: {
+                email: email,
+                temporary_password: tempPassword,
+            },
+            employee_number: employee_number,
+        });
+    } catch (error) {
+        console.error("Error converting candidate to employee:", error);
+        res.status(500).json({ error: "Failed to convert candidate to employee" });
+    }
+};
+
 // ========================================
 // STAGE 3B: INTERVIEWS & EVALUATIONS
 // ========================================
