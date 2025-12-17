@@ -4,7 +4,8 @@ import apiClient from '../api-client';
 
 export const getMyProfile = async () => {
   try {
-    const response = await apiClient.get('/auth/profile');
+    const response = await apiClient.get('/ess/my-profile');
+    console.log('My Profile Response:', response);
     return response.data;
   } catch (error) {
     console.error('Get my profile error:', error);
@@ -14,7 +15,7 @@ export const getMyProfile = async () => {
 
 export const updateMyProfile = async (updates) => {
   try {
-    const response = await apiClient.put('/auth/profile', updates);
+    const response = await apiClient.put('/ess/my-profile', updates);
     return response.data;
   } catch (error) {
     console.error('Update my profile error:', error);

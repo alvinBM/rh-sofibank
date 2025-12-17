@@ -17,6 +17,15 @@ import AttendanceRecord from './AttendanceRecord.js';
 import Holiday from './Holiday.js';
 import BiometricDevice from './BiometricDevice.js';
 import SystemParameter from './SystemParameter.js';
+import EmployeeDocument from './EmployeeDocument.js';
+import EmployeeContract from './EmployeeContract.js';
+import RequestType from './RequestType.js';
+import EmployeeRequest from './EmployeeRequest.js';
+import InternalAnnouncement from './InternalAnnouncement.js';
+import AnnouncementRead from './AnnouncementRead.js';
+import EmployeeFeedback from './EmployeeFeedback.js';
+import CareerHistory from './CareerHistory.js';
+import EmployeeDependent from './EmployeeDependent.js';
 
 // ========== USER <-> ROLE (Many-to-Many) ==========
 User.belongsToMany(Role, {
@@ -194,6 +203,113 @@ Employee.hasMany(AttendanceRecord, {
     as: 'attendance_records'
 });
 
+// ========== EMPLOYEE DOCUMENTS ==========
+EmployeeDocument.belongsTo(Employee, {
+    foreignKey: 'employee_id',
+    as: 'employee'
+});
+
+Employee.hasMany(EmployeeDocument, {
+    foreignKey: 'employee_id',
+    as: 'documents'
+});
+
+// ========== EMPLOYEE CONTRACTS ==========
+EmployeeContract.belongsTo(Employee, {
+    foreignKey: 'employee_id',
+    as: 'employee'
+});
+
+Employee.hasMany(EmployeeContract, {
+    foreignKey: 'employee_id',
+    as: 'contracts'
+});
+
+// ========== EMPLOYEE REQUESTS ==========
+EmployeeRequest.belongsTo(Employee, {
+    foreignKey: 'employee_id',
+    as: 'employee'
+});
+
+EmployeeRequest.belongsTo(RequestType, {
+    foreignKey: 'request_type_id',
+    as: 'request_type'
+});
+
+Employee.hasMany(EmployeeRequest, {
+    foreignKey: 'employee_id',
+    as: 'requests'
+});
+
+// ========== ANNOUNCEMENTS ==========
+InternalAnnouncement.belongsTo(User, {
+    foreignKey: 'created_by',
+    as: 'creator'
+});
+
+AnnouncementRead.belongsTo(InternalAnnouncement, {
+    foreignKey: 'announcement_id',
+    as: 'announcement'
+});
+
+AnnouncementRead.belongsTo(Employee, {
+    foreignKey: 'employee_id',
+    as: 'employee'
+});
+
+// ========== EMPLOYEE FEEDBACK ==========
+EmployeeFeedback.belongsTo(Employee, {
+    foreignKey: 'employee_id',
+    as: 'employee'
+});
+
+Employee.hasMany(EmployeeFeedback, {
+    foreignKey: 'employee_id',
+    as: 'feedback'
+});
+
+// ========== CAREER HISTORY ==========
+CareerHistory.belongsTo(Employee, {
+    foreignKey: 'employee_id',
+    as: 'employee'
+});
+
+CareerHistory.belongsTo(Direction, {
+    foreignKey: 'new_direction_id',
+    as: 'direction'
+});
+
+CareerHistory.belongsTo(Service, {
+    foreignKey: 'new_service_id',
+    as: 'service'
+});
+
+CareerHistory.belongsTo(JobPosition, {
+    foreignKey: 'new_job_position_id',
+    as: 'job_position'
+});
+
+CareerHistory.belongsTo(Grade, {
+    foreignKey: 'new_grade_id',
+    as: 'grade'
+});
+
+Employee.hasMany(CareerHistory, {
+    foreignKey: 'employee_id',
+    as: 'career_history'
+});
+
+// ========== EMPLOYEE DEPENDENTS ==========
+EmployeeDependent.belongsTo(Employee, {
+    foreignKey: 'employee_id',
+    as: 'employee'
+});
+
+Employee.hasMany(EmployeeDependent, {
+    foreignKey: 'employee_id',
+    as: 'dependents'
+});
+
 export default {
     database,
     sequelize: database,
@@ -214,5 +330,14 @@ export default {
     AttendanceRecord,
     Holiday,
     BiometricDevice,
-    SystemParameter
+    SystemParameter,
+    EmployeeDocument,
+    EmployeeContract,
+    RequestType,
+    EmployeeRequest,
+    InternalAnnouncement,
+    AnnouncementRead,
+    EmployeeFeedback,
+    CareerHistory,
+    EmployeeDependent
 };

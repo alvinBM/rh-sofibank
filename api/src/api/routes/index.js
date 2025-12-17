@@ -8,6 +8,7 @@ import leaveRoutes from "./leaveRoutes.js";
 import attendanceRoutes from "./attendanceRoutes.js";
 import settingsRoutes from "./settingsRoutes.js";
 import dashboardRoutes from "./dashboardRoutes.js";
+import essRoutes from "./essRoutes.js";
 
 // Mount routes
 router.use("/auth", authRoutes);
@@ -17,6 +18,7 @@ router.use("/attendance", attendanceRoutes);
 router.use("/settings", settingsRoutes);
 router.use("/rbac", settingsRoutes);
 router.use("/dashboard", dashboardRoutes);
+router.use("/ess", essRoutes);
 
 // Health check route
 router.get("/health", (req, res) => {
