@@ -81,7 +81,15 @@ export const updateMyProfile = async (req, res) => {
         const filteredUpdates = {};
         allowedFields.forEach((field) => {
             if (updates[field] !== undefined) {
-                filteredUpdates[field] = updates[field];
+                // Convert empty strings to null for specific fields
+                if (updates[field] === "" && ["marital_status", "personal_email", "spouse_name"].includes(field)) {
+                    filteredUpdates[field] = null;
+                } else if (updates[field] === "") {
+                    // For other string fields, keep empty string or set to null
+                    filteredUpdates[field] = updates[field];
+                } else {
+                    filteredUpdates[field] = updates[field];
+                }
             }
         });
 

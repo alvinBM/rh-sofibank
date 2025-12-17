@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Card, CardBody, Tabs, Tab, Button, Input, Chip, Avatar, Spinner, Divider, Table, TableHeader, TableColumn, TableBody, TableRow, TableCell } from "@nextui-org/react";
+import { Card, CardBody, Tabs, Tab, Button, Input, Chip, Avatar, Spinner, Divider, Table, TableHeader, TableColumn, TableBody, TableRow, TableCell, Select, SelectItem } from "@nextui-org/react";
 import { FiUser, FiEdit, FiSave, FiFileText, FiTrendingUp, FiUsers } from "react-icons/fi";
 import { useGetMyProfile, useUpdateMyProfile, useGetMyContracts, useGetEmployeeHistory, useGetEmployeeDependents } from "@/src/hooks/useESS";
 import { useForm, Controller } from "react-hook-form";
@@ -66,7 +66,19 @@ export default function MyProfilePage() {
 
     const onSubmit = async (data) => {
         try {
-            await updateProfile.mutateAsync(data);
+            // Clean empty strings for ENUM fields
+            const cleanedData = { ...data };
+            if (cleanedData.marital_status === "") {
+                cleanedData.marital_status = null;
+            }
+            if (cleanedData.personal_email === "") {
+                cleanedData.personal_email = null;
+            }
+            if (cleanedData.spouse_name === "") {
+                cleanedData.spouse_name = null;
+            }
+            
+            await updateProfile.mutateAsync(cleanedData);
             toast.success("Profil mis à jour avec succès");
             setIsEditing(false);
         } catch (error) {
@@ -210,7 +222,28 @@ export default function MyProfilePage() {
                                         <Controller
                                             name="marital_status"
                                             control={control}
-                                            render={({ field }) => <Input {...field} label="Situation Matrimoniale" value={MARITAL_STATUS_LABELS[field.value] || field.value || ""} isDisabled={!isEditing} />}
+                                            render={({ field }) => (
+                                                isEditing ? (
+                                                    <Select
+                                                        {...field}
+                                                        label="Situation Matrimoniale"
+                                                        placeholder="Sélectionner"
+                                                        selectedKeys={field.value ? [field.value] : []}
+                                                        onSelectionChange={(keys) => field.onChange(Array.from(keys)[0] || null)}
+                                                    >
+                                                        <SelectItem key="single" value="single">Célibataire</SelectItem>
+                                                        <SelectItem key="married" value="married">Marié(e)</SelectItem>
+                                                        <SelectItem key="divorced" value="divorced">Divorcé(e)</SelectItem>
+                                                        <SelectItem key="widowed" value="widowed">Veuf/Veuve</SelectItem>
+                                                    </Select>
+                                                ) : (
+                                                    <Input 
+                                                        label="Situation Matrimoniale" 
+                                                        value={MARITAL_STATUS_LABELS[field.value] || ""} 
+                                                        isDisabled={true}
+                                                    />
+                                                )
+                                            )}
                                         />
 
                                         <Controller name="spouse_name" control={control} render={({ field }) => <Input {...field} label="Nom du Conjoint" isDisabled={!isEditing} />} />
