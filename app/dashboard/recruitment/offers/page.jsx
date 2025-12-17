@@ -20,374 +20,257 @@ import {
   Select,
   SelectItem,
   Spinner,
-  User,
   Modal,
   ModalContent,
   ModalHeader,
   ModalBody,
   ModalFooter,
   Textarea,
-  Checkbox,
-  CheckboxGroup,
   useDisclosure,
+  User,
+  Divider,
 } from "@nextui-org/react";
 import {
   FiPlus,
   FiSearch,
   FiMoreVertical,
   FiEye,
-  FiEdit,
-  FiSend,
-  FiFileText,
   FiCheckCircle,
+  FiSend,
   FiXCircle,
-  FiTrash2,
+  FiFileText,
+  FiDownload,
 } from "react-icons/fi";
 import { useForm, Controller } from "react-hook-form";
 import { toast } from "react-toastify";
 import {
-  useGetJobOffers,
-  useCreateJobOffer,
-  useUpdateJobOffer,
-  useGetCandidates,
+  useGetEmploymentOffers,
+  useGetEmploymentOfferById,
+  useCreateEmploymentOffer,
+  useUpdateEmploymentOffer,
+  useApproveEmploymentOffer,
+  useSendEmploymentOffer,
+  useRespondToOffer,
+  useGetJobApplications,
 } from "@/src/hooks/useRecruitment";
-import PermissionGuard from "@/app/ui/dashboard/PermissionGuard";
+import { useGetEmployees } from "@/src/hooks/useEmployees";
 
-const STATUS_COLORS = {
-  draft: "default",
-  sent: "danger",
-  accepted: "success",
-  rejected: "danger",
-  expired: "warning",
-  withdrawn: "default",
-};
-
-const STATUS_LABELS = {
-  draft: "Brouillon",
-  sent: "Envoyée",
-  accepted: "Acceptée",
-  rejected: "Rejetée",
-  expired: "Expirée",
-  withdrawn: "Retirée",
-};
-
-const BENEFITS_OPTIONS = [
-  { value: "health_insurance", label: "Assurance Santé" },
-  { value: "pension", label: "Pension" },
-  { value: "transport", label: "Transport" },
-  { value: "housing", label: "Logement" },
-  { value: "meal_allowance", label: "Prime de Repas" },
-  { value: "phone_allowance", label: "Prime de Téléphone" },
-  { value: "education", label: "Éducation" },
-  { value: "bonus", label: "Prime de Performance" },
-];
-
-export default function OffersPage() {
-  const [filters, setFilters] = useState({
-    status: "",
-  });
-  const [searchQuery, setSearchQuery] = useState("");
+export default function EmploymentOffersPage() {
+  const [filters, setFilters] = useState({});
   const [selectedOffer, setSelectedOffer] = useState(null);
-  const { isOpen, onOpen, onClose } = useDisclosure();
 
-  const { data: offers, isLoading } = useGetJobOffers(filters);
-  const { data: candidates } = useGetCandidates({});
+  const { isOpen: isCreateOpen, onOpen: onCreateOpen, onClose: onCreateClose } = useDisclosure();
+  const { isOpen: isDetailOpen, onOpen: onDetailOpen, onClose: onDetailClose } = useDisclosure();
+  const { isOpen: isApproveOpen, onOpen: onApproveOpen, onClose: onApproveClose } = useDisclosure();
 
-  const createOfferMutation = useCreateJobOffer();
-  const updateOfferMutation = useUpdateJobOffer();
+  const { data: offers, isLoading } = useGetEmploymentOffers(filters);
+  const { data: applications } = useGetJobApplications({ status: "interview" });
+  const { data: employees } = useGetEmployees();
 
-  const { control, handleSubmit, watch, reset, formState: { errors } } = useForm({
-    defaultValues: {
-      candidate_id: "",
-      salary_offered: "",
-      benefits: [],
-      start_date: "",
-      response_deadline: "",
-      offer_letter_url: "",
-      notes: "",
-    }
-  });
+  const createOfferMutation = useCreateEmploymentOffer();
+  const updateOfferMutation = useUpdateEmploymentOffer();
+  const approveOfferMutation = useApproveEmploymentOffer();
+  const sendOfferMutation = useSendEmploymentOffer();
+  const respondOfferMutation = useRespondToOffer();
 
-  const selectedCandidateId = watch("candidate_id");
-  const selectedCandidate = candidates?.find(c => c.id === selectedCandidateId);
+  const {
+    control: createControl,
+    handleSubmit: handleCreateSubmit,
+    reset: resetCreate,
+    watch: watchCreate,
+    formState: { errors: createErrors },
+  } = useForm();
 
-  const handleOpenModal = (offer = null) => {
-    if (offer) {
-      setSelectedOffer(offer);
-      reset({
-        candidate_id: offer.candidate_id || "",
-        salary_offered: offer.salary_offered || "",
-        benefits: offer.benefits || [],
-        start_date: offer.start_date || "",
-        response_deadline: offer.response_deadline || "",
-        offer_letter_url: offer.offer_letter_url || "",
-        notes: offer.notes || "",
-      });
-    } else {
-      setSelectedOffer(null);
-      reset({
-        candidate_id: "",
-        salary_offered: "",
-        benefits: [],
-        start_date: "",
-        response_deadline: "",
-        offer_letter_url: "",
-        notes: "",
-      });
-    }
-    onOpen();
-  };
+  const {
+    control: approveControl,
+    handleSubmit: handleApproveSubmit,
+    reset: resetApprove,
+    watch: watchApprove,
+  } = useForm();
 
-  const handleCloseModal = () => {
-    setSelectedOffer(null);
-    reset();
-    onClose();
-  };
-
-  const onSubmit = async (data) => {
+  const onCreateOffer = async (data) => {
     try {
-      const offerData = {
-        ...data,
-        job_opening_id: selectedCandidate?.job_opening_id,
-        status: "draft",
-      };
-
-      if (selectedOffer) {
-        await updateOfferMutation.mutateAsync({
-          id: selectedOffer.id,
-          updates: offerData,
-        });
-        toast.success("Offre mise à jour avec succès");
-      } else {
-        await createOfferMutation.mutateAsync(offerData);
-        toast.success("Offre créée avec succès");
-      }
-      handleCloseModal();
+      await createOfferMutation.mutateAsync(data);
+      toast.success("Offre d'emploi créée avec succès");
+      resetCreate();
+      onCreateClose();
     } catch (error) {
-      toast.error("Erreur lors de l'enregistrement de l'offre");
-      console.error(error);
+      toast.error(error.response?.data?.error || "Erreur lors de la création");
     }
   };
 
-  const handleSendOffer = async (offerId) => {
-    if (window.confirm("Êtes-vous sûr de vouloir envoyer cette offre au candidat ?")) {
+  const onApproveOffer = async (data) => {
+    try {
+      await approveOfferMutation.mutateAsync({
+        id: selectedOffer,
+        approvalData: {
+          approve: data.approve,
+          rejection_reason: data.rejection_reason,
+        },
+      });
+      toast.success(data.approve ? "Offre approuvée" : "Offre rejetée");
+      resetApprove();
+      onApproveClose();
+    } catch (error) {
+      toast.error(error.response?.data?.error || "Erreur lors de l'approbation");
+    }
+  };
+
+  const onSendOffer = async (offerId) => {
+    if (window.confirm("Êtes-vous sûr de vouloir envoyer cette offre au candidat?")) {
       try {
-        await updateOfferMutation.mutateAsync({
-          id: offerId,
-          updates: {
-            status: "sent",
-            sent_date: new Date().toISOString(),
-          },
-        });
-        toast.success("Offre envoyée avec succès");
+        await sendOfferMutation.mutateAsync(offerId);
+        toast.success("Offre envoyée au candidat");
       } catch (error) {
         toast.error("Erreur lors de l'envoi");
-        console.error(error);
       }
     }
   };
 
-  const handleAcceptOffer = async (offerId) => {
-    try {
-      await updateOfferMutation.mutateAsync({
-        id: offerId,
-        updates: {
-          status: "accepted",
-          response_date: new Date().toISOString(),
-        },
-      });
-      toast.success("Offre marquée comme acceptée");
-    } catch (error) {
-      toast.error("Erreur lors de la mise à jour");
-      console.error(error);
-    }
+  const getStatusColor = (status) => {
+    const colors = {
+      draft: "default",
+      pending_approval: "warning",
+      approved: "primary",
+      sent: "secondary",
+      accepted: "success",
+      rejected: "danger",
+      expired: "danger",
+      withdrawn: "default",
+    };
+    return colors[status] || "default";
   };
 
-  const handleRejectOffer = async (offerId) => {
-    try {
-      await updateOfferMutation.mutateAsync({
-        id: offerId,
-        updates: {
-          status: "rejected",
-          response_date: new Date().toISOString(),
-        },
-      });
-      toast.success("Offre marquée comme rejetée");
-    } catch (error) {
-      toast.error("Erreur lors de la mise à jour");
-      console.error(error);
-    }
+  const getStatusLabel = (status) => {
+    const labels = {
+      draft: "Brouillon",
+      pending_approval: "En attente d'approbation",
+      approved: "Approuvé",
+      sent: "Envoyé",
+      accepted: "Accepté",
+      rejected: "Rejeté",
+      expired: "Expiré",
+      withdrawn: "Retiré",
+    };
+    return labels[status] || status;
   };
-
-  const handleGenerateLetter = () => {
-    toast.info("Génération de lettre d'offre - Fonctionnalité à implémenter");
-  };
-
-  const handleDelete = async (offerId) => {
-    if (window.confirm("Êtes-vous sûr de vouloir supprimer cette offre ?")) {
-      try {
-        toast.warning("Suppression d'offre - Fonctionnalité à implémenter");
-      } catch (error) {
-        toast.error("Erreur lors de la suppression");
-        console.error(error);
-      }
-    }
-  };
-
-  const filteredOffers = offers?.filter((offer) =>
-    searchQuery === "" ||
-    offer.candidate?.first_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    offer.candidate?.last_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    offer.candidate?.email?.toLowerCase().includes(searchQuery.toLowerCase())
-  ) || [];
 
   return (
-    <PermissionGuard requiredPermission="recruitment_manage">
-      <div className="p-6 max-w-7xl mx-auto">
-        <div className="flex justify-between items-center mb-6">
-          <div>
-            <h1 className="text-2xl font-bold">Offres d'Emploi</h1>
-            <p className="text-default-500">Gérez les offres faites aux candidats</p>
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-2xl font-bold">Offres d'Emploi</h1>
+          <p className="text-sm text-gray-500">
+            Gestion des offres d'emploi et contrats de travail
+          </p>
+        </div>
+        <Button color="primary" startContent={<FiPlus />} onPress={onCreateOpen}>
+          Nouvelle Offre
+        </Button>
+      </div>
+
+      {/* Filters */}
+      <Card>
+        <CardBody>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <Input
+              placeholder="Rechercher..."
+              startContent={<FiSearch />}
+              onChange={(e) => setFilters({ ...filters, search: e.target.value })}
+            />
+            <Select
+              label="Statut"
+              placeholder="Tous"
+              onChange={(e) => setFilters({ ...filters, status: e.target.value })}
+            >
+              <SelectItem key="draft" value="draft">Brouillon</SelectItem>
+              <SelectItem key="pending_approval" value="pending_approval">
+                En attente
+              </SelectItem>
+              <SelectItem key="approved" value="approved">Approuvé</SelectItem>
+              <SelectItem key="sent" value="sent">Envoyé</SelectItem>
+              <SelectItem key="accepted" value="accepted">Accepté</SelectItem>
+              <SelectItem key="rejected" value="rejected">Rejeté</SelectItem>
+            </Select>
+            <Input
+              type="date"
+              label="Date de début"
+              onChange={(e) => setFilters({ ...filters, start_date_from: e.target.value })}
+            />
+            <Input
+              type="date"
+              label="Date d'expiration"
+              onChange={(e) => setFilters({ ...filters, offer_expiry_date: e.target.value })}
+            />
           </div>
-          <Button color="danger" startContent={<FiPlus />} onPress={() => handleOpenModal()}>
-            Nouvelle Offre
-          </Button>
-        </div>
+        </CardBody>
+      </Card>
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-5 gap-4 mb-6">
-          <Card>
-            <CardBody className="text-center">
-              <p className="text-2xl font-bold">{filteredOffers.filter(o => o.status === "draft").length || 0}</p>
-              <p className="text-sm text-default-500">Brouillons</p>
-            </CardBody>
-          </Card>
-          <Card>
-            <CardBody className="text-center">
-              <p className="text-2xl font-bold">{filteredOffers.filter(o => o.status === "sent").length || 0}</p>
-              <p className="text-sm text-default-500">Envoyées</p>
-            </CardBody>
-          </Card>
-          <Card>
-            <CardBody className="text-center">
-              <p className="text-2xl font-bold">{filteredOffers.filter(o => o.status === "accepted").length || 0}</p>
-              <p className="text-sm text-default-500">Acceptées</p>
-            </CardBody>
-          </Card>
-          <Card>
-            <CardBody className="text-center">
-              <p className="text-2xl font-bold">{filteredOffers.filter(o => o.status === "rejected").length || 0}</p>
-              <p className="text-sm text-default-500">Rejetées</p>
-            </CardBody>
-          </Card>
-          <Card>
-            <CardBody className="text-center">
-              <p className="text-2xl font-bold">{filteredOffers.filter(o => o.status === "expired").length || 0}</p>
-              <p className="text-sm text-default-500">Expirées</p>
-            </CardBody>
-          </Card>
-        </div>
-
-        {/* Filters */}
-        <Card className="mb-6">
-          <CardBody>
-            <div className="flex gap-4">
-              <Input
-                placeholder="Rechercher par candidat..."
-                startContent={<FiSearch />}
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="flex-1"
-              />
-
-              <Select
-                label="Statut"
-                placeholder="Tous les statuts"
-                selectedKeys={filters.status ? [filters.status] : []}
-                onChange={(e) => setFilters({ ...filters, status: e.target.value })}
-                className="w-48"
-              >
-                {Object.entries(STATUS_LABELS).map(([value, label]) => (
-                  <SelectItem key={value} value={value}>
-                    {label}
-                  </SelectItem>
-                ))}
-              </Select>
-
-              <Button
-                variant="flat"
-                onPress={() => {
-                  setFilters({ status: "" });
-                  setSearchQuery("");
-                }}
-              >
-                Réinitialiser
-              </Button>
+      {/* Offers Table */}
+      <Card>
+        <CardBody>
+          {isLoading ? (
+            <div className="flex justify-center py-8">
+              <Spinner size="lg" />
             </div>
-          </CardBody>
-        </Card>
-
-        {/* Table */}
-        <Card>
-          <CardBody>
+          ) : (
             <Table aria-label="Offres d'emploi">
               <TableHeader>
                 <TableColumn>CANDIDAT</TableColumn>
                 <TableColumn>POSTE</TableColumn>
-                <TableColumn>SALAIRE OFFERT</TableColumn>
+                <TableColumn>SALAIRE</TableColumn>
                 <TableColumn>DATE DÉBUT</TableColumn>
-                <TableColumn>DATE ENVOI</TableColumn>
-                <TableColumn>DEADLINE</TableColumn>
                 <TableColumn>STATUT</TableColumn>
+                <TableColumn>DATE EXPIRATION</TableColumn>
                 <TableColumn>ACTIONS</TableColumn>
               </TableHeader>
-              <TableBody
-                items={filteredOffers}
-                isLoading={isLoading}
-                loadingContent={<Spinner label="Chargement..." />}
-                emptyContent="Aucune offre trouvée"
-              >
-                {(offer) => (
+              <TableBody emptyContent="Aucune offre d'emploi trouvée">
+                {(offers || []).map((offer) => (
                   <TableRow key={offer.id}>
                     <TableCell>
                       <User
-                        name={`${offer.candidate?.first_name} ${offer.candidate?.last_name}`}
-                        description={offer.candidate?.email}
+                        name={`${offer.application?.first_name} ${offer.application?.last_name}`}
+                        description={offer.application?.email}
                         avatarProps={{
-                          name: `${offer.candidate?.first_name?.[0]}${offer.candidate?.last_name?.[0]}`,
+                          src: offer.application?.profile_picture,
+                          name: offer.application?.first_name?.[0],
                         }}
                       />
                     </TableCell>
                     <TableCell>
                       <div>
-                        <p className="text-sm font-semibold">{offer.job_opening?.title || "-"}</p>
-                        <p className="text-xs text-default-400">{offer.job_opening?.job_number}</p>
+                        <p className="font-semibold">{offer.job_title}</p>
+                        <p className="text-xs text-gray-500">{offer.department?.name}</p>
                       </div>
                     </TableCell>
                     <TableCell>
-                      {offer.salary_offered ? `${parseInt(offer.salary_offered).toLocaleString()} FC` : "-"}
+                      <p className="font-semibold">
+                        {parseInt(offer.offered_salary).toLocaleString()} XAF
+                      </p>
                     </TableCell>
                     <TableCell>
-                      {offer.start_date ? new Date(offer.start_date).toLocaleDateString("fr-FR") : "-"}
+                      {new Date(offer.start_date).toLocaleDateString("fr-FR")}
                     </TableCell>
                     <TableCell>
-                      {offer.sent_date ? new Date(offer.sent_date).toLocaleDateString("fr-FR") : "-"}
-                    </TableCell>
-                    <TableCell>
-                      {offer.response_deadline ? (
-                        <span className={
-                          new Date(offer.response_deadline) < new Date() && offer.status === "sent"
-                            ? "text-danger"
-                            : ""
-                        }>
-                          {new Date(offer.response_deadline).toLocaleDateString("fr-FR")}
-                        </span>
-                      ) : "-"}
-                    </TableCell>
-                    <TableCell>
-                      <Chip color={STATUS_COLORS[offer.status]} variant="flat" size="sm">
-                        {STATUS_LABELS[offer.status]}
+                      <Chip size="sm" color={getStatusColor(offer.status)} variant="flat">
+                        {getStatusLabel(offer.status)}
                       </Chip>
+                    </TableCell>
+                    <TableCell>
+                      {offer.offer_expiry_date ? (
+                        <span
+                          className={
+                            new Date(offer.offer_expiry_date) < new Date()
+                              ? "text-danger"
+                              : ""
+                          }
+                        >
+                          {new Date(offer.offer_expiry_date).toLocaleDateString("fr-FR")}
+                        </span>
+                      ) : (
+                        "N/A"
+                      )}
                     </TableCell>
                     <TableCell>
                       <Dropdown>
@@ -396,268 +279,546 @@ export default function OffersPage() {
                             <FiMoreVertical />
                           </Button>
                         </DropdownTrigger>
-                        <DropdownMenu>
+                        <DropdownMenu aria-label="Actions">
                           <DropdownItem
                             key="view"
                             startContent={<FiEye />}
+                            onPress={() => {
+                              setSelectedOffer(offer);
+                              onDetailOpen();
+                            }}
                           >
-                            Voir détails
+                            Voir les détails
                           </DropdownItem>
-                          <DropdownItem
-                            key="edit"
-                            startContent={<FiEdit />}
-                            onPress={() => handleOpenModal(offer)}
-                          >
-                            Modifier
-                          </DropdownItem>
-                          {offer.status === "draft" && (
+                          {offer.status === "pending_approval" && (
+                            <DropdownItem
+                              key="approve"
+                              startContent={<FiCheckCircle />}
+                              onPress={() => {
+                                setSelectedOffer(offer.id);
+                                onApproveOpen();
+                              }}
+                            >
+                              Approuver/Rejeter
+                            </DropdownItem>
+                          )}
+                          {offer.status === "approved" && (
                             <DropdownItem
                               key="send"
                               startContent={<FiSend />}
-                              onPress={() => handleSendOffer(offer.id)}
+                              onPress={() => onSendOffer(offer.id)}
                             >
-                              Envoyer l'offre
+                              Envoyer au candidat
                             </DropdownItem>
                           )}
-                          {offer.status === "sent" && (
-                            <>
-                              <DropdownItem
-                                key="accept"
-                                startContent={<FiCheckCircle />}
-                                onPress={() => handleAcceptOffer(offer.id)}
-                                className="text-success"
-                              >
-                                Marquer acceptée
-                              </DropdownItem>
-                              <DropdownItem
-                                key="reject"
-                                startContent={<FiXCircle />}
-                                onPress={() => handleRejectOffer(offer.id)}
-                                className="text-danger"
-                              >
-                                Marquer rejetée
-                              </DropdownItem>
-                            </>
-                          )}
-                          <DropdownItem
-                            key="generate"
-                            startContent={<FiFileText />}
-                            onPress={handleGenerateLetter}
-                          >
-                            Générer lettre
-                          </DropdownItem>
-                          {offer.status === "draft" && (
+                          {offer.offer_letter_url && (
                             <DropdownItem
-                              key="delete"
-                              startContent={<FiTrash2 />}
-                              onPress={() => handleDelete(offer.id)}
-                              className="text-danger"
-                              color="danger"
+                              key="download"
+                              startContent={<FiDownload />}
+                              onPress={() => window.open(offer.offer_letter_url, "_blank")}
                             >
-                              Supprimer
+                              Télécharger la lettre
                             </DropdownItem>
                           )}
                         </DropdownMenu>
                       </Dropdown>
                     </TableCell>
                   </TableRow>
-                )}
+                ))}
               </TableBody>
             </Table>
-          </CardBody>
-        </Card>
+          )}
+        </CardBody>
+      </Card>
 
-        {/* Modal CRUD */}
-        <Modal
-          isOpen={isOpen}
-          onClose={handleCloseModal}
-          size="4xl"
-          scrollBehavior="inside"
-        >
-          <ModalContent>
-            {(onClose) => (
-              <form onSubmit={handleSubmit(onSubmit)}>
-                <ModalHeader>
-                  <h3 className="text-xl font-bold">
-                    {selectedOffer ? "Modifier l'Offre" : "Créer une Nouvelle Offre"}
-                  </h3>
-                </ModalHeader>
-                <ModalBody>
-                  <div className="space-y-4">
-                    <Controller
-                      name="candidate_id"
-                      control={control}
-                      rules={{ required: "Candidat requis" }}
-                      render={({ field }) => (
-                        <Select
-                          {...field}
-                          label="Candidat"
-                          placeholder="Sélectionnez le candidat"
-                          isRequired
-                          errorMessage={errors.candidate_id?.message}
-                          isInvalid={!!errors.candidate_id}
-                          selectedKeys={field.value ? [field.value] : []}
-                          onSelectionChange={(keys) => field.onChange(Array.from(keys)[0])}
-                        >
-                          {(candidates || []).map((candidate) => (
-                            <SelectItem key={candidate.id} value={candidate.id}>
-                              {candidate.first_name} {candidate.last_name} - {candidate.job_opening?.title}
-                            </SelectItem>
-                          ))}
-                        </Select>
-                      )}
-                    />
+      {/* Create Offer Modal */}
+      <Modal isOpen={isCreateOpen} onClose={onCreateClose} size="5xl" scrollBehavior="inside">
+        <ModalContent>
+          <form onSubmit={handleCreateSubmit(onCreateOffer)}>
+            <ModalHeader>Nouvelle Offre d'Emploi</ModalHeader>
+            <ModalBody>
+              <div className="space-y-6">
+                {/* Candidate Selection */}
+                <Controller
+                  name="application_id"
+                  control={createControl}
+                  rules={{ required: "Le candidat est requis" }}
+                  render={({ field }) => (
+                    <Select
+                      {...field}
+                      label="Candidat"
+                      placeholder="Sélectionnez un candidat"
+                      isInvalid={!!createErrors.application_id}
+                      errorMessage={createErrors.application_id?.message}
+                    >
+                      {applications?.map((app) => (
+                        <SelectItem key={app.id} value={app.id}>
+                          {app.first_name} {app.last_name} - {app.job_posting?.job_title}
+                        </SelectItem>
+                      ))}
+                    </Select>
+                  )}
+                />
 
-                    {selectedCandidate && (
-                      <Card className="bg-default-100">
-                        <CardBody>
-                          <p className="text-sm">
-                            <span className="font-semibold">Poste: </span>
-                            {selectedCandidate.job_opening?.title}
-                          </p>
-                          <p className="text-sm">
-                            <span className="font-semibold">Email: </span>
-                            {selectedCandidate.email}
-                          </p>
-                          <p className="text-sm">
-                            <span className="font-semibold">Téléphone: </span>
-                            {selectedCandidate.phone}
-                          </p>
-                        </CardBody>
-                      </Card>
+                <Divider />
+
+                {/* Job Details */}
+                <div className="grid grid-cols-2 gap-4">
+                  <Controller
+                    name="job_title"
+                    control={createControl}
+                    rules={{ required: "Le titre du poste est requis" }}
+                    render={({ field }) => (
+                      <Input
+                        {...field}
+                        label="Titre du Poste"
+                        placeholder="Ex: Développeur Senior"
+                        isInvalid={!!createErrors.job_title}
+                        errorMessage={createErrors.job_title?.message}
+                      />
                     )}
+                  />
+                  <Controller
+                    name="employment_type"
+                    control={createControl}
+                    rules={{ required: "Le type d'emploi est requis" }}
+                    render={({ field }) => (
+                      <Select
+                        {...field}
+                        label="Type d'Emploi"
+                        placeholder="Sélectionnez"
+                        isInvalid={!!createErrors.employment_type}
+                        errorMessage={createErrors.employment_type?.message}
+                      >
+                        <SelectItem key="full-time" value="full-time">
+                          Temps Plein
+                        </SelectItem>
+                        <SelectItem key="part-time" value="part-time">
+                          Temps Partiel
+                        </SelectItem>
+                        <SelectItem key="contract" value="contract">
+                          Contrat
+                        </SelectItem>
+                        <SelectItem key="internship" value="internship">
+                          Stage
+                        </SelectItem>
+                      </Select>
+                    )}
+                  />
+                </div>
 
-                    <div className="grid grid-cols-2 gap-4">
-                      <Controller
-                        name="salary_offered"
-                        control={control}
-                        rules={{ required: "Salaire requis" }}
-                        render={({ field }) => (
-                          <Input
-                            {...field}
-                            type="number"
-                            label="Salaire offert (FC)"
-                            placeholder="Ex: 2000000"
-                            isRequired
-                            errorMessage={errors.salary_offered?.message}
-                            isInvalid={!!errors.salary_offered}
-                          />
-                        )}
+                {/* Compensation */}
+                <div className="grid grid-cols-3 gap-4">
+                  <Controller
+                    name="offered_salary"
+                    control={createControl}
+                    rules={{ required: "Le salaire est requis" }}
+                    render={({ field }) => (
+                      <Input
+                        {...field}
+                        type="number"
+                        label="Salaire Offert (XAF)"
+                        placeholder="0"
+                        isInvalid={!!createErrors.offered_salary}
+                        errorMessage={createErrors.offered_salary?.message}
                       />
+                    )}
+                  />
+                  <Controller
+                    name="bonus"
+                    control={createControl}
+                    render={({ field }) => (
+                      <Input {...field} type="number" label="Bonus (XAF)" placeholder="0" />
+                    )}
+                  />
+                  <Controller
+                    name="benefits"
+                    control={createControl}
+                    render={({ field }) => (
+                      <Input {...field} label="Avantages" placeholder="Ex: Assurance santé" />
+                    )}
+                  />
+                </div>
 
-                      <Controller
-                        name="start_date"
-                        control={control}
-                        rules={{ required: "Date de début requise" }}
-                        render={({ field }) => (
-                          <Input
-                            {...field}
-                            type="date"
-                            label="Date de début proposée"
-                            isRequired
-                            errorMessage={errors.start_date?.message}
-                            isInvalid={!!errors.start_date}
-                          />
-                        )}
+                {/* Dates */}
+                <div className="grid grid-cols-2 gap-4">
+                  <Controller
+                    name="start_date"
+                    control={createControl}
+                    rules={{ required: "La date de début est requise" }}
+                    render={({ field }) => (
+                      <Input
+                        {...field}
+                        type="date"
+                        label="Date de Début"
+                        isInvalid={!!createErrors.start_date}
+                        errorMessage={createErrors.start_date?.message}
                       />
+                    )}
+                  />
+                  <Controller
+                    name="offer_expiry_date"
+                    control={createControl}
+                    render={({ field }) => (
+                      <Input
+                        {...field}
+                        type="date"
+                        label="Date d'Expiration de l'Offre"
+                        description="Date limite de réponse du candidat"
+                      />
+                    )}
+                  />
+                </div>
 
-                      <Controller
-                        name="response_deadline"
-                        control={control}
-                        render={({ field }) => (
-                          <Input
-                            {...field}
-                            type="date"
-                            label="Deadline de réponse"
-                          />
-                        )}
+                {/* Work Schedule */}
+                <div className="grid grid-cols-2 gap-4">
+                  <Controller
+                    name="work_schedule"
+                    control={createControl}
+                    render={({ field }) => (
+                      <Input
+                        {...field}
+                        label="Horaires de Travail"
+                        placeholder="Ex: 8h-17h, Lun-Ven"
                       />
+                    )}
+                  />
+                  <Controller
+                    name="probation_period_months"
+                    control={createControl}
+                    render={({ field }) => (
+                      <Input
+                        {...field}
+                        type="number"
+                        label="Période d'Essai (mois)"
+                        placeholder="3"
+                      />
+                    )}
+                  />
+                </div>
 
-                      <Controller
-                        name="offer_letter_url"
-                        control={control}
-                        render={({ field }) => (
-                          <Input
-                            {...field}
-                            label="URL Lettre d'offre"
-                            placeholder="https://..."
-                            startContent={<FiFileText />}
-                          />
-                        )}
+                {/* Additional Terms */}
+                <Controller
+                  name="terms_and_conditions"
+                  control={createControl}
+                  render={({ field }) => (
+                    <Textarea
+                      {...field}
+                      label="Conditions Générales"
+                      placeholder="Détaillez les termes et conditions du contrat..."
+                      rows={6}
+                    />
+                  )}
+                />
+
+                <Controller
+                  name="additional_notes"
+                  control={createControl}
+                  render={({ field }) => (
+                    <Textarea
+                      {...field}
+                      label="Notes Additionnelles"
+                      placeholder="Informations complémentaires..."
+                      rows={4}
+                    />
+                  )}
+                />
+              </div>
+            </ModalBody>
+            <ModalFooter>
+              <Button variant="light" onPress={onCreateClose}>
+                Annuler
+              </Button>
+              <Button color="primary" type="submit" isLoading={createOfferMutation.isPending}>
+                Créer l'Offre
+              </Button>
+            </ModalFooter>
+          </form>
+        </ModalContent>
+      </Modal>
+
+      {/* Approve/Reject Offer Modal */}
+      <Modal isOpen={isApproveOpen} onClose={onApproveClose}>
+        <ModalContent>
+          <form onSubmit={handleApproveSubmit(onApproveOffer)}>
+            <ModalHeader>Approuver / Rejeter l'Offre</ModalHeader>
+            <ModalBody>
+              <div className="space-y-4">
+                <Controller
+                  name="approve"
+                  control={approveControl}
+                  defaultValue={true}
+                  render={({ field }) => (
+                    <Select {...field} label="Décision" placeholder="Sélectionnez">
+                      <SelectItem key={true} value={true}>
+                        Approuver
+                      </SelectItem>
+                      <SelectItem key={false} value={false}>
+                        Rejeter
+                      </SelectItem>
+                    </Select>
+                  )}
+                />
+                {watchApprove("approve") === false && (
+                  <Controller
+                    name="rejection_reason"
+                    control={approveControl}
+                    render={({ field }) => (
+                      <Textarea
+                        {...field}
+                        label="Raison du Rejet"
+                        placeholder="Expliquez pourquoi vous rejetez cette offre..."
+                        rows={4}
                       />
+                    )}
+                  />
+                )}
+              </div>
+            </ModalBody>
+            <ModalFooter>
+              <Button variant="light" onPress={onApproveClose}>
+                Annuler
+              </Button>
+              <Button
+                color={watchApprove("approve") === false ? "danger" : "success"}
+                type="submit"
+                isLoading={approveOfferMutation.isPending}
+              >
+                Confirmer
+              </Button>
+            </ModalFooter>
+          </form>
+        </ModalContent>
+      </Modal>
+
+      {/* Offer Details Modal */}
+      {selectedOffer && (
+        <Modal isOpen={isDetailOpen} onClose={onDetailClose} size="4xl" scrollBehavior="inside">
+          <ModalContent>
+            <ModalHeader>Détails de l'Offre d'Emploi</ModalHeader>
+            <ModalBody>
+              <div className="space-y-6">
+                {/* Candidate Info */}
+                <div>
+                  <h4 className="font-semibold mb-3">Candidat</h4>
+                  <User
+                    name={`${selectedOffer.application?.first_name} ${selectedOffer.application?.last_name}`}
+                    description={selectedOffer.application?.email}
+                    avatarProps={{
+                      src: selectedOffer.application?.profile_picture,
+                      name: selectedOffer.application?.first_name?.[0],
+                      size: "lg",
+                    }}
+                  />
+                </div>
+
+                <Divider />
+
+                {/* Job Details */}
+                <div>
+                  <h4 className="font-semibold mb-3">Détails du Poste</h4>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-sm text-gray-500">Titre</p>
+                      <p className="font-semibold">{selectedOffer.job_title}</p>
                     </div>
+                    <div>
+                      <p className="text-sm text-gray-500">Type d'Emploi</p>
+                      <p className="font-semibold">{selectedOffer.employment_type}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-500">Département</p>
+                      <p className="font-semibold">{selectedOffer.department?.name || "N/A"}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-500">Statut</p>
+                      <Chip color={getStatusColor(selectedOffer.status)} variant="flat">
+                        {getStatusLabel(selectedOffer.status)}
+                      </Chip>
+                    </div>
+                  </div>
+                </div>
 
-                    <Controller
-                      name="benefits"
-                      control={control}
-                      render={({ field }) => (
+                <Divider />
+
+                {/* Compensation */}
+                <div>
+                  <h4 className="font-semibold mb-3">Rémunération</h4>
+                  <div className="grid grid-cols-3 gap-4">
+                    <div>
+                      <p className="text-sm text-gray-500">Salaire</p>
+                      <p className="font-semibold text-lg">
+                        {parseInt(selectedOffer.offered_salary).toLocaleString()} XAF
+                      </p>
+                    </div>
+                    {selectedOffer.bonus && (
+                      <div>
+                        <p className="text-sm text-gray-500">Bonus</p>
+                        <p className="font-semibold">
+                          {parseInt(selectedOffer.bonus).toLocaleString()} XAF
+                        </p>
+                      </div>
+                    )}
+                    {selectedOffer.benefits && (
+                      <div>
+                        <p className="text-sm text-gray-500">Avantages</p>
+                        <p className="font-semibold">{selectedOffer.benefits}</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <Divider />
+
+                {/* Dates & Schedule */}
+                <div>
+                  <h4 className="font-semibold mb-3">Dates & Horaires</h4>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-sm text-gray-500">Date de Début</p>
+                      <p className="font-semibold">
+                        {new Date(selectedOffer.start_date).toLocaleDateString("fr-FR")}
+                      </p>
+                    </div>
+                    {selectedOffer.offer_expiry_date && (
+                      <div>
+                        <p className="text-sm text-gray-500">Date d'Expiration</p>
+                        <p className="font-semibold">
+                          {new Date(selectedOffer.offer_expiry_date).toLocaleDateString("fr-FR")}
+                        </p>
+                      </div>
+                    )}
+                    {selectedOffer.work_schedule && (
+                      <div>
+                        <p className="text-sm text-gray-500">Horaires</p>
+                        <p className="font-semibold">{selectedOffer.work_schedule}</p>
+                      </div>
+                    )}
+                    {selectedOffer.probation_period_months && (
+                      <div>
+                        <p className="text-sm text-gray-500">Période d'Essai</p>
+                        <p className="font-semibold">
+                          {selectedOffer.probation_period_months} mois
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Terms & Conditions */}
+                {selectedOffer.terms_and_conditions && (
+                  <>
+                    <Divider />
+                    <div>
+                      <h4 className="font-semibold mb-3">Conditions Générales</h4>
+                      <p className="text-sm whitespace-pre-wrap bg-gray-50 p-4 rounded-lg">
+                        {selectedOffer.terms_and_conditions}
+                      </p>
+                    </div>
+                  </>
+                )}
+
+                {/* Additional Notes */}
+                {selectedOffer.additional_notes && (
+                  <>
+                    <Divider />
+                    <div>
+                      <h4 className="font-semibold mb-3">Notes Additionnelles</h4>
+                      <p className="text-sm whitespace-pre-wrap bg-blue-50 p-4 rounded-lg">
+                        {selectedOffer.additional_notes}
+                      </p>
+                    </div>
+                  </>
+                )}
+
+                {/* Approval Info */}
+                {selectedOffer.approved_by && (
+                  <>
+                    <Divider />
+                    <div>
+                      <h4 className="font-semibold mb-3">Informations d'Approbation</h4>
+                      <div className="grid grid-cols-2 gap-4">
                         <div>
-                          <label className="block text-sm font-medium mb-2">
-                            Avantages
-                          </label>
-                          <CheckboxGroup
-                            value={field.value}
-                            onChange={field.onChange}
-                            classNames={{
-                              base: "w-full",
-                            }}
-                          >
-                            <div className="grid grid-cols-2 gap-2">
-                              {BENEFITS_OPTIONS.map((benefit) => (
-                                <Checkbox key={benefit.value} value={benefit.value}>
-                                  {benefit.label}
-                                </Checkbox>
-                              ))}
-                            </div>
-                          </CheckboxGroup>
+                          <p className="text-sm text-gray-500">Approuvé par</p>
+                          <p className="font-semibold">{selectedOffer.approved_by.username}</p>
                         </div>
-                      )}
-                    />
-
-                    <Controller
-                      name="notes"
-                      control={control}
-                      render={({ field }) => (
-                        <Textarea
-                          {...field}
-                          label="Notes internes"
-                          placeholder="Notes sur cette offre..."
-                          minRows={3}
-                        />
-                      )}
-                    />
-
-                    <div className="bg-danger-50 p-4 rounded-lg">
-                      <div className="flex items-start gap-2">
-                        <FiFileText className="text-danger mt-1" />
                         <div>
-                          <p className="text-sm font-semibold text-danger">Génération de lettre d'offre</p>
-                          <p className="text-xs text-default-600 mt-1">
-                            Une fois l'offre créée, vous pourrez générer automatiquement une lettre d'offre
-                            personnalisée avec toutes les informations saisies.
+                          <p className="text-sm text-gray-500">Date d'Approbation</p>
+                          <p className="font-semibold">
+                            {new Date(selectedOffer.approved_date).toLocaleDateString("fr-FR")}
                           </p>
                         </div>
                       </div>
                     </div>
-                  </div>
-                </ModalBody>
-                <ModalFooter>
-                  <Button variant="light" onPress={handleCloseModal}>
-                    Annuler
-                  </Button>
-                  <Button
-                    color="danger"
-                    type="submit"
-                    isLoading={createOfferMutation.isPending || updateOfferMutation.isPending}
-                  >
-                    {selectedOffer ? "Mettre à jour" : "Créer"}
-                  </Button>
-                </ModalFooter>
-              </form>
-            )}
+                  </>
+                )}
+
+                {/* Rejection Reason */}
+                {selectedOffer.rejection_reason && (
+                  <>
+                    <Divider />
+                    <div className="p-4 bg-danger-50 rounded-lg">
+                      <p className="text-sm text-danger-600 font-semibold mb-2">
+                        Raison du Rejet:
+                      </p>
+                      <p className="text-sm">{selectedOffer.rejection_reason}</p>
+                    </div>
+                  </>
+                )}
+
+                {/* Candidate Response */}
+                {selectedOffer.candidate_response_date && (
+                  <>
+                    <Divider />
+                    <div>
+                      <h4 className="font-semibold mb-3">Réponse du Candidat</h4>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <p className="text-sm text-gray-500">Date de Réponse</p>
+                          <p className="font-semibold">
+                            {new Date(selectedOffer.candidate_response_date).toLocaleDateString(
+                              "fr-FR"
+                            )}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-sm text-gray-500">Statut</p>
+                          <Chip color={getStatusColor(selectedOffer.status)} variant="flat">
+                            {getStatusLabel(selectedOffer.status)}
+                          </Chip>
+                        </div>
+                      </div>
+                      {selectedOffer.candidate_response_notes && (
+                        <div className="mt-3">
+                          <p className="text-sm text-gray-500">Notes du Candidat</p>
+                          <p className="text-sm bg-gray-50 p-3 rounded-lg mt-1">
+                            {selectedOffer.candidate_response_notes}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </>
+                )}
+              </div>
+            </ModalBody>
+            <ModalFooter>
+              <Button onPress={onDetailClose}>Fermer</Button>
+              {selectedOffer.status === "approved" && (
+                <Button
+                  color="primary"
+                  startContent={<FiSend />}
+                  onPress={() => {
+                    onSendOffer(selectedOffer.id);
+                    onDetailClose();
+                  }}
+                >
+                  Envoyer au Candidat
+                </Button>
+              )}
+            </ModalFooter>
           </ModalContent>
         </Modal>
-      </div>
-    </PermissionGuard>
+      )}
+    </div>
   );
 }
