@@ -18,6 +18,7 @@ import {
   DropdownItem,
   Input,
   Select,
+  Pagination,
   SelectItem,
   Spinner,
   Modal,
@@ -60,6 +61,8 @@ import {
 import { useGetEmployees } from "@/src/hooks/useEmployees";
 
 export default function CandidatesPage() {
+  const [page, setPage] = useState(1);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
   const [filters, setFilters] = useState({});
   const [selectedApplication, setSelectedApplication] = useState(null);
   const [activeTab, setActiveTab] = useState("info");
@@ -69,9 +72,17 @@ export default function CandidatesPage() {
   const { isOpen: isRateOpen, onOpen: onRateOpen, onClose: onRateClose } = useDisclosure();
   const { isOpen: isInterviewOpen, onOpen: onInterviewOpen, onClose: onInterviewClose } = useDisclosure();
 
-  const { data: applications, isLoading } = useGetJobApplications(filters);
-  const { data: jobPostings } = useGetJobPostings({ status: "published" });
-  const { data: employees } = useGetEmployees();
+  const { data: applicationsData, isLoading } = useGetJobApplications({ page, rowsPerPage, ...filters });
+  const { data: dataPostings } = useGetJobPostings({ page: 1, rowsPerPage: 1000, status: "published" });
+  const { data: employeesData } = useGetEmployees({ page: 1, rowsPerPage: 1000, query: "", filters: {} });
+  
+  const applications = applicationsData?.applications || [];
+  const totalApplications = applicationsData?.total || 0;
+  const jobPostings = dataPostings?.postings || [];
+  const employees = employeesData?.employees || [];
+  const pages = Math.ceil(totalApplications / rowsPerPage);
+
+  console.log("Applications Data ***** :", applicationsData);
 
   const updateApplicationMutation = useUpdateJobApplication();
   const assignApplicationMutation = useAssignApplication();
@@ -276,13 +287,13 @@ export default function CandidatesPage() {
                       <div>
                         <p className="font-semibold">{application.job_posting?.job_title}</p>
                         <p className="text-xs text-gray-500">
-                          {application.job_posting?.reference_number}
+                          {application.job_posting?.title}
                         </p>
                       </div>
                     </TableCell>
                     <TableCell>
                       <Chip size="sm" variant="flat">
-                        {application.source}
+                        {application.application_source}
                       </Chip>
                     </TableCell>
                     <TableCell>
@@ -385,6 +396,41 @@ export default function CandidatesPage() {
                 ))}
               </TableBody>
             </Table>
+          )}
+          
+          {/* Pagination */}
+          {!isLoading && totalApplications > 0 && (
+            <div className="flex justify-between items-center mt-4">
+              <span className="text-sm text-gray-500">
+                Total: {totalApplications} candidature(s)
+              </span>
+              <div className="flex gap-2 items-center">
+                <Select
+                  size="sm"
+                  label="Lignes"
+                  selectedKeys={[String(rowsPerPage)]}
+                  onChange={(e) => {
+                    setRowsPerPage(Number(e.target.value));
+                    setPage(1);
+                  }}
+                  className="w-24"
+                >
+                  <SelectItem key="10" value="10">10</SelectItem>
+                  <SelectItem key="20" value="20">20</SelectItem>
+                  <SelectItem key="50" value="50">50</SelectItem>
+                  <SelectItem key="100" value="100">100</SelectItem>
+                </Select>
+                <Pagination
+                  isCompact
+                  showControls
+                  showShadow
+                  color="danger"
+                  page={page}
+                  total={pages}
+                  onChange={setPage}
+                />
+              </div>
+            </div>
           )}
         </CardBody>
       </Card>

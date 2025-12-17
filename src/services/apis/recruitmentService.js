@@ -108,7 +108,7 @@ export const getJobPostings = async ({ offset = 0, limit = 10, status, plan_id, 
     if (job_position_id) requestUrl += `&job_position_id=${job_position_id}`;
     if (query) requestUrl += `&query=${query}`;
 
-    const { data } = await apiClient.get(requestUrl);
+    const data = await apiClient.get(requestUrl);
 
     if (data.status === 200) {
         return {
@@ -125,6 +125,14 @@ export const getJobPostings = async ({ offset = 0, limit = 10, status, plan_id, 
  */
 export const getJobPostingById = async (id) => {
     const { data } = await apiClient.get(`/recruitment/postings/${id}`);
+    return data;
+};
+
+/**
+ * Get a single job posting by ID (Public - no auth)
+ */
+export const getPublicJobPostingById = async (id) => {
+    const data = await apiClient.get(`/recruitment/postings/${id}/public`);
     return data;
 };
 
@@ -177,7 +185,7 @@ export const getJobApplications = async ({ offset = 0, limit = 10, status, posti
     if (sort) requestUrl += `&sort=${sort}`;
     if (order) requestUrl += `&order=${order}`;
 
-    const { data } = await apiClient.get(requestUrl);
+    const data = await apiClient.get(requestUrl);
 
     if (data.status === 200) {
         return {

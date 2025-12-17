@@ -2,6 +2,22 @@
 @tailwind components;
 @tailwind utilities;
 
+@media print {
+    .print\:hidden {
+        display: none !important;
+    }
+    
+    body {
+        background: white;
+        color: black;
+    }
+    
+    @page {
+        margin: 2cm;
+        size: A4;
+    }
+}
+
 .scrollbar::-webkit-scrollbar {
     width: 8px;
     height: 8px;

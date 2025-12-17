@@ -56,6 +56,8 @@ import {
 import { useGetEmployees } from "@/src/hooks/useEmployees";
 
 export default function EmploymentOffersPage() {
+  const [page, setPage] = useState(1);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
   const [filters, setFilters] = useState({});
   const [selectedOffer, setSelectedOffer] = useState(null);
 
@@ -63,9 +65,15 @@ export default function EmploymentOffersPage() {
   const { isOpen: isDetailOpen, onOpen: onDetailOpen, onClose: onDetailClose } = useDisclosure();
   const { isOpen: isApproveOpen, onOpen: onApproveOpen, onClose: onApproveClose } = useDisclosure();
 
-  const { data: offers, isLoading } = useGetEmploymentOffers(filters);
-  const { data: applications } = useGetJobApplications({ status: "interview" });
-  const { data: employees } = useGetEmployees();
+  const { data: offersData, isLoading } = useGetEmploymentOffers({ page, rowsPerPage, ...filters });
+  const { data: applicationsData } = useGetJobApplications({ page: 1, rowsPerPage: 1000, status: "interview" });
+  const { data: employeesData } = useGetEmployees({ page: 1, rowsPerPage: 1000, query: "", filters: {} });
+  
+  const offers = offersData?.offers || [];
+  const totalOffers = offersData?.total || 0;
+  const applications = applicationsData?.applications || [];
+  const employees = employeesData?.employees || [];
+  const pages = Math.ceil(totalOffers / rowsPerPage);
 
   const createOfferMutation = useCreateEmploymentOffer();
   const updateOfferMutation = useUpdateEmploymentOffer();

@@ -163,7 +163,7 @@ export default function RecruitmentDashboard() {
                 <Card
                   isPressable
                   isHoverable
-                  className="border-none hover:scale-105 transition-transform"
+                  className="border-none hover:scale-105 transition-transform w-full shadow-none"
                 >
                   <CardBody>
                     <div className="flex justify-between items-start">
@@ -190,7 +190,7 @@ export default function RecruitmentDashboard() {
           {/* Charts Section */}
           <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
             {/* Applications Status Pie Chart */}
-            <Card>
+            <Card className="shadow-none">
               <CardHeader>
                 <h3 className="text-lg font-semibold">Répartition des Candidatures</h3>
               </CardHeader>
@@ -229,7 +229,7 @@ export default function RecruitmentDashboard() {
             </Card>
 
             {/* Timeline Bar Chart */}
-            <Card>
+            <Card className="shadow-none">
               <CardHeader>
                 <h3 className="text-lg font-semibold">Évolution Mensuelle</h3>
               </CardHeader>
@@ -251,7 +251,7 @@ export default function RecruitmentDashboard() {
           </div>
 
           {/* Conversion Funnel */}
-          <Card>
+          <Card className="shadow-none">
             <CardHeader>
               <h3 className="text-lg font-semibold">Entonnoir de Conversion</h3>
             </CardHeader>
@@ -297,8 +297,8 @@ export default function RecruitmentDashboard() {
               <Link href="/dashboard/recruitment/plans">
                 <Button
                   fullWidth
-                  variant="flat"
-                  color="primary"
+                  variant="solid"
+                  color="default"
                   startContent={<FiBriefcase />}
                   className="justify-start"
                 >
@@ -308,8 +308,8 @@ export default function RecruitmentDashboard() {
               <Link href="/dashboard/recruitment/jobs">
                 <Button
                   fullWidth
-                  variant="flat"
-                  color="secondary"
+                  variant="solid"
+                  color="default"
                   startContent={<FiFileText />}
                   className="justify-start"
                 >
@@ -319,8 +319,8 @@ export default function RecruitmentDashboard() {
               <Link href="/dashboard/recruitment/interviews">
                 <Button
                   fullWidth
-                  variant="flat"
-                  color="warning"
+                  variant="solid"
+                  color="default"
                   startContent={<FiCalendar />}
                   className="justify-start"
                 >
@@ -330,8 +330,8 @@ export default function RecruitmentDashboard() {
               <Link href="/dashboard/recruitment/candidates">
                 <Button
                   fullWidth
-                  variant="flat"
-                  color="success"
+                  variant="solid"
+                  color="default"
                   startContent={<FiUsers />}
                   className="justify-start"
                 >

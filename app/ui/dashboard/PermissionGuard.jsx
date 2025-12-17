@@ -30,7 +30,6 @@ const PermissionGuard = ({
     const permissions = useSelector(selectUserPermissions);
     const user = useSelector(selectUserData);
     const router = useRouter();
-    console.log("PermissionGuard - User:", user?.main_roles);
 
     // Récupérer le plan d'abonnement et la date d'expiration
     const { billing_plan, expired_at } = user?.account || {};

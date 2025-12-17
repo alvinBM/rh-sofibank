@@ -8,16 +8,16 @@ const employeeController = {
   getAll: async (req, res) => {
     try {
       const {
-        page = 1,
+        offset = 0,
         limit = 10,
         search,
         direction_id,
         service_id,
         employment_status,
-        contract_type
+        contract_type,
+        user_id
       } = req.query;
 
-      const offset = (parseInt(page) - 1) * parseInt(limit);
       const where = {};
 
       // Search filter
@@ -50,10 +50,15 @@ const employeeController = {
         where.contract_type = contract_type;
       }
 
+      // User ID filter
+      if (user_id) {
+        where.user_id = user_id;
+      }
+
       const { count, rows } = await models.Employee.findAndCountAll({
         where,
         limit: parseInt(limit),
-        offset,
+        offset: parseInt(offset),
         include: [
           { model: models.User, as: 'user', attributes: ['id', 'email', 'is_active'] },
           { model: models.Direction, as: 'direction' },
@@ -70,12 +75,7 @@ const employeeController = {
         status: 200,
         data: {
           employees: rows,
-          pagination: {
-            total: count,
-            page: parseInt(page),
-            limit: parseInt(limit),
-            totalPages: Math.ceil(count / parseInt(limit))
-          }
+          total: count
         }
       });
     } catch (error) {

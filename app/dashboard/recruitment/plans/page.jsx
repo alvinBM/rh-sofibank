@@ -51,8 +51,8 @@ export default function RecruitmentPlanningPage() {
     const { data: jobPositions } = useGetJobPositions();
     const { data: grades } = useGetGrades();
 
-    const plans = dataPlans.plans || [];
-    const totalPlans = dataPlans.total || 0;
+    const plans = dataPlans?.plans || [];
+    const totalPlans = dataPlans?.total || 0;
 
     const createPlanMutation = useCreateRecruitmentPlan();
     const updatePlanMutation = useUpdateRecruitmentPlan();
@@ -183,7 +183,7 @@ export default function RecruitmentPlanningPage() {
             </div>
 
             {/* Filters */}
-            <Card>
+            <Card className="shadow-none">
                 <CardBody>
                     <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                         <Input placeholder="Rechercher..." startContent={<FiSearch />} onChange={(e) => setFilters({ ...filters, search: e.target.value })} />
@@ -214,95 +214,93 @@ export default function RecruitmentPlanningPage() {
             </Card>
 
             {/* Plans Table */}
-            <Card>
-                <CardBody>
-                    {isLoading ? (
-                        <div className="flex justify-center py-8">
-                            <Spinner size="lg" />
-                        </div>
-                    ) : (
-                        <Table aria-label="Plans de recrutement">
-                            <TableHeader>
-                                <TableColumn>ANNÉE</TableColumn>
-                                <TableColumn>DIRECTION</TableColumn>
-                                <TableColumn>POSITIONS</TableColumn>
-                                <TableColumn>STATUT</TableColumn>
-                                <TableColumn>DATE CRÉATION</TableColumn>
-                                <TableColumn>ACTIONS</TableColumn>
-                            </TableHeader>
-                            <TableBody emptyContent="Aucun plan de recrutement trouvé">
-                                {plans.map((plan) => (
-                                    <TableRow key={plan.id}>
-                                        <TableCell className="font-semibold">{plan.year}</TableCell>
-                                        <TableCell>{plan.direction?.name || "N/A"}</TableCell>
-                                        <TableCell>
-                                            <Chip size="sm" variant="flat">
-                                                {plan.positions?.length || 0} position(s)
-                                            </Chip>
-                                        </TableCell>
-                                        <TableCell>
-                                            <Chip size="sm" color={getStatusColor(plan.status)} variant="flat">
-                                                {getStatusLabel(plan.status)}
-                                            </Chip>
-                                        </TableCell>
-                                        <TableCell>{new Date(plan.created_at).toLocaleDateString("fr-FR")}</TableCell>
-                                        <TableCell>
-                                            <Dropdown>
-                                                <DropdownTrigger>
-                                                    <Button isIconOnly size="sm" variant="light">
-                                                        <FiMoreVertical />
-                                                    </Button>
-                                                </DropdownTrigger>
-                                                <DropdownMenu aria-label="Actions">
-                                                    <DropdownItem
-                                                        key="view"
-                                                        startContent={<FiEye />}
-                                                        onPress={() => {
-                                                            setSelectedPlanDetails(plan);
-                                                            onDetailOpen();
-                                                        }}
-                                                    >
-                                                        Voir les détails
-                                                    </DropdownItem>
-                                                    {plan.status === "draft" && (
-                                                        <>
-                                                            <DropdownItem
-                                                                key="add-position"
-                                                                startContent={<FiPlus />}
-                                                                onPress={() => {
-                                                                    setSelectedPlan(plan.id);
-                                                                    onAddPositionOpen();
-                                                                }}
-                                                            >
-                                                                Ajouter une position
-                                                            </DropdownItem>
-                                                            <DropdownItem key="submit" startContent={<FiSend />} onPress={() => onSubmitPlan(plan.id)}>
-                                                                Soumettre pour approbation
-                                                            </DropdownItem>
-                                                        </>
-                                                    )}
-                                                    {plan.status === "submitted" && (
+            <div className="shadow-none">
+                {isLoading ? (
+                    <div className="flex justify-center py-8">
+                        <Spinner size="lg" />
+                    </div>
+                ) : (
+                    <Table aria-label="Plans de recrutement" className="border-none">
+                        <TableHeader>
+                            <TableColumn>ANNÉE</TableColumn>
+                            <TableColumn>DIRECTION</TableColumn>
+                            <TableColumn>POSITIONS</TableColumn>
+                            <TableColumn>STATUT</TableColumn>
+                            <TableColumn>DATE CRÉATION</TableColumn>
+                            <TableColumn>ACTIONS</TableColumn>
+                        </TableHeader>
+                        <TableBody emptyContent="Aucun plan de recrutement trouvé">
+                            {plans.map((plan) => (
+                                <TableRow key={plan.id}>
+                                    <TableCell className="font-semibold">{plan.year}</TableCell>
+                                    <TableCell>{plan.direction?.name || "N/A"}</TableCell>
+                                    <TableCell>
+                                        <Chip size="sm" variant="flat">
+                                            {plan.positions?.length || 0} position(s)
+                                        </Chip>
+                                    </TableCell>
+                                    <TableCell>
+                                        <Chip size="sm" color={getStatusColor(plan.status)} variant="flat">
+                                            {getStatusLabel(plan.status)}
+                                        </Chip>
+                                    </TableCell>
+                                    <TableCell>{new Date(plan.created_at).toLocaleDateString("fr-FR")}</TableCell>
+                                    <TableCell>
+                                        <Dropdown>
+                                            <DropdownTrigger>
+                                                <Button isIconOnly size="sm" variant="light">
+                                                    <FiMoreVertical />
+                                                </Button>
+                                            </DropdownTrigger>
+                                            <DropdownMenu aria-label="Actions">
+                                                <DropdownItem
+                                                    key="view"
+                                                    startContent={<FiEye />}
+                                                    onPress={() => {
+                                                        setSelectedPlanDetails(plan);
+                                                        onDetailOpen();
+                                                    }}
+                                                >
+                                                    Voir les détails
+                                                </DropdownItem>
+                                                {plan.status === "draft" && (
+                                                    <>
                                                         <DropdownItem
-                                                            key="approve"
-                                                            startContent={<FiCheckCircle />}
+                                                            key="add-position"
+                                                            startContent={<FiPlus />}
                                                             onPress={() => {
                                                                 setSelectedPlan(plan.id);
-                                                                onApproveOpen();
+                                                                onAddPositionOpen();
                                                             }}
                                                         >
-                                                            Approuver/Rejeter
+                                                            Ajouter une position
                                                         </DropdownItem>
-                                                    )}
-                                                </DropdownMenu>
-                                            </Dropdown>
-                                        </TableCell>
-                                    </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
-                    )}
-                </CardBody>
-            </Card>
+                                                        <DropdownItem key="submit" startContent={<FiSend />} onPress={() => onSubmitPlan(plan.id)}>
+                                                            Soumettre pour approbation
+                                                        </DropdownItem>
+                                                    </>
+                                                )}
+                                                {plan.status === "submitted" && (
+                                                    <DropdownItem
+                                                        key="approve"
+                                                        startContent={<FiCheckCircle />}
+                                                        onPress={() => {
+                                                            setSelectedPlan(plan.id);
+                                                            onApproveOpen();
+                                                        }}
+                                                    >
+                                                        Approuver/Rejeter
+                                                    </DropdownItem>
+                                                )}
+                                            </DropdownMenu>
+                                        </Dropdown>
+                                    </TableCell>
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
+                )}
+            </div>
 
             {/* Create Plan Modal */}
             <Modal isOpen={isCreateOpen} onClose={onCreateClose} size="2xl" scrollBehavior="inside">
@@ -576,40 +574,44 @@ export default function RecruitmentPlanningPage() {
 
                                 <div>
                                     <h4 className="font-semibold mb-4">Positions ({selectedPlanDetails.positions?.length || 0})</h4>
-                                    <Table aria-label="Positions">
-                                        <TableHeader>
-                                            <TableColumn>POSTE</TableColumn>
-                                            <TableColumn>GRADE</TableColumn>
-                                            <TableColumn>SERVICE</TableColumn>
-                                            <TableColumn>QUANTITÉ</TableColumn>
-                                            <TableColumn>PRIORITÉ</TableColumn>
-                                            <TableColumn>BUDGET</TableColumn>
-                                            {selectedPlanDetails.status === "draft" && <TableColumn>ACTIONS</TableColumn>}
-                                        </TableHeader>
-                                        <TableBody>
-                                            {(selectedPlanDetails.positions || []).map((pos) => (
-                                                <TableRow key={pos.id}>
-                                                    <TableCell>{pos.job_position?.title}</TableCell>
-                                                    <TableCell>{pos.grade?.name}</TableCell>
-                                                    <TableCell>{pos.service?.name || "N/A"}</TableCell>
-                                                    <TableCell>{pos.quantity_needed}</TableCell>
-                                                    <TableCell>
-                                                        <Chip size="sm" color={getPriorityColor(pos.priority)} variant="flat">
-                                                            {pos.priority}
-                                                        </Chip>
-                                                    </TableCell>
-                                                    <TableCell>{pos.budget_allocated ? `${parseInt(pos.budget_allocated).toLocaleString()} CFD` : "N/A"}</TableCell>
-                                                    {selectedPlanDetails.status === "draft" && (
+                                    {selectedPlanDetails.positions && selectedPlanDetails.positions.length > 0 ? (
+                                        <Table aria-label="Positions">
+                                            <TableHeader>
+                                                <TableColumn>POSTE</TableColumn>
+                                                <TableColumn>GRADE</TableColumn>
+                                                <TableColumn>SERVICE</TableColumn>
+                                                <TableColumn>QUANTITÉ</TableColumn>
+                                                <TableColumn>PRIORITÉ</TableColumn>
+                                                <TableColumn>BUDGET</TableColumn>
+                                                {selectedPlanDetails.status === "draft" && <TableColumn>ACTIONS</TableColumn>}
+                                            </TableHeader>
+                                            <TableBody>
+                                                {selectedPlanDetails.positions.map((pos) => (
+                                                    <TableRow key={pos.id}>
+                                                        <TableCell>{pos.job_position?.title || "N/A"}</TableCell>
+                                                        <TableCell>{pos.grade?.name || "N/A"}</TableCell>
+                                                        <TableCell>{pos.service?.name || "N/A"}</TableCell>
+                                                        <TableCell>{pos.quantity_needed || 0}</TableCell>
                                                         <TableCell>
-                                                            <Button isIconOnly size="sm" color="danger" variant="light" onPress={() => onDeletePosition(pos.id)}>
-                                                                <FiTrash2 />
-                                                            </Button>
+                                                            <Chip size="sm" color={getPriorityColor(pos.priority)} variant="flat">
+                                                                {pos.priority || "N/A"}
+                                                            </Chip>
                                                         </TableCell>
-                                                    )}
-                                                </TableRow>
-                                            ))}
-                                        </TableBody>
-                                    </Table>
+                                                        <TableCell>{pos.budget_allocated ? `${parseInt(pos.budget_allocated).toLocaleString()} CFD` : "N/A"}</TableCell>
+                                                        {selectedPlanDetails.status === "draft" && (
+                                                            <TableCell>
+                                                                <Button isIconOnly size="sm" color="danger" variant="light" onPress={() => onDeletePosition(pos.id)}>
+                                                                    <FiTrash2 />
+                                                                </Button>
+                                                            </TableCell>
+                                                        )}
+                                                    </TableRow>
+                                                ))}
+                                            </TableBody>
+                                        </Table>
+                                    ) : (
+                                        <div className="p-8 text-center text-gray-500 bg-gray-50 rounded-lg">Aucune position ajoutée pour ce plan</div>
+                                    )}
                                 </div>
                             </div>
                         </ModalBody>

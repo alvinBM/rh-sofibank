@@ -410,6 +410,7 @@ export const getJobPostings = async (req, res) => {
                 { model: Direction, as: "direction" },
                 { model: Service, as: "service" },
                 { model: JobPosition, as: "job_position" },
+                { model: Grade, as: "grade" },
                 { model: User, as: "creator", attributes: ["id", "email"] },
                 {
                     model: JobApplication,
@@ -448,6 +449,7 @@ export const getJobPostingById = async (req, res) => {
                 { model: Direction, as: "direction" },
                 { model: Service, as: "service" },
                 { model: JobPosition, as: "job_position" },
+                { model: Grade, as: "grade" },
                 { model: User, as: "creator" },
                 {
                     model: RecruitmentPlanPosition,
@@ -499,6 +501,7 @@ export const createJobPosting = async (req, res) => {
                 { model: Direction, as: "direction" },
                 { model: Service, as: "service" },
                 { model: JobPosition, as: "job_position" },
+                { model: Grade, as: "grade" },
                 { model: User, as: "creator" },
             ],
         });
@@ -530,6 +533,7 @@ export const updateJobPosting = async (req, res) => {
                 { model: Direction, as: "direction" },
                 { model: Service, as: "service" },
                 { model: JobPosition, as: "job_position" },
+                { model: Grade, as: "grade" },
                 { model: User, as: "creator" },
             ],
         });
@@ -766,6 +770,121 @@ export const createJobApplication = async (req, res) => {
 };
 
 /**
+ * Create a new job application from public form (with file uploads)
+ */
+export const createPublicJobApplication = async (req, res) => {
+    try {
+        const applicationData = req.body;
+        const files = req.files;
+
+        console.log("Received application data:", applicationData);
+        console.log("Received files:", files);
+
+        // Validate required fields
+        if (!applicationData.job_posting_id) {
+            return res.status(400).json({ error: "Job posting ID is required" });
+        }
+
+        if (!applicationData.first_name || !applicationData.last_name || !applicationData.email) {
+            return res.status(400).json({ error: "First name, last name, and email are required" });
+        }
+
+        // Check if CV file is uploaded
+        if (!files || !files.cv_file || files.cv_file.length === 0) {
+            return res.status(400).json({ error: "CV file is required" });
+        }
+
+        // Verify job posting exists and is published
+        const posting = await JobPosting.findByPk(applicationData.job_posting_id);
+        if (!posting) {
+            return res.status(404).json({ error: "Job posting not found" });
+        }
+
+        if (posting.status !== "published") {
+            return res.status(400).json({ error: "This job posting is not accepting applications" });
+        }
+
+        // Generate unique application number
+        const year = new Date().getFullYear();
+        const month = String(new Date().getMonth() + 1).padStart(2, "0");
+        const count = await JobApplication.count({
+            where: {
+                application_number: {
+                    [Op.like]: `APP-${year}${month}-%`,
+                },
+            },
+        });
+        const applicationNumber = `APP-${year}${month}-${String(count + 1).padStart(4, "0")}`;
+
+        // Prepare file paths
+        const cvFile = files.cv_file[0];
+        const cvFilePath = cvFile.path.replace("public/", "");
+
+        let coverLetterFilePath = null;
+        if (files.cover_letter_file && files.cover_letter_file.length > 0) {
+            const coverLetterFile = files.cover_letter_file[0];
+            coverLetterFilePath = coverLetterFile.path.replace("public/", "");
+        }
+
+        let additionalDocsPaths = [];
+        if (files.additional_documents && files.additional_documents.length > 0) {
+            additionalDocsPaths = files.additional_documents.map((file) =>
+                file.path.replace("public/", "")
+            );
+        }
+
+        // Create application
+        const application = await JobApplication.create({
+            application_number: applicationNumber,
+            job_posting_id: applicationData.job_posting_id,
+            first_name: applicationData.first_name,
+            last_name: applicationData.last_name,
+            email: applicationData.email,
+            phone: applicationData.phone,
+            address: applicationData.address || null,
+            cv_file_path: cvFilePath,
+            cover_letter: applicationData.cover_letter || null,
+            cover_letter_file_path: coverLetterFilePath,
+            additional_documents: additionalDocsPaths.length > 0 ? JSON.stringify(additionalDocsPaths) : null,
+            linkedin_url: applicationData.linkedin_url || null,
+            portfolio_url: applicationData.portfolio_url || null,
+            years_of_experience: applicationData.years_of_experience || 0,
+            expected_salary: applicationData.expected_salary || null,
+            availability_date: applicationData.availability_date || null,
+            status: "new",
+            applied_date: new Date(),
+            source: "website",
+        });
+
+        // Note: We don't create status history for public applications
+        // because changed_by requires a user ID, and public applications don't have one.
+        // The status history will be created when an admin/recruiter changes the status.
+
+        // Fetch created application with associations
+        const createdApplication = await JobApplication.findByPk(application.id, {
+            include: [
+                {
+                    model: JobPosting,
+                    as: "job_posting",
+                    include: [
+                        { model: Direction, as: "direction" },
+                        { model: JobPosition, as: "job_position" },
+                    ],
+                },
+            ],
+        });
+
+        res.status(201).json({
+            message: "Application submitted successfully",
+            application: createdApplication,
+        });
+    } catch (error) {
+        console.error("Error creating public job application:", error);
+        res.status(500).json({ error: "Failed to submit application" });
+    }
+};
+
+/**
  * Update job application
  */
 export const updateJobApplication = async (req, res) => {
@@ -987,17 +1106,17 @@ export const submitInterviewEvaluation = async (req, res) => {
         const evaluatorId = req.user.id;
 
         // Calculate overall score
-        const { technical_skills, communication, problem_solving, cultural_fit, motivation, experience_relevance } = evaluationData;
+        const { technical_skills_score, communication_score, problem_solving_score, cultural_fit_score, experience_score } = evaluationData;
 
-        const scores = [technical_skills, communication, problem_solving, cultural_fit, motivation, experience_relevance].filter((score) => score !== null && score !== undefined);
+        const scores = [technical_skills_score, communication_score, problem_solving_score, cultural_fit_score, experience_score].filter((score) => score !== null && score !== undefined);
 
-        const overall_score = scores.length > 0 ? (scores.reduce((sum, score) => sum + score, 0) / scores.length).toFixed(2) : null;
+        const overall_score = scores.length > 0 ? Math.round(scores.reduce((sum, score) => sum + score, 0) / scores.length) : null;
 
         const evaluation = await InterviewEvaluation.create({
             ...evaluationData,
             evaluator_id: evaluatorId,
             overall_score,
-            submitted_date: new Date(),
+            evaluation_date: new Date(),
         });
 
         const createdEvaluation = await InterviewEvaluation.findByPk(evaluation.id, {
@@ -1104,7 +1223,6 @@ export const getEmploymentOfferById = async (req, res) => {
                 { model: Grade, as: "grade" },
                 { model: Service, as: "service" },
                 { model: Direction, as: "direction" },
-                { model: Employee, as: "manager" },
                 { model: User, as: "approver" },
                 { model: User, as: "creator" },
             ],
@@ -1373,13 +1491,13 @@ export const getOnboardingChecklists = async (req, res) => {
             include: [
                 { model: Employee, as: "employee" },
                 { model: EmploymentOffer, as: "employment_offer" },
-                { model: User, as: "assigned_hr" },
+                { model: User, as: "assigned_mentor" },
+                { model: User, as: "creator" },
                 {
                     model: OnboardingTask,
                     as: "tasks",
                     include: [
                         { model: User, as: "assigned_user" },
-                        { model: User, as: "completer" },
                     ],
                 },
             ],
@@ -1404,14 +1522,13 @@ export const getOnboardingChecklistById = async (req, res) => {
             include: [
                 { model: Employee, as: "employee" },
                 { model: EmploymentOffer, as: "employment_offer" },
-                { model: User, as: "assigned_hr" },
+                { model: User, as: "assigned_mentor" },
+                { model: User, as: "creator" },
                 {
                     model: OnboardingTask,
                     as: "tasks",
                     include: [
-                        { model: OnboardingTaskTemplate, as: "template" },
                         { model: User, as: "assigned_user" },
-                        { model: User, as: "completer" },
                     ],
                     order: [["order_index", "ASC"]],
                 },
@@ -1434,20 +1551,20 @@ export const getOnboardingChecklistById = async (req, res) => {
  */
 export const createOnboardingChecklist = async (req, res) => {
     try {
-        const { employee_id, employment_offer_id, checklist_name, start_date, assigned_hr_id } = req.body;
+        const { employee_id, employment_offer_id, start_date, assigned_mentor_id } = req.body;
 
-        // Calculate target completion date (30 days from start)
-        const targetDate = new Date(start_date);
-        targetDate.setDate(targetDate.getDate() + 30);
+        // Calculate expected completion date (30 days from start)
+        const expectedDate = new Date(start_date);
+        expectedDate.setDate(expectedDate.getDate() + 30);
 
         const checklist = await OnboardingChecklist.create({
             employee_id,
             employment_offer_id,
-            checklist_name: checklist_name || "New Employee Onboarding",
             start_date,
-            target_completion_date: targetDate,
-            assigned_hr_id,
-            status: "not_started",
+            expected_completion_date: expectedDate,
+            assigned_mentor_id,
+            status: "pending",
+            created_by: req.user.id,
         });
 
         // Get active task templates and create tasks
@@ -1461,14 +1578,14 @@ export const createOnboardingChecklist = async (req, res) => {
             dueDate.setDate(dueDate.getDate() + template.days_from_start);
 
             return {
-                checklist_id: checklist.id,
-                task_template_id: template.id,
+                onboarding_checklist_id: checklist.id,
                 task_name: template.task_name,
                 description: template.description,
                 category: template.category,
                 priority: template.priority,
                 due_date: dueDate,
                 order_index: template.order_index,
+                is_mandatory: template.is_mandatory,
                 status: "pending",
             };
         });
@@ -1508,7 +1625,8 @@ export const updateOnboardingChecklist = async (req, res) => {
         const updatedChecklist = await OnboardingChecklist.findByPk(id, {
             include: [
                 { model: Employee, as: "employee" },
-                { model: User, as: "assigned_hr" },
+                { model: User, as: "assigned_mentor" },
+                { model: User, as: "creator" },
                 { model: OnboardingTask, as: "tasks" },
             ],
         });
@@ -1581,15 +1699,13 @@ export const updateOnboardingTask = async (req, res) => {
         const completionPercentage = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
 
         await checklist.update({
-            completion_percentage: completionPercentage,
-            status: completionPercentage === 100 ? "completed" : completionPercentage > 0 ? "in_progress" : "not_started",
+            status: completionPercentage === 100 ? "completed" : completionPercentage > 0 ? "in_progress" : "pending",
             actual_completion_date: completionPercentage === 100 ? new Date() : null,
         });
 
         const updatedTask = await OnboardingTask.findByPk(taskId, {
             include: [
                 { model: User, as: "assigned_user" },
-                { model: User, as: "completer" },
             ],
         });
 

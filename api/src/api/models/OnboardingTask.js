@@ -9,19 +9,11 @@ const OnboardingTask = sequelize.define(
             defaultValue: DataTypes.UUIDV4,
             primaryKey: true,
         },
-        checklist_id: {
+        onboarding_checklist_id: {
             type: DataTypes.UUID,
             allowNull: false,
             references: {
                 model: "onboarding_checklists",
-                key: "id",
-            },
-        },
-        task_template_id: {
-            type: DataTypes.UUID,
-            allowNull: true,
-            references: {
-                model: "onboarding_task_templates",
                 key: "id",
             },
         },
@@ -34,8 +26,8 @@ const OnboardingTask = sequelize.define(
             allowNull: true,
         },
         category: {
-            type: DataTypes.ENUM("administrative", "equipment", "training", "team_introduction", "system_access", "documentation", "other"),
-            defaultValue: "other",
+            type: DataTypes.ENUM("administrative", "equipment", "training", "documentation", "orientation", "system_access", "other"),
+            allowNull: false,
         },
         priority: {
             type: DataTypes.ENUM("low", "medium", "high", "critical"),
@@ -54,28 +46,20 @@ const OnboardingTask = sequelize.define(
             },
         },
         status: {
-            type: DataTypes.ENUM("pending", "in_progress", "completed", "skipped", "blocked"),
+            type: DataTypes.ENUM("pending", "in_progress", "completed", "blocked"),
             defaultValue: "pending",
         },
         completion_date: {
             type: DataTypes.DATE,
             allowNull: true,
         },
-        completed_by: {
-            type: DataTypes.UUID,
-            allowNull: true,
-            references: {
-                model: "users",
-                key: "id",
-            },
-        },
-        notes: {
+        completion_notes: {
             type: DataTypes.TEXT,
             allowNull: true,
         },
-        attachments: {
-            type: DataTypes.TEXT,
-            allowNull: true,
+        is_mandatory: {
+            type: DataTypes.BOOLEAN,
+            defaultValue: true,
         },
         order_index: {
             type: DataTypes.INTEGER,
