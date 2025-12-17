@@ -9,7 +9,8 @@ export const signIn = async (email, password) => {
       throw new Error(response.message || 'Email ou mot de passe incorrect');
     }
 
-    const { token, user, roles, permissions } = response.data;
+    const { token, user } = response.data;
+    const { roles, permissions, employee } = user;
 
     // Sauvegarder le token
     apiClient.setToken(token);
@@ -23,23 +24,24 @@ export const signIn = async (email, password) => {
       status: user.is_active ? 1 : 0,
       created_by: 0,
       account_id: user.account_id || null,
-      firstname: user.firstname,
-      lastname: user.lastname,
+      firstname: employee?.first_name || '',
+      lastname: employee?.last_name || '',
       username: user.email,
-      phone: user.phone,
+      phone: employee?.phone || '',
       email: user.email,
-      last_activity: new Date().toISOString(),
+      last_activity: user.last_login || new Date().toISOString(),
       otp: null,
-      country: user.country || 'CD',
-      city: user.city || '',
+      country: employee?.country || 'CD',
+      city: employee?.city || '',
       profile: roles && roles.length > 0 ? roles[0].code : 'EMPLOYEE',
       root_store: null,
       public_token: token,
       ip_address: null,
       main_roles: roles ? roles.map(role => ({
+        role_id: role.id,
         role_name: role.name,
         role_code: role.code,
-        main_permissions: role.permissions || [],
+        main_permissions: permissions || [],
         main_users_roles: {
           id: user.id,
           user_id: user.id,
@@ -48,7 +50,13 @@ export const signIn = async (email, password) => {
       })) : [],
       account: null,
       main_store: null,
-      employee: user.employee || null,
+      employee: employee ? {
+        id: employee.id,
+        employee_number: employee.employee_number,
+        first_name: employee.first_name,
+        last_name: employee.last_name,
+        profile_photo_url: employee.profile_photo_url,
+      } : null,
     };
 
     return {
@@ -121,7 +129,8 @@ export const getCurrentUser = async () => {
       return null;
     }
 
-    const { user, roles, permissions } = response.data;
+    const user = response.data;
+    const { roles, permissions, employee } = user;
     
     // Formater les données utilisateur
     const formattedUser = {
@@ -132,23 +141,31 @@ export const getCurrentUser = async () => {
       status: user.is_active ? 1 : 0,
       created_by: 0,
       account_id: user.account_id || null,
-      firstname: user.firstname,
-      lastname: user.lastname,
+      firstname: employee?.first_name || '',
+      lastname: employee?.last_name || '',
       username: user.email,
-      phone: user.phone,
+      phone: employee?.phone || '',
       email: user.email,
-      last_activity: new Date().toISOString(),
+      last_activity: user.last_login || new Date().toISOString(),
       otp: null,
-      country: user.country || 'CD',
-      city: user.city || '',
+      country: employee?.country || 'CD',
+      city: employee?.city || '',
       profile: roles && roles.length > 0 ? roles[0].code : 'EMPLOYEE',
       root_store: null,
       public_token: token,
       ip_address: null,
       main_roles: roles ? roles.map(role => ({
+        role_id: role.id,
         role_name: role.name,
         role_code: role.code,
-        main_permissions: role.permissions || [],
+        role_description: role.description || '',
+        main_permissions: role.permissions ? role.permissions.map(perm => ({
+          id: perm.id,
+          name: perm.name,
+          code: perm.code,
+          module: perm.module,
+          description: perm.description || '',
+        })) : [],
         main_users_roles: {
           id: user.id,
           user_id: user.id,
@@ -157,7 +174,62 @@ export const getCurrentUser = async () => {
       })) : [],
       account: null,
       main_store: null,
-      employee: user.employee || null,
+      employee: employee ? {
+        id: employee.id,
+        user_id: employee.user_id,
+        employee_number: employee.employee_number,
+        first_name: employee.first_name,
+        last_name: employee.last_name,
+        maiden_name: employee.maiden_name,
+        date_of_birth: employee.date_of_birth,
+        place_of_birth: employee.place_of_birth,
+        gender: employee.gender,
+        nationality: employee.nationality,
+        national_id: employee.national_id,
+        email: employee.email,
+        phone: employee.phone,
+        personal_email: employee.personal_email,
+        emergency_contact_name: employee.emergency_contact_name,
+        emergency_contact_phone: employee.emergency_contact_phone,
+        emergency_contact_relationship: employee.emergency_contact_relationship,
+        address_line1: employee.address_line1,
+        address_line2: employee.address_line2,
+        city: employee.city,
+        province: employee.province,
+        postal_code: employee.postal_code,
+        country: employee.country,
+        marital_status: employee.marital_status,
+        spouse_name: employee.spouse_name,
+        number_of_children: employee.number_of_children,
+        direction_id: employee.direction_id,
+        service_id: employee.service_id,
+        job_position_id: employee.job_position_id,
+        grade_id: employee.grade_id,
+        hire_date: employee.hire_date,
+        contract_type: employee.contract_type,
+        employment_status: employee.employment_status,
+        termination_date: employee.termination_date,
+        termination_reason: employee.termination_reason,
+        direct_supervisor_id: employee.direct_supervisor_id,
+        secondary_supervisor_id: employee.secondary_supervisor_id,
+        bank_name: employee.bank_name,
+        bank_account_number: employee.bank_account_number,
+        bank_account_holder: employee.bank_account_holder,
+        tax_id: employee.tax_id,
+        social_security_number: employee.social_security_number,
+        profile_photo_url: employee.profile_photo_url,
+        notes: employee.notes,
+        is_active: employee.is_active,
+        created_at: employee.created_at,
+        updated_at: employee.updated_at,
+        created_by: employee.created_by,
+        updated_by: employee.updated_by,
+        direction: employee.direction || null,
+        service: employee.service || null,
+        job_position: employee.job_position || null,
+        grade: employee.grade || null,
+      } : null,
+      permissions: permissions || [],
     };
 
     return {

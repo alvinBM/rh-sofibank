@@ -6,7 +6,8 @@ import { useForm, Controller } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
 import AlertMessage from "../../AlertMessage";
-import { useGetBranches } from "@/src/hooks/useBranches";
+// TODO: Activer quand l'endpoint /api/main/branches sera créé
+// import { useGetBranches } from "@/src/hooks/useBranches";
 import { Icon } from "@iconify/react";
 import { useGetRolesByAccount } from "@/src/hooks/useMain";
 import queryClient from "@/src/lib/react-query-client";
@@ -19,8 +20,9 @@ const AddUserModal = ({ isOpen, onOpenChange, onSubmitResult }) => {
     const [visiblePassword, setIsVisiblePassword] = useState(false);
     const toggleVisibility = () => setIsVisiblePassword(!visiblePassword);
     const [error, setError] = useState(null);
-    const { data, isError, error: errorGetBranches, isLoading: isLoadingGetBranches } = useGetBranches({ page: 1, rowsPerPage: 1000 });
-    const branches = data?.branches || [];
+    // TODO: Activer quand l'endpoint /api/main/branches sera créé
+    // const { data, isError, error: errorGetBranches, isLoading: isLoadingGetBranches } = useGetBranches({ page: 1, rowsPerPage: 1000 });
+    const branches = []; // Utiliser [] en attendant l'endpoint
     const { data: dataRoles, isError: isErrorRoles, error: errorRoles, isLoading: isLoadingRoles } = useGetRolesByAccount({ page: 1, rowsPerPage: 1000, filterValue: null });
     const roles = dataRoles?.roles || [];
 

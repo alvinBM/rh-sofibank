@@ -65,8 +65,10 @@ const Layout = ({ children }) => {
     const currentPage = useSelector(selectCurrentPage) ?? router.pathname;
     const [selectedBranchData, setSelectedBranchData] = useState(null);
     const isAdmin = user?.main_roles?.some((role) => role.role_name === "Admin");
-    const { data: dataBranches, isError: isErrorBranch, error: errorBranch, isLoading: isLoadingGetBranches } = useGetBranches({ page: 1, rowsPerPage: 1000 });
-    const branches = dataBranches && dataBranches?.branches.length > 0 ? dataBranches?.branches : [user?.main_store];
+    // TODO: Activer quand l'endpoint /api/main/branches sera créé
+    // const { data: dataBranches, isError: isErrorBranch, error: errorBranch, isLoading: isLoadingGetBranches } = useGetBranches({ page: 1, rowsPerPage: 1000 });
+    // const branches = dataBranches && dataBranches?.branches.length > 0 ? dataBranches?.branches : [user?.main_store];
+    const branches = user?.main_store ? [user?.main_store] : [];
     const { theme, setTheme } = useTheme();
     const [isAccountExpired, setIsAccountExpired] = useState(false);
 

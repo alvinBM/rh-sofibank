@@ -1,4 +1,4 @@
-import { supabase } from "../../lib/supabase-client";
+import apiClient from '../api-client';
 
 /**
  * Service pour la gestion de la paie
@@ -12,35 +12,19 @@ import { supabase } from "../../lib/supabase-client";
  */
 export const fetchPayrollRuns = async ({ offset, limit, query, filters = {} }) => {
   try {
-    let queryBuilder = supabase
-      .from('payroll_runs')
-      .select('*', { count: 'exact' })
-      .range(offset, offset + limit - 1)
-      .order('created_at', { ascending: false });
+    const params = new URLSearchParams();
+    params.append('offset', offset);
+    params.append('limit', limit);
+    if (query) params.append('search', query);
+    if (filters.status) params.append('status', filters.status);
+    if (filters.year) params.append('year', filters.year);
+    if (filters.month) params.append('month', filters.month);
 
-    if (query) {
-      queryBuilder = queryBuilder.or(`period.ilike.%${query}%`);
-    }
-
-    if (filters.status) {
-      queryBuilder = queryBuilder.eq('status', filters.status);
-    }
-
-    if (filters.year) {
-      queryBuilder = queryBuilder.eq('year', filters.year);
-    }
-
-    if (filters.month) {
-      queryBuilder = queryBuilder.eq('month', filters.month);
-    }
-
-    const { data, error, count } = await queryBuilder;
-
-    if (error) throw error;
-
+    const response = await apiClient.get(`/payroll/runs?${params.toString()}`);
+    
     return {
-      runs: data || [],
-      total: count || 0,
+      runs: response.data?.runs || [],
+      total: response.data?.total || 0,
     };
   } catch (error) {
     console.error('Fetch payroll runs error:', error);
@@ -53,20 +37,8 @@ export const fetchPayrollRuns = async ({ offset, limit, query, filters = {} }) =
  */
 export const fetchPayrollRunById = async (id) => {
   try {
-    const { data, error } = await supabase
-      .from('payroll_runs')
-      .select(`
-        *,
-        payroll_details:payroll_details(
-          *,
-          employee:employees!payroll_details_employee_id_fkey(id, first_name, last_name, employee_number)
-        )
-      `)
-      .eq('id', id)
-      .single();
-
-    if (error) throw error;
-    return data;
+    const response = await apiClient.get(`/payroll/runs/${id}`);
+    return response.data;
   } catch (error) {
     console.error('Fetch payroll run by id error:', error);
     throw error;
@@ -78,18 +50,8 @@ export const fetchPayrollRunById = async (id) => {
  */
 export const createPayrollRun = async (payload) => {
   try {
-    const { data, error } = await supabase
-      .from('payroll_runs')
-      .insert([{
-        ...payload,
-        status: 'draft',
-        created_at: new Date().toISOString()
-      }])
-      .select()
-      .single();
-
-    if (error) throw error;
-    return data;
+    const response = await apiClient.post('/payroll/runs', payload);
+    return response.data;
   } catch (error) {
     console.error('Create payroll run error:', error);
     throw error;
@@ -101,12 +63,8 @@ export const createPayrollRun = async (payload) => {
  */
 export const processPayrollRun = async (runId) => {
   try {
-    const { data, error } = await supabase.rpc('process_payroll_run', {
-      run_id: runId
-    });
-
-    if (error) throw error;
-    return data;
+    const response = await apiClient.post(`/payroll/runs/${runId}/process`);
+    return response.data;
   } catch (error) {
     console.error('Process payroll run error:', error);
     throw error;
@@ -118,19 +76,8 @@ export const processPayrollRun = async (runId) => {
  */
 export const approvePayrollRun = async (runId, approvedBy) => {
   try {
-    const { data, error } = await supabase
-      .from('payroll_runs')
-      .update({
-        status: 'approved',
-        approved_by: approvedBy,
-        approved_at: new Date().toISOString()
-      })
-      .eq('id', runId)
-      .select()
-      .single();
-
-    if (error) throw error;
-    return data;
+    const response = await apiClient.post(`/payroll/runs/${runId}/approve`, { approved_by: approvedBy });
+    return response.data;
   } catch (error) {
     console.error('Approve payroll run error:', error);
     throw error;
@@ -142,23 +89,8 @@ export const approvePayrollRun = async (runId, approvedBy) => {
  */
 export const distributePayslips = async (runId, distributionMethod = 'email') => {
   try {
-    const { data, error } = await supabase.rpc('distribute_payslips', {
-      run_id: runId,
-      method: distributionMethod
-    });
-
-    if (error) throw error;
-
-    // Met à jour le statut
-    await supabase
-      .from('payroll_runs')
-      .update({
-        status: 'paid',
-        distributed_at: new Date().toISOString()
-      })
-      .eq('id', runId);
-
-    return data;
+    const response = await apiClient.post(`/payroll/runs/${runId}/distribute`, { method: distributionMethod });
+    return response.data;
   } catch (error) {
     console.error('Distribute payslips error:', error);
     throw error;
@@ -172,17 +104,8 @@ export const distributePayslips = async (runId, distributionMethod = 'email') =>
  */
 export const fetchPayrollDetails = async (runId) => {
   try {
-    const { data, error } = await supabase
-      .from('payroll_details')
-      .select(`
-        *,
-        employee:employees!payroll_details_employee_id_fkey(id, first_name, last_name, employee_number)
-      `)
-      .eq('payroll_run_id', runId)
-      .order('employee.last_name', { ascending: true });
-
-    if (error) throw error;
-    return data || [];
+    const response = await apiClient.get(`/payroll/runs/${runId}/details`);
+    return response.data || [];
   } catch (error) {
     console.error('Fetch payroll details error:', error);
     throw error;
@@ -194,15 +117,8 @@ export const fetchPayrollDetails = async (runId) => {
  */
 export const updatePayrollDetail = async (detailId, payload) => {
   try {
-    const { data, error } = await supabase
-      .from('payroll_details')
-      .update(payload)
-      .eq('id', detailId)
-      .select()
-      .single();
-
-    if (error) throw error;
-    return data;
+    const response = await apiClient.put(`/payroll/details/${detailId}`, payload);
+    return response.data;
   } catch (error) {
     console.error('Update payroll detail error:', error);
     throw error;
@@ -216,42 +132,20 @@ export const updatePayrollDetail = async (detailId, payload) => {
  */
 export const fetchPayrollVariables = async ({ offset, limit, query, filters = {} }) => {
   try {
-    let queryBuilder = supabase
-      .from('payroll_variables')
-      .select(`
-        *,
-        employee:employees!payroll_variables_employee_id_fkey(id, first_name, last_name, employee_number)
-      `, { count: 'exact' })
-      .range(offset, offset + limit - 1)
-      .order('created_at', { ascending: false });
+    const params = new URLSearchParams();
+    params.append('offset', offset);
+    params.append('limit', limit);
+    if (query) params.append('search', query);
+    if (filters.type) params.append('type', filters.type);
+    if (filters.employee_id) params.append('employee_id', filters.employee_id);
+    if (filters.period) params.append('period', filters.period);
+    if (filters.status) params.append('status', filters.status);
 
-    if (query) {
-      queryBuilder = queryBuilder.or(`employee.first_name.ilike.%${query}%,employee.last_name.ilike.%${query}%`);
-    }
-
-    if (filters.type) {
-      queryBuilder = queryBuilder.eq('type', filters.type);
-    }
-
-    if (filters.employee_id) {
-      queryBuilder = queryBuilder.eq('employee_id', filters.employee_id);
-    }
-
-    if (filters.period) {
-      queryBuilder = queryBuilder.eq('period', filters.period);
-    }
-
-    if (filters.status) {
-      queryBuilder = queryBuilder.eq('status', filters.status);
-    }
-
-    const { data, error, count } = await queryBuilder;
-
-    if (error) throw error;
+    const response = await apiClient.get(`/payroll/variables?${params.toString()}`);
 
     return {
-      variables: data || [],
-      total: count || 0,
+      variables: response.data?.variables || [],
+      total: response.data?.total || 0,
     };
   } catch (error) {
     console.error('Fetch payroll variables error:', error);
@@ -264,14 +158,8 @@ export const fetchPayrollVariables = async ({ offset, limit, query, filters = {}
  */
 export const createPayrollVariable = async (payload) => {
   try {
-    const { data, error } = await supabase
-      .from('payroll_variables')
-      .insert([payload])
-      .select()
-      .single();
-
-    if (error) throw error;
-    return data;
+    const response = await apiClient.post('/payroll/variables', payload);
+    return response.data;
   } catch (error) {
     console.error('Create payroll variable error:', error);
     throw error;
@@ -283,15 +171,8 @@ export const createPayrollVariable = async (payload) => {
  */
 export const updatePayrollVariable = async (id, payload) => {
   try {
-    const { data, error } = await supabase
-      .from('payroll_variables')
-      .update(payload)
-      .eq('id', id)
-      .select()
-      .single();
-
-    if (error) throw error;
-    return data;
+    const response = await apiClient.put(`/payroll/variables/${id}`, payload);
+    return response.data;
   } catch (error) {
     console.error('Update payroll variable error:', error);
     throw error;
@@ -303,13 +184,8 @@ export const updatePayrollVariable = async (id, payload) => {
  */
 export const deletePayrollVariable = async (id) => {
   try {
-    const { error } = await supabase
-      .from('payroll_variables')
-      .delete()
-      .eq('id', id);
-
-    if (error) throw error;
-    return true;
+    const response = await apiClient.delete(`/payroll/variables/${id}`);
+    return response.data;
   } catch (error) {
     console.error('Delete payroll variable error:', error);
     throw error;
@@ -323,13 +199,8 @@ export const deletePayrollVariable = async (id) => {
  */
 export const fetchPayrollSettings = async () => {
   try {
-    const { data, error } = await supabase
-      .from('payroll_settings')
-      .select('*')
-      .single();
-
-    if (error) throw error;
-    return data || {
+    const response = await apiClient.get('/payroll/settings');
+    return response.data || {
       irpp_rate: 0,
       periodicity: 'monthly',
       payment_day: 24,
@@ -346,14 +217,8 @@ export const fetchPayrollSettings = async () => {
  */
 export const updatePayrollSettings = async (payload) => {
   try {
-    const { data, error } = await supabase
-      .from('payroll_settings')
-      .upsert(payload)
-      .select()
-      .single();
-
-    if (error) throw error;
-    return data;
+    const response = await apiClient.put('/payroll/settings', payload);
+    return response.data;
   } catch (error) {
     console.error('Update payroll settings error:', error);
     throw error;
@@ -365,13 +230,8 @@ export const updatePayrollSettings = async (payload) => {
  */
 export const fetchTaxRates = async () => {
   try {
-    const { data, error } = await supabase
-      .from('tax_rates')
-      .select('*')
-      .order('min_salary', { ascending: true });
-
-    if (error) throw error;
-    return data || [];
+    const response = await apiClient.get('/payroll/tax-rates');
+    return response.data || [];
   } catch (error) {
     console.error('Fetch tax rates error:', error);
     throw error;
@@ -383,15 +243,8 @@ export const fetchTaxRates = async () => {
  */
 export const updateTaxRate = async (id, payload) => {
   try {
-    const { data, error } = await supabase
-      .from('tax_rates')
-      .update(payload)
-      .eq('id', id)
-      .select()
-      .single();
-
-    if (error) throw error;
-    return data;
+    const response = await apiClient.put(`/payroll/tax-rates/${id}`, payload);
+    return response.data;
   } catch (error) {
     console.error('Update tax rate error:', error);
     throw error;
@@ -405,12 +258,8 @@ export const updateTaxRate = async (id, payload) => {
  */
 export const generatePayslipPDF = async (payrollDetailId) => {
   try {
-    const { data, error } = await supabase.rpc('generate_payslip_pdf', {
-      detail_id: payrollDetailId
-    });
-
-    if (error) throw error;
-    return data;
+    const response = await apiClient.post(`/payroll/details/${payrollDetailId}/generate-pdf`);
+    return response.data;
   } catch (error) {
     console.error('Generate payslip PDF error:', error);
     throw error;
@@ -422,17 +271,8 @@ export const generatePayslipPDF = async (payrollDetailId) => {
  */
 export const fetchDistributionHistory = async (runId) => {
   try {
-    const { data, error } = await supabase
-      .from('payslip_distributions')
-      .select(`
-        *,
-        employee:employees(id, first_name, last_name, email)
-      `)
-      .eq('payroll_run_id', runId)
-      .order('distributed_at', { ascending: false });
-
-    if (error) throw error;
-    return data || [];
+    const response = await apiClient.get(`/payroll/runs/${runId}/distribution-history`);
+    return response.data || [];
   } catch (error) {
     console.error('Fetch distribution history error:', error);
     throw error;
@@ -444,12 +284,8 @@ export const fetchDistributionHistory = async (runId) => {
  */
 export const fetchPayrollStats = async (year) => {
   try {
-    const { data, error } = await supabase.rpc('get_payroll_stats', {
-      target_year: year
-    });
-
-    if (error) throw error;
-    return data || {
+    const response = await apiClient.get(`/payroll/stats?year=${year}`);
+    return response.data || {
       total_gross_paid: 0,
       total_net_paid: 0,
       total_employees: 0,

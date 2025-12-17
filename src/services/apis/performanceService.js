@@ -1,4 +1,4 @@
-import { supabase } from "../../lib/supabase-client";
+import apiClient from '../api-client';
 
 /**
  * Service pour la gestion de la performance 360°

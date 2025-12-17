@@ -1,4 +1,4 @@
-import { supabase } from '@/src/lib/supabase-client';
+import apiClient from '../api-client';
 
 // ==================== WORKFORCE PLANNING ====================
 

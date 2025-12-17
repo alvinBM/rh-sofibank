@@ -1,24 +1,16 @@
-import { supabase } from "../../lib/supabase-client";
+import apiClient from "../api-client";
 
-export const fetchAccountRoles = async ({ offset, limit, query }) => {
+/**
+ * Récupère la liste des rôles du compte
+ */
+export const fetchAccountRoles = async ({ offset = 0, limit = 100, query = "" }) => {
     try {
-        let queryBuilder = supabase
-            .from('roles')
-            .select('*', { count: 'exact' })
-            .range(offset, offset + limit - 1)
-            .order('name', { ascending: true });
-
-        if (query) {
-            queryBuilder = queryBuilder.or(`name.ilike.%${query}%,code.ilike.%${query}%`);
-        }
-
-        const { data, error, count } = await queryBuilder;
-
-        if (error) throw error;
-
+        // TODO: Créer l'endpoint /settings/roles dans le backend
+        // Pour l'instant, retourner un tableau vide
+        console.warn('fetchAccountRoles: Endpoint /settings/roles non encore implémenté');
         return {
-            roles: data || [],
-            total: count || 0,
+            roles: [],
+            total: 0,
         };
     } catch (error) {
         console.error('Fetch roles error:', error);
@@ -26,21 +18,17 @@ export const fetchAccountRoles = async ({ offset, limit, query }) => {
     }
 };
 
-export const fetchAccountPayments = async ({ offset, limit, query }) => {
+/**
+ * Récupère la liste des paiements du compte
+ */
+export const fetchAccountPayments = async ({ offset = 0, limit = 100, query = "" }) => {
     try {
-        let queryBuilder = supabase
-            .from('payments')
-            .select('*', { count: 'exact' })
-            .range(offset, offset + limit - 1)
-            .order('created_at', { ascending: false });
-
-        const { data, error, count } = await queryBuilder;
-
-        if (error) throw error;
-
+        // TODO: Créer l'endpoint /settings/payments dans le backend
+        // Pour l'instant, retourner un tableau vide
+        console.warn('fetchAccountPayments: Endpoint /settings/payments non encore implémenté');
         return {
-            payments: data || [],
-            total: count || 0,
+            payments: [],
+            total: 0,
         };
     } catch (error) {
         console.error('Fetch payments error:', error);
@@ -48,25 +36,25 @@ export const fetchAccountPayments = async ({ offset, limit, query }) => {
     }
 };
 
+/**
+ * Récupère la liste des directions
+ */
 export const fetchDirections = async ({ offset = 0, limit = 100, query = "" }) => {
     try {
-        let queryBuilder = supabase
-            .from('directions')
-            .select('*', { count: 'exact' })
-            .range(offset, offset + limit - 1)
-            .order('name', { ascending: true });
+        const params = new URLSearchParams();
+        if (query) params.append('search', query);
+        params.append('offset', offset);
+        params.append('limit', limit);
 
-        if (query) {
-            queryBuilder = queryBuilder.ilike('name', `%${query}%`);
+        const response = await apiClient.get(`/settings/directions?${params.toString()}`);
+
+        if (response.status !== 200) {
+            throw new Error(response.message || 'Erreur lors de la récupération des directions');
         }
 
-        const { data, error, count } = await queryBuilder;
-
-        if (error) throw error;
-
         return {
-            directions: data || [],
-            total: count || 0,
+            directions: response.data || [],
+            total: response.data?.length || 0,
         };
     } catch (error) {
         console.error('Fetch directions error:', error);
@@ -74,29 +62,26 @@ export const fetchDirections = async ({ offset = 0, limit = 100, query = "" }) =
     }
 };
 
+/**
+ * Récupère la liste des services
+ */
 export const fetchServices = async ({ offset = 0, limit = 100, query = "", direction_id = "" }) => {
     try {
-        let queryBuilder = supabase
-            .from('services')
-            .select('*, direction:directions(id, name)', { count: 'exact' })
-            .range(offset, offset + limit - 1)
-            .order('name', { ascending: true });
+        const params = new URLSearchParams();
+        if (query) params.append('search', query);
+        if (direction_id) params.append('direction_id', direction_id);
+        params.append('offset', offset);
+        params.append('limit', limit);
 
-        if (query) {
-            queryBuilder = queryBuilder.ilike('name', `%${query}%`);
+        const response = await apiClient.get(`/settings/services?${params.toString()}`);
+
+        if (response.status !== 200) {
+            throw new Error(response.message || 'Erreur lors de la récupération des services');
         }
-
-        if (direction_id) {
-            queryBuilder = queryBuilder.eq('direction_id', direction_id);
-        }
-
-        const { data, error, count } = await queryBuilder;
-
-        if (error) throw error;
 
         return {
-            services: data || [],
-            total: count || 0,
+            services: response.data || [],
+            total: response.data?.length || 0,
         };
     } catch (error) {
         console.error('Fetch services error:', error);
@@ -104,25 +89,25 @@ export const fetchServices = async ({ offset = 0, limit = 100, query = "", direc
     }
 };
 
+/**
+ * Récupère la liste des grades
+ */
 export const fetchGrades = async ({ offset = 0, limit = 100, query = "" }) => {
     try {
-        let queryBuilder = supabase
-            .from('grades')
-            .select('*', { count: 'exact' })
-            .range(offset, offset + limit - 1)
-            .order('level', { ascending: true });
+        const params = new URLSearchParams();
+        if (query) params.append('search', query);
+        params.append('offset', offset);
+        params.append('limit', limit);
 
-        if (query) {
-            queryBuilder = queryBuilder.or(`name.ilike.%${query}%,code.ilike.%${query}%`);
+        const response = await apiClient.get(`/settings/grades?${params.toString()}`);
+
+        if (response.status !== 200) {
+            throw new Error(response.message || 'Erreur lors de la récupération des grades');
         }
 
-        const { data, error, count } = await queryBuilder;
-
-        if (error) throw error;
-
         return {
-            grades: data || [],
-            total: count || 0,
+            grades: response.data || [],
+            total: response.data?.length || 0,
         };
     } catch (error) {
         console.error('Fetch grades error:', error);
@@ -130,25 +115,25 @@ export const fetchGrades = async ({ offset = 0, limit = 100, query = "" }) => {
     }
 };
 
+/**
+ * Récupère la liste des postes
+ */
 export const fetchJobPositions = async ({ offset = 0, limit = 100, query = "" }) => {
     try {
-        let queryBuilder = supabase
-            .from('job_positions')
-            .select('*, grade:grades(id, name, code)', { count: 'exact' })
-            .range(offset, offset + limit - 1)
-            .order('title', { ascending: true });
+        const params = new URLSearchParams();
+        if (query) params.append('search', query);
+        params.append('offset', offset);
+        params.append('limit', limit);
 
-        if (query) {
-            queryBuilder = queryBuilder.or(`title.ilike.%${query}%,code.ilike.%${query}%`);
+        const response = await apiClient.get(`/settings/job-positions?${params.toString()}`);
+
+        if (response.status !== 200) {
+            throw new Error(response.message || 'Erreur lors de la récupération des postes');
         }
 
-        const { data, error, count } = await queryBuilder;
-
-        if (error) throw error;
-
         return {
-            job_positions: data || [],
-            total: count || 0,
+            job_positions: response.data || [],
+            total: response.data?.length || 0,
         };
     } catch (error) {
         console.error('Fetch job positions error:', error);

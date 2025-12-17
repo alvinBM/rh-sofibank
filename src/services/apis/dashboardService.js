@@ -6,6 +6,7 @@ import apiClient from '../api-client';
 export const fetchDashboardStats = async () => {
     try {
         const response = await apiClient.get('/dashboard/stats');
+        console.log('Dashboard stats fetched:', response.data);
         return response.data;
     } catch (error) {
         console.error('Error fetching dashboard stats:', error);

@@ -40,7 +40,7 @@ export const getDashboardStats = async (req, res) => {
             },
             attributes: [
                 'direction_id',
-                [fn('COUNT', col('id')), 'count']
+                [fn('COUNT', col('employees.id')), 'count']
             ],
             include: [{
                 model: Direction,
@@ -60,7 +60,7 @@ export const getDashboardStats = async (req, res) => {
         const employeesByStatus = await Employee.findAll({
             attributes: [
                 'employment_status',
-                [fn('COUNT', col('id')), 'count']
+                [fn('COUNT', col('employees.id')), 'count']
             ],
             group: ['employment_status'],
             raw: true
@@ -82,8 +82,8 @@ export const getDashboardStats = async (req, res) => {
         // Leave requests by month for current year
         const leaveRequestsByMonth = await LeaveRequest.findAll({
             attributes: [
-                [fn('MONTH', col('created_at')), 'month'],
-                [fn('COUNT', col('id')), 'count']
+                [fn('MONTH', col('leave_requests.created_at')), 'month'],
+                [fn('COUNT', col('leave_requests.id')), 'count']
             ],
             where: {
                 created_at: {
@@ -91,7 +91,7 @@ export const getDashboardStats = async (req, res) => {
                     [Op.lte]: `${currentYear}-12-31`
                 }
             },
-            group: [fn('MONTH', col('created_at'))],
+            group: [fn('MONTH', col('leave_requests.created_at'))],
             raw: true
         });
 

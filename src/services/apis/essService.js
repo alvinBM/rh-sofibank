@@ -1,454 +1,309 @@
-import { supabase } from '@/src/lib/supabase-client';
+import apiClient from '../api-client';
 
 // ==================== EMPLOYEE SELF-SERVICE ====================
 
 export const getMyProfile = async () => {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) throw new Error('User not authenticated');
-
-  const { data, error } = await supabase
-    .from('employees')
-    .select(`
-      *,
-      direction:directions(id, name, code),
-      service:services(id, name, code),
-      job_position:job_positions(id, title, code),
-      grade:grades(id, name, code, base_salary),
-      direct_supervisor:direct_supervisor_id(id, first_name, last_name, email),
-      user:users(id, email, firstname, lastname)
-    `)
-    .eq('user_id', user.id)
-    .single();
-
-  if (error) throw error;
-  return data;
+  try {
+    const response = await apiClient.get('/auth/profile');
+    return response.data;
+  } catch (error) {
+    console.error('Get my profile error:', error);
+    throw error;
+  }
 };
 
 export const updateMyProfile = async (updates) => {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) throw new Error('User not authenticated');
-
-  const { data, error } = await supabase
-    .from('employees')
-    .update(updates)
-    .eq('user_id', user.id)
-    .select()
-    .single();
-
-  if (error) throw error;
-  return data;
+  try {
+    const response = await apiClient.put('/auth/profile', updates);
+    return response.data;
+  } catch (error) {
+    console.error('Update my profile error:', error);
+    throw error;
+  }
 };
 
 // ==================== EMPLOYEE DOCUMENTS ====================
 
 export const getMyDocuments = async () => {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) throw new Error('User not authenticated');
-
-  const { data: employee } = await supabase
-    .from('employees')
-    .select('id')
-    .eq('user_id', user.id)
-    .single();
-
-  if (!employee) throw new Error('Employee not found');
-
-  const { data, error } = await supabase
-    .from('employee_documents')
-    .select(`
-      *,
-      document_type:document_types(id, name, code, category),
-      uploaded_by_user:uploaded_by(id, email, firstname, lastname)
-    `)
-    .eq('employee_id', employee.id)
-    .order('created_at', { ascending: false });
-
-  if (error) throw error;
-  return data;
+  try {
+    const response = await apiClient.get('/ess/my-documents');
+    return response.data || [];
+  } catch (error) {
+    console.error('Get my documents error:', error);
+    throw error;
+  }
 };
 
 export const getEmployeeDocuments = async (employeeId) => {
-  const { data, error } = await supabase
-    .from('employee_documents')
-    .select(`
-      *,
-      document_type:document_types(id, name, code, category),
-      uploaded_by_user:uploaded_by(id, email, firstname, lastname)
-    `)
-    .eq('employee_id', employeeId)
-    .order('created_at', { ascending: false });
-
-  if (error) throw error;
-  return data;
+  try {
+    const response = await apiClient.get(`/ess/employees/${employeeId}/documents`);
+    return response.data || [];
+  } catch (error) {
+    console.error('Get employee documents error:', error);
+    throw error;
+  }
 };
 
 export const uploadEmployeeDocument = async (documentData) => {
-  const { data, error } = await supabase
-    .from('employee_documents')
-    .insert([documentData])
-    .select()
-    .single();
-
-  if (error) throw error;
-  return data;
+  try {
+    const response = await apiClient.post('/ess/documents', documentData);
+    return response.data;
+  } catch (error) {
+    console.error('Upload employee document error:', error);
+    throw error;
+  }
 };
 
 export const deleteEmployeeDocument = async (id) => {
-  const { error } = await supabase
-    .from('employee_documents')
-    .delete()
-    .eq('id', id);
-
-  if (error) throw error;
+  try {
+    const response = await apiClient.delete(`/ess/documents/${id}`);
+    return response.data;
+  } catch (error) {
+    console.error('Delete employee document error:', error);
+    throw error;
+  }
 };
 
 // ==================== EMPLOYEE CONTRACTS ====================
 
 export const getMyContracts = async () => {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) throw new Error('User not authenticated');
-
-  const { data: employee } = await supabase
-    .from('employees')
-    .select('id')
-    .eq('user_id', user.id)
-    .single();
-
-  if (!employee) throw new Error('Employee not found');
-
-  const { data, error } = await supabase
-    .from('employee_contracts')
-    .select('*')
-    .eq('employee_id', employee.id)
-    .order('start_date', { ascending: false });
-
-  if (error) throw error;
-  return data;
+  try {
+    const response = await apiClient.get('/ess/my-contracts');
+    return response.data || [];
+  } catch (error) {
+    console.error('Get my contracts error:', error);
+    throw error;
+  }
 };
 
 export const getEmployeeContracts = async (employeeId) => {
-  const { data, error } = await supabase
-    .from('employee_contracts')
-    .select('*')
-    .eq('employee_id', employeeId)
-    .order('start_date', { ascending: false });
-
-  if (error) throw error;
-  return data;
+  try {
+    const response = await apiClient.get(`/ess/employees/${employeeId}/contracts`);
+    return response.data || [];
+  } catch (error) {
+    console.error('Get employee contracts error:', error);
+    throw error;
+  }
 };
 
 // ==================== EMPLOYEE REQUESTS ====================
 
 export const getMyRequests = async () => {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) throw new Error('User not authenticated');
-
-  const { data: employee } = await supabase
-    .from('employees')
-    .select('id')
-    .eq('user_id', user.id)
-    .single();
-
-  if (!employee) throw new Error('Employee not found');
-
-  const { data, error } = await supabase
-    .from('employee_requests')
-    .select(`
-      *,
-      request_type:request_types(id, name, code, category),
-      reviewed_by_user:reviewed_by(id, email, firstname, lastname),
-      approved_by_user:approved_by(id, email, firstname, lastname)
-    `)
-    .eq('employee_id', employee.id)
-    .order('created_at', { ascending: false });
-
-  if (error) throw error;
-  return data;
+  try {
+    const response = await apiClient.get('/ess/my-requests');
+    return response.data || [];
+  } catch (error) {
+    console.error('Get my requests error:', error);
+    throw error;
+  }
 };
 
 export const getEmployeeRequests = async (filters = {}) => {
-  let query = supabase
-    .from('employee_requests')
-    .select(`
-      *,
-      employee:employees(id, employee_number, first_name, last_name),
-      request_type:request_types(id, name, code, category),
-      reviewed_by_user:reviewed_by(id, email, firstname, lastname),
-      approved_by_user:approved_by(id, email, firstname, lastname)
-    `)
-    .order('created_at', { ascending: false });
+  try {
+    const params = new URLSearchParams();
+    if (filters.status) params.append('status', filters.status);
+    if (filters.employee_id) params.append('employee_id', filters.employee_id);
 
-  if (filters.status) {
-    query = query.eq('status', filters.status);
+    const response = await apiClient.get(`/ess/requests?${params.toString()}`);
+    return response.data || [];
+  } catch (error) {
+    console.error('Get employee requests error:', error);
+    throw error;
   }
-  if (filters.employee_id) {
-    query = query.eq('employee_id', filters.employee_id);
-  }
-
-  const { data, error } = await query;
-  if (error) throw error;
-  return data;
 };
 
 export const createEmployeeRequest = async (requestData) => {
-  const { data, error } = await supabase
-    .from('employee_requests')
-    .insert([requestData])
-    .select()
-    .single();
-
-  if (error) throw error;
-  return data;
+  try {
+    const response = await apiClient.post('/ess/requests', requestData);
+    return response.data;
+  } catch (error) {
+    console.error('Create employee request error:', error);
+    throw error;
+  }
 };
 
 export const updateEmployeeRequest = async (id, updates) => {
-  const { data, error } = await supabase
-    .from('employee_requests')
-    .update(updates)
-    .eq('id', id)
-    .select()
-    .single();
-
-  if (error) throw error;
-  return data;
+  try {
+    const response = await apiClient.put(`/ess/requests/${id}`, updates);
+    return response.data;
+  } catch (error) {
+    console.error('Update employee request error:', error);
+    throw error;
+  }
 };
 
 export const getRequestTypes = async () => {
-  const { data, error } = await supabase
-    .from('request_types')
-    .select('*')
-    .eq('is_active', true)
-    .order('name');
-
-  if (error) throw error;
-  return data;
+  try {
+    const response = await apiClient.get('/ess/request-types');
+    return response.data || [];
+  } catch (error) {
+    console.error('Get request types error:', error);
+    throw error;
+  }
 };
 
 // ==================== INTERNAL ANNOUNCEMENTS ====================
 
 export const getInternalAnnouncements = async () => {
-  const { data, error } = await supabase
-    .from('internal_announcements')
-    .select(`
-      *,
-      created_by_user:created_by(id, email, firstname, lastname)
-    `)
-    .eq('is_published', true)
-    .or('expires_at.is.null,expires_at.gt.' + new Date().toISOString())
-    .order('created_at', { ascending: false });
-
-  if (error) throw error;
-  return data;
+  try {
+    const response = await apiClient.get('/ess/announcements');
+    return response.data || [];
+  } catch (error) {
+    console.error('Get internal announcements error:', error);
+    throw error;
+  }
 };
 
 export const getAllAnnouncements = async (filters = {}) => {
-  let query = supabase
-    .from('internal_announcements')
-    .select(`
-      *,
-      created_by_user:created_by(id, email, firstname, lastname)
-    `)
-    .order('created_at', { ascending: false });
+  try {
+    const params = new URLSearchParams();
+    if (filters.is_published !== undefined) params.append('is_published', filters.is_published);
+    if (filters.category) params.append('category', filters.category);
 
-  if (filters.is_published !== undefined) {
-    query = query.eq('is_published', filters.is_published);
+    const response = await apiClient.get(`/ess/announcements/all?${params.toString()}`);
+    return response.data || [];
+  } catch (error) {
+    console.error('Get all announcements error:', error);
+    throw error;
   }
-  if (filters.category) {
-    query = query.eq('category', filters.category);
-  }
-
-  const { data, error } = await query;
-  if (error) throw error;
-  return data;
 };
 
 export const createAnnouncement = async (announcementData) => {
-  const { data, error } = await supabase
-    .from('internal_announcements')
-    .insert([announcementData])
-    .select()
-    .single();
-
-  if (error) throw error;
-  return data;
+  try {
+    const response = await apiClient.post('/ess/announcements', announcementData);
+    return response.data;
+  } catch (error) {
+    console.error('Create announcement error:', error);
+    throw error;
+  }
 };
 
 export const updateAnnouncement = async (id, updates) => {
-  const { data, error } = await supabase
-    .from('internal_announcements')
-    .update(updates)
-    .eq('id', id)
-    .select()
-    .single();
-
-  if (error) throw error;
-  return data;
+  try {
+    const response = await apiClient.put(`/ess/announcements/${id}`, updates);
+    return response.data;
+  } catch (error) {
+    console.error('Update announcement error:', error);
+    throw error;
+  }
 };
 
 export const markAnnouncementAsRead = async (announcementId) => {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) throw new Error('User not authenticated');
-
-  const { data, error } = await supabase
-    .from('announcement_reads')
-    .upsert([{ announcement_id: announcementId, user_id: user.id }])
-    .select()
-    .single();
-
-  if (error) throw error;
-  return data;
+  try {
+    const response = await apiClient.post(`/ess/announcements/${announcementId}/read`);
+    return response.data;
+  } catch (error) {
+    console.error('Mark announcement as read error:', error);
+    throw error;
+  }
 };
 
 // ==================== EMPLOYEE FEEDBACK ====================
 
 export const getMyFeedback = async () => {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) throw new Error('User not authenticated');
-
-  const { data: employee } = await supabase
-    .from('employees')
-    .select('id')
-    .eq('user_id', user.id)
-    .single();
-
-  if (!employee) throw new Error('Employee not found');
-
-  const { data, error } = await supabase
-    .from('employee_feedback')
-    .select(`
-      *,
-      assigned_to_user:assigned_to(id, email, firstname, lastname),
-      responded_by_user:responded_by(id, email, firstname, lastname)
-    `)
-    .eq('employee_id', employee.id)
-    .order('created_at', { ascending: false });
-
-  if (error) throw error;
-  return data;
+  try {
+    const response = await apiClient.get('/ess/my-feedback');
+    return response.data || [];
+  } catch (error) {
+    console.error('Get my feedback error:', error);
+    throw error;
+  }
 };
 
 export const getAllFeedback = async (filters = {}) => {
-  let query = supabase
-    .from('employee_feedback')
-    .select(`
-      *,
-      employee:employees(id, employee_number, first_name, last_name),
-      assigned_to_user:assigned_to(id, email, firstname, lastname),
-      responded_by_user:responded_by(id, email, firstname, lastname)
-    `)
-    .order('created_at', { ascending: false });
+  try {
+    const params = new URLSearchParams();
+    if (filters.status) params.append('status', filters.status);
+    if (filters.category) params.append('category', filters.category);
 
-  if (filters.status) {
-    query = query.eq('status', filters.status);
+    const response = await apiClient.get(`/ess/feedback?${params.toString()}`);
+    return response.data || [];
+  } catch (error) {
+    console.error('Get all feedback error:', error);
+    throw error;
   }
-  if (filters.category) {
-    query = query.eq('category', filters.category);
-  }
-
-  const { data, error } = await query;
-  if (error) throw error;
-  return data;
 };
 
 export const createFeedback = async (feedbackData) => {
-  const { data, error } = await supabase
-    .from('employee_feedback')
-    .insert([feedbackData])
-    .select()
-    .single();
-
-  if (error) throw error;
-  return data;
+  try {
+    const response = await apiClient.post('/ess/feedback', feedbackData);
+    return response.data;
+  } catch (error) {
+    console.error('Create feedback error:', error);
+    throw error;
+  }
 };
 
 export const updateFeedback = async (id, updates) => {
-  const { data, error } = await supabase
-    .from('employee_feedback')
-    .update(updates)
-    .eq('id', id)
-    .select()
-    .single();
-
-  if (error) throw error;
-  return data;
+  try {
+    const response = await apiClient.put(`/ess/feedback/${id}`, updates);
+    return response.data;
+  } catch (error) {
+    console.error('Update feedback error:', error);
+    throw error;
+  }
 };
 
 // ==================== EMPLOYEE HISTORY ====================
 
 export const getEmployeeHistory = async (employeeId) => {
-  const { data, error } = await supabase
-    .from('employee_history')
-    .select(`
-      *,
-      old_direction:old_direction_id(id, name, code),
-      new_direction:new_direction_id(id, name, code),
-      old_service:old_service_id(id, name, code),
-      new_service:new_service_id(id, name, code),
-      old_job_position:old_job_position_id(id, title, code),
-      new_job_position:new_job_position_id(id, title, code),
-      old_grade:old_grade_id(id, name, code),
-      new_grade:new_grade_id(id, name, code),
-      created_by_user:created_by(id, email, firstname, lastname)
-    `)
-    .eq('employee_id', employeeId)
-    .order('event_date', { ascending: false });
-
-  if (error) throw error;
-  return data;
+  try {
+    const response = await apiClient.get(`/ess/employees/${employeeId}/history`);
+    return response.data || [];
+  } catch (error) {
+    console.error('Get employee history error:', error);
+    throw error;
+  }
 };
 
 export const createEmployeeHistory = async (historyData) => {
-  const { data, error } = await supabase
-    .from('employee_history')
-    .insert([historyData])
-    .select()
-    .single();
-
-  if (error) throw error;
-  return data;
+  try {
+    const response = await apiClient.post('/ess/history', historyData);
+    return response.data;
+  } catch (error) {
+    console.error('Create employee history error:', error);
+    throw error;
+  }
 };
 
 // ==================== EMPLOYEE DEPENDENTS ====================
 
 export const getEmployeeDependents = async (employeeId) => {
-  const { data, error } = await supabase
-    .from('employee_dependents')
-    .select('*')
-    .eq('employee_id', employeeId)
-    .order('created_at', { ascending: false });
-
-  if (error) throw error;
-  return data;
+  try {
+    const response = await apiClient.get(`/ess/employees/${employeeId}/dependents`);
+    return response.data || [];
+  } catch (error) {
+    console.error('Get employee dependents error:', error);
+    throw error;
+  }
 };
 
 export const createEmployeeDependent = async (dependentData) => {
-  const { data, error } = await supabase
-    .from('employee_dependents')
-    .insert([dependentData])
-    .select()
-    .single();
-
-  if (error) throw error;
-  return data;
+  try {
+    const response = await apiClient.post('/ess/dependents', dependentData);
+    return response.data;
+  } catch (error) {
+    console.error('Create employee dependent error:', error);
+    throw error;
+  }
 };
 
 export const updateEmployeeDependent = async (id, updates) => {
-  const { data, error } = await supabase
-    .from('employee_dependents')
-    .update(updates)
-    .eq('id', id)
-    .select()
-    .single();
-
-  if (error) throw error;
-  return data;
+  try {
+    const response = await apiClient.put(`/ess/dependents/${id}`, updates);
+    return response.data;
+  } catch (error) {
+    console.error('Update employee dependent error:', error);
+    throw error;
+  }
 };
 
 export const deleteEmployeeDependent = async (id) => {
-  const { error } = await supabase
-    .from('employee_dependents')
-    .delete()
-    .eq('id', id);
-
-  if (error) throw error;
+  try {
+    const response = await apiClient.delete(`/ess/dependents/${id}`);
+    return response.data;
+  } catch (error) {
+    console.error('Delete employee dependent error:', error);
+    throw error;
+  }
 };

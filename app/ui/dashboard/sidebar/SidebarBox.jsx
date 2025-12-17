@@ -49,11 +49,13 @@ const SidebarBox = React.forwardRef(({ items, isCompact, defaultSelectedKey, onS
                 delete item.href;
             }
 
+            const random = () => Math.random().toString(36).substring(2, 15);
+
             return (
                 <ListboxItem
                     className={cn(isActive && "bg-default-50", "")}
                     {...item}
-                    key={item.key}
+                    key={item.key + random}
                     classNames={{
                         base: cn(
                             {
@@ -130,6 +132,8 @@ const SidebarBox = React.forwardRef(({ items, isCompact, defaultSelectedKey, onS
                 return renderNestItem(item);
             }
 
+            const random = () => Math.random().toString(36).substring(2, 15);
+
             return (
                 <ListboxItem
                     className={cn(
@@ -138,7 +142,7 @@ const SidebarBox = React.forwardRef(({ items, isCompact, defaultSelectedKey, onS
                     )}
                     aria-label={item.title}
                     {...item}
-                    key={index}
+                    key={index + random}
                     endContent={isCompact || hideEndContent ? null : item.endContent ?? null}
                     startContent={isCompact ? null : item.icon ? <Icon className={cn(isActive && "text-white", "text-default-600 group-data-[selected=true]:text-foreground", iconClassName)} icon={item.icon} width={24} /> : item.startContent ?? null}
                     textvalue={item.title}
@@ -191,7 +195,7 @@ const SidebarBox = React.forwardRef(({ items, isCompact, defaultSelectedKey, onS
                 return item.items && item.items?.length > 0 && item?.type === SidebarItemType.Nest ? (
                     renderNestItem(item)
                 ) : item.items && item.items?.length > 0 ? (
-                    <ListboxSection textvalue={item.title} key={index} classNames={sectionClasses} showDivider={isCompact} title={item.title}>
+                    <ListboxSection textvalue={item.title} key={index + Math.random().toString(36).substring(2, 15)} classNames={sectionClasses} showDivider={isCompact} title={item.title}>
                         {item.items.map(renderItem)}
                     </ListboxSection>
                 ) : (

@@ -21,18 +21,31 @@ export const AuthProvider = ({ children }) => {
     useEffect(() => {
         const initializeAuth = async () => {
             try {
+                // Récupérer le token depuis les cookies
+                const token = localStorage.getItem("auth_token");
+                
+                if (!token) {
+                    setLoading(false);
+                    return;
+                }
+
+                // Configurer le token dans l'API client
+                apiClient.setToken(token);
+
+                // Récupérer les informations de l'utilisateur
                 const response = await getCurrentUser();
                 if (response && response.user) {
-                    setCookie("auth_token", response.token);
-                    dispatch(setUser({ user: response.user, token: response.token }));
+                    dispatch(setUser({ user: response.user, token }));
                 } else {
                     removeCookie("auth_token");
+                    localStorage.removeItem("auth_token");
                     apiClient.removeToken();
                     dispatch(clearUserSession());
                 }
             } catch (error) {
                 console.error("Auth initialization error:", error);
                 removeCookie("auth_token");
+                localStorage.removeItem("auth_token");
                 apiClient.removeToken();
                 dispatch(clearUserSession());
             } finally {
@@ -52,6 +65,7 @@ export const AuthProvider = ({ children }) => {
             if (response.status === 200) {
                 const { user, token } = response;
                 setCookie("auth_token", token);
+                localStorage.setItem("auth_token", token);
                 apiClient.setToken(token);
                 dispatch(setUser({ user, token }));
             }
@@ -71,6 +85,7 @@ export const AuthProvider = ({ children }) => {
         try {
             await signOut();
             removeCookie("auth_token");
+            localStorage.removeItem("auth_token");
             apiClient.removeToken();
             dispatch(clearUserSession());
         } catch (error) {
