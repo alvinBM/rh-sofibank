@@ -99,6 +99,14 @@ export default function JobPostingsPage() {
     formState: { errors: createErrors },
   } = useForm();
 
+  const {
+    control: editControl,
+    handleSubmit: handleEditSubmit,
+    reset: resetEdit,
+    setValue: setEditValue,
+    formState: { errors: editErrors },
+  } = useForm();
+
   const handlePrint = useReactToPrint({
     content: () => printRef.current,
     documentTitle: `Offre_${selectedPosting?.reference_code || 'Job'}`,
@@ -119,10 +127,10 @@ export default function JobPostingsPage() {
     try {
       await updatePostingMutation.mutateAsync({
         id: selectedPosting.id,
-        postingData: data,
+        updates: data,
       });
       toast.success("Offre mise à jour");
-      onDetailClose();
+      setViewMode("preview");
     } catch (error) {
       toast.error(error.response?.data?.error || "Erreur lors de la mise à jour");
     }
@@ -889,9 +897,124 @@ export default function JobPostingsPage() {
                   </div>
                 </div>
               ) : (
-                <div className="text-center py-8">
-                  <p>Mode édition à implémenter</p>
-                </div>
+                <form onSubmit={handleEditSubmit(onUpdatePosting)} className="space-y-6">
+                  <Input
+                    label="Titre du Poste"
+                    defaultValue={selectedPosting.title}
+                    onValueChange={(value) => setEditValue("title", value)}
+                  />
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <Select
+                      label="Type de Contrat"
+                      defaultSelectedKeys={[selectedPosting.contract_type]}
+                      onSelectionChange={(keys) => setEditValue("contract_type", Array.from(keys)[0])}
+                    >
+                      <SelectItem key="permanent" value="permanent">CDI</SelectItem>
+                      <SelectItem key="fixed_term" value="fixed_term">CDD</SelectItem>
+                      <SelectItem key="temporary" value="temporary">Temporaire</SelectItem>
+                      <SelectItem key="internship" value="internship">Stage</SelectItem>
+                      <SelectItem key="consultant" value="consultant">Consultant</SelectItem>
+                    </Select>
+
+                    <Select
+                      label="Type d'Emploi"
+                      defaultSelectedKeys={[selectedPosting.employment_type]}
+                      onSelectionChange={(keys) => setEditValue("employment_type", Array.from(keys)[0])}
+                    >
+                      <SelectItem key="full_time" value="full_time">Temps Plein</SelectItem>
+                      <SelectItem key="part_time" value="part_time">Temps Partiel</SelectItem>
+                      <SelectItem key="contract" value="contract">Contrat</SelectItem>
+                    </Select>
+                  </div>
+
+                  <Input
+                    label="Localisation"
+                    defaultValue={selectedPosting.location}
+                    onValueChange={(value) => setEditValue("location", value)}
+                  />
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <Input
+                      type="number"
+                      label="Salaire Min (CFD)"
+                      defaultValue={selectedPosting.salary_range_min}
+                      onValueChange={(value) => setEditValue("salary_range_min", value)}
+                    />
+                    <Input
+                      type="number"
+                      label="Salaire Max (CFD)"
+                      defaultValue={selectedPosting.salary_range_max}
+                      onValueChange={(value) => setEditValue("salary_range_max", value)}
+                    />
+                  </div>
+
+                  <Textarea
+                    label="Description"
+                    defaultValue={selectedPosting.description}
+                    onValueChange={(value) => setEditValue("description", value)}
+                    rows={4}
+                  />
+
+                  <Textarea
+                    label="Responsabilités"
+                    defaultValue={selectedPosting.responsibilities}
+                    onValueChange={(value) => setEditValue("responsibilities", value)}
+                    rows={4}
+                  />
+
+                  <Textarea
+                    label="Exigences"
+                    defaultValue={selectedPosting.requirements}
+                    onValueChange={(value) => setEditValue("requirements", value)}
+                    rows={4}
+                  />
+
+                  <Textarea
+                    label="Qualifications"
+                    defaultValue={selectedPosting.qualifications}
+                    onValueChange={(value) => setEditValue("qualifications", value)}
+                    rows={3}
+                  />
+
+                  <Textarea
+                    label="Avantages"
+                    defaultValue={selectedPosting.benefits}
+                    onValueChange={(value) => setEditValue("benefits", value)}
+                    rows={3}
+                  />
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <Input
+                      type="date"
+                      label="Date Limite de Candidature"
+                      defaultValue={selectedPosting.application_deadline?.split('T')[0]}
+                      onValueChange={(value) => setEditValue("application_deadline", value)}
+                    />
+                    <Input
+                      type="number"
+                      label="Postes Disponibles"
+                      defaultValue={selectedPosting.positions_available}
+                      onValueChange={(value) => setEditValue("positions_available", value)}
+                    />
+                  </div>
+
+                  <Input
+                    type="email"
+                    label="Email de Réception"
+                    defaultValue={selectedPosting.receiving_email}
+                    onValueChange={(value) => setEditValue("receiving_email", value)}
+                  />
+
+                  <div className="flex justify-end gap-2 pt-4">
+                    <Button variant="light" onPress={() => setViewMode("preview")}>
+                      Annuler
+                    </Button>
+                    <Button color="primary" type="submit" isLoading={updatePostingMutation.isPending}>
+                      Enregistrer les Modifications
+                    </Button>
+                  </div>
+                </form>
               )}
             </ModalBody>
             <ModalFooter>

@@ -129,6 +129,14 @@ export const getJobPostingById = async (id) => {
 };
 
 /**
+ * Get a single job posting by ID (Public - no auth)
+ */
+export const getPublicJobPostingById = async (id) => {
+    const data = await apiClient.get(`/recruitment/postings/${id}/public`);
+    return data;
+};
+
+/**
  * Create a new job posting
  */
 export const createJobPosting = async (postingData) => {

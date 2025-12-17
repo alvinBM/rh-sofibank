@@ -770,6 +770,121 @@ export const createJobApplication = async (req, res) => {
 };
 
 /**
+ * Create a new job application from public form (with file uploads)
+ */
+export const createPublicJobApplication = async (req, res) => {
+    try {
+        const applicationData = req.body;
+        const files = req.files;
+
+        console.log("Received application data:", applicationData);
+        console.log("Received files:", files);
+
+        // Validate required fields
+        if (!applicationData.job_posting_id) {
+            return res.status(400).json({ error: "Job posting ID is required" });
+        }
+
+        if (!applicationData.first_name || !applicationData.last_name || !applicationData.email) {
+            return res.status(400).json({ error: "First name, last name, and email are required" });
+        }
+
+        // Check if CV file is uploaded
+        if (!files || !files.cv_file || files.cv_file.length === 0) {
+            return res.status(400).json({ error: "CV file is required" });
+        }
+
+        // Verify job posting exists and is published
+        const posting = await JobPosting.findByPk(applicationData.job_posting_id);
+        if (!posting) {
+            return res.status(404).json({ error: "Job posting not found" });
+        }
+
+        if (posting.status !== "published") {
+            return res.status(400).json({ error: "This job posting is not accepting applications" });
+        }
+
+        // Generate unique application number
+        const year = new Date().getFullYear();
+        const month = String(new Date().getMonth() + 1).padStart(2, "0");
+        const count = await JobApplication.count({
+            where: {
+                application_number: {
+                    [Op.like]: `APP-${year}${month}-%`,
+                },
+            },
+        });
+        const applicationNumber = `APP-${year}${month}-${String(count + 1).padStart(4, "0")}`;
+
+        // Prepare file paths
+        const cvFile = files.cv_file[0];
+        const cvFilePath = cvFile.path.replace("public/", "");
+
+        let coverLetterFilePath = null;
+        if (files.cover_letter_file && files.cover_letter_file.length > 0) {
+            const coverLetterFile = files.cover_letter_file[0];
+            coverLetterFilePath = coverLetterFile.path.replace("public/", "");
+        }
+
+        let additionalDocsPaths = [];
+        if (files.additional_documents && files.additional_documents.length > 0) {
+            additionalDocsPaths = files.additional_documents.map((file) =>
+                file.path.replace("public/", "")
+            );
+        }
+
+        // Create application
+        const application = await JobApplication.create({
+            application_number: applicationNumber,
+            job_posting_id: applicationData.job_posting_id,
+            first_name: applicationData.first_name,
+            last_name: applicationData.last_name,
+            email: applicationData.email,
+            phone: applicationData.phone,
+            address: applicationData.address || null,
+            cv_file_path: cvFilePath,
+            cover_letter: applicationData.cover_letter || null,
+            cover_letter_file_path: coverLetterFilePath,
+            additional_documents: additionalDocsPaths.length > 0 ? JSON.stringify(additionalDocsPaths) : null,
+            linkedin_url: applicationData.linkedin_url || null,
+            portfolio_url: applicationData.portfolio_url || null,
+            years_of_experience: applicationData.years_of_experience || 0,
+            expected_salary: applicationData.expected_salary || null,
+            availability_date: applicationData.availability_date || null,
+            status: "new",
+            applied_date: new Date(),
+            source: "website",
+        });
+
+        // Note: We don't create status history for public applications
+        // because changed_by requires a user ID, and public applications don't have one.
+        // The status history will be created when an admin/recruiter changes the status.
+
+        // Fetch created application with associations
+        const createdApplication = await JobApplication.findByPk(application.id, {
+            include: [
+                {
+                    model: JobPosting,
+                    as: "job_posting",
+                    include: [
+                        { model: Direction, as: "direction" },
+                        { model: JobPosition, as: "job_position" },
+                    ],
+                },
+            ],
+        });
+
+        res.status(201).json({
+            message: "Application submitted successfully",
+            application: createdApplication,
+        });
+    } catch (error) {
+        console.error("Error creating public job application:", error);
+        res.status(500).json({ error: "Failed to submit application" });
+    }
+};
+
+/**
  * Update job application
  */
 export const updateJobApplication = async (req, res) => {

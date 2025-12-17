@@ -118,6 +118,14 @@ export const useGetJobPostingById = (id) => {
   });
 };
 
+export const useGetPublicJobPostingById = (id) => {
+  return useQuery({
+    queryKey: ['public-job-posting', id],
+    queryFn: () => recruitmentService.getPublicJobPostingById(id),
+    enabled: !!id,
+  });
+};
+
 export const useCreateJobPosting = () => {
   const queryClient = useQueryClient();
   return useMutation({
