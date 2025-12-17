@@ -1106,17 +1106,17 @@ export const submitInterviewEvaluation = async (req, res) => {
         const evaluatorId = req.user.id;
 
         // Calculate overall score
-        const { technical_skills, communication, problem_solving, cultural_fit, motivation, experience_relevance } = evaluationData;
+        const { technical_skills_score, communication_score, problem_solving_score, cultural_fit_score, experience_score } = evaluationData;
 
-        const scores = [technical_skills, communication, problem_solving, cultural_fit, motivation, experience_relevance].filter((score) => score !== null && score !== undefined);
+        const scores = [technical_skills_score, communication_score, problem_solving_score, cultural_fit_score, experience_score].filter((score) => score !== null && score !== undefined);
 
-        const overall_score = scores.length > 0 ? (scores.reduce((sum, score) => sum + score, 0) / scores.length).toFixed(2) : null;
+        const overall_score = scores.length > 0 ? Math.round(scores.reduce((sum, score) => sum + score, 0) / scores.length) : null;
 
         const evaluation = await InterviewEvaluation.create({
             ...evaluationData,
             evaluator_id: evaluatorId,
             overall_score,
-            submitted_date: new Date(),
+            evaluation_date: new Date(),
         });
 
         const createdEvaluation = await InterviewEvaluation.findByPk(evaluation.id, {
@@ -1223,7 +1223,6 @@ export const getEmploymentOfferById = async (req, res) => {
                 { model: Grade, as: "grade" },
                 { model: Service, as: "service" },
                 { model: Direction, as: "direction" },
-                { model: Employee, as: "manager" },
                 { model: User, as: "approver" },
                 { model: User, as: "creator" },
             ],
@@ -1492,13 +1491,13 @@ export const getOnboardingChecklists = async (req, res) => {
             include: [
                 { model: Employee, as: "employee" },
                 { model: EmploymentOffer, as: "employment_offer" },
-                { model: User, as: "assigned_hr" },
+                { model: User, as: "assigned_mentor" },
+                { model: User, as: "creator" },
                 {
                     model: OnboardingTask,
                     as: "tasks",
                     include: [
                         { model: User, as: "assigned_user" },
-                        { model: User, as: "completer" },
                     ],
                 },
             ],
@@ -1523,14 +1522,13 @@ export const getOnboardingChecklistById = async (req, res) => {
             include: [
                 { model: Employee, as: "employee" },
                 { model: EmploymentOffer, as: "employment_offer" },
-                { model: User, as: "assigned_hr" },
+                { model: User, as: "assigned_mentor" },
+                { model: User, as: "creator" },
                 {
                     model: OnboardingTask,
                     as: "tasks",
                     include: [
-                        { model: OnboardingTaskTemplate, as: "template" },
                         { model: User, as: "assigned_user" },
-                        { model: User, as: "completer" },
                     ],
                     order: [["order_index", "ASC"]],
                 },
@@ -1553,20 +1551,20 @@ export const getOnboardingChecklistById = async (req, res) => {
  */
 export const createOnboardingChecklist = async (req, res) => {
     try {
-        const { employee_id, employment_offer_id, checklist_name, start_date, assigned_hr_id } = req.body;
+        const { employee_id, employment_offer_id, start_date, assigned_mentor_id } = req.body;
 
-        // Calculate target completion date (30 days from start)
-        const targetDate = new Date(start_date);
-        targetDate.setDate(targetDate.getDate() + 30);
+        // Calculate expected completion date (30 days from start)
+        const expectedDate = new Date(start_date);
+        expectedDate.setDate(expectedDate.getDate() + 30);
 
         const checklist = await OnboardingChecklist.create({
             employee_id,
             employment_offer_id,
-            checklist_name: checklist_name || "New Employee Onboarding",
             start_date,
-            target_completion_date: targetDate,
-            assigned_hr_id,
-            status: "not_started",
+            expected_completion_date: expectedDate,
+            assigned_mentor_id,
+            status: "pending",
+            created_by: req.user.id,
         });
 
         // Get active task templates and create tasks
@@ -1580,14 +1578,14 @@ export const createOnboardingChecklist = async (req, res) => {
             dueDate.setDate(dueDate.getDate() + template.days_from_start);
 
             return {
-                checklist_id: checklist.id,
-                task_template_id: template.id,
+                onboarding_checklist_id: checklist.id,
                 task_name: template.task_name,
                 description: template.description,
                 category: template.category,
                 priority: template.priority,
                 due_date: dueDate,
                 order_index: template.order_index,
+                is_mandatory: template.is_mandatory,
                 status: "pending",
             };
         });
@@ -1627,7 +1625,8 @@ export const updateOnboardingChecklist = async (req, res) => {
         const updatedChecklist = await OnboardingChecklist.findByPk(id, {
             include: [
                 { model: Employee, as: "employee" },
-                { model: User, as: "assigned_hr" },
+                { model: User, as: "assigned_mentor" },
+                { model: User, as: "creator" },
                 { model: OnboardingTask, as: "tasks" },
             ],
         });
@@ -1700,15 +1699,13 @@ export const updateOnboardingTask = async (req, res) => {
         const completionPercentage = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
 
         await checklist.update({
-            completion_percentage: completionPercentage,
-            status: completionPercentage === 100 ? "completed" : completionPercentage > 0 ? "in_progress" : "not_started",
+            status: completionPercentage === 100 ? "completed" : completionPercentage > 0 ? "in_progress" : "pending",
             actual_completion_date: completionPercentage === 100 ? new Date() : null,
         });
 
         const updatedTask = await OnboardingTask.findByPk(taskId, {
             include: [
                 { model: User, as: "assigned_user" },
-                { model: User, as: "completer" },
             ],
         });
 

@@ -185,7 +185,7 @@ export const getJobApplications = async ({ offset = 0, limit = 10, status, posti
     if (sort) requestUrl += `&sort=${sort}`;
     if (order) requestUrl += `&order=${order}`;
 
-    const { data } = await apiClient.get(requestUrl);
+    const data = await apiClient.get(requestUrl);
 
     if (data.status === 200) {
         return {

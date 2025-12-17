@@ -489,11 +489,6 @@ EmploymentOffer.belongsTo(Direction, {
     as: 'direction'
 });
 
-EmploymentOffer.belongsTo(Employee, {
-    foreignKey: 'manager_id',
-    as: 'manager'
-});
-
 EmploymentOffer.belongsTo(User, {
     foreignKey: 'approved_by',
     as: 'approver'
@@ -521,8 +516,13 @@ OnboardingChecklist.belongsTo(EmploymentOffer, {
 });
 
 OnboardingChecklist.belongsTo(User, {
-    foreignKey: 'assigned_hr_id',
-    as: 'assigned_hr'
+    foreignKey: 'assigned_mentor_id',
+    as: 'assigned_mentor'
+});
+
+OnboardingChecklist.belongsTo(User, {
+    foreignKey: 'created_by',
+    as: 'creator'
 });
 
 Employee.hasMany(OnboardingChecklist, {
@@ -532,13 +532,8 @@ Employee.hasMany(OnboardingChecklist, {
 
 // ========== ONBOARDING TASK ==========
 OnboardingTask.belongsTo(OnboardingChecklist, {
-    foreignKey: 'checklist_id',
+    foreignKey: 'onboarding_checklist_id',
     as: 'checklist'
-});
-
-OnboardingTask.belongsTo(OnboardingTaskTemplate, {
-    foreignKey: 'task_template_id',
-    as: 'template'
 });
 
 OnboardingTask.belongsTo(User, {
@@ -546,13 +541,8 @@ OnboardingTask.belongsTo(User, {
     as: 'assigned_user'
 });
 
-OnboardingTask.belongsTo(User, {
-    foreignKey: 'completed_by',
-    as: 'completer'
-});
-
 OnboardingChecklist.hasMany(OnboardingTask, {
-    foreignKey: 'checklist_id',
+    foreignKey: 'onboarding_checklist_id',
     as: 'tasks'
 });
 

@@ -82,6 +82,8 @@ export default function CandidatesPage() {
   const employees = employeesData?.employees || [];
   const pages = Math.ceil(totalApplications / rowsPerPage);
 
+  console.log("Applications Data ***** :", applicationsData);
+
   const updateApplicationMutation = useUpdateJobApplication();
   const assignApplicationMutation = useAssignApplication();
   const rateApplicationMutation = useRateApplication();
@@ -285,13 +287,13 @@ export default function CandidatesPage() {
                       <div>
                         <p className="font-semibold">{application.job_posting?.job_title}</p>
                         <p className="text-xs text-gray-500">
-                          {application.job_posting?.reference_number}
+                          {application.job_posting?.title}
                         </p>
                       </div>
                     </TableCell>
                     <TableCell>
                       <Chip size="sm" variant="flat">
-                        {application.source}
+                        {application.application_source}
                       </Chip>
                     </TableCell>
                     <TableCell>

@@ -54,69 +54,73 @@ const EmploymentOffer = sequelize.define(
                 key: "id",
             },
         },
-        manager_id: {
-            type: DataTypes.UUID,
-            allowNull: true,
-            references: {
-                model: "employees",
-                key: "id",
-            },
-        },
-        offered_salary: {
+        salary: {
             type: DataTypes.DECIMAL(15, 2),
             allowNull: false,
         },
-        currency: {
-            type: DataTypes.STRING(10),
-            defaultValue: "CFD",
+        benefits: {
+            type: DataTypes.TEXT,
+            allowNull: true,
         },
-        salary_frequency: {
-            type: DataTypes.ENUM("hourly", "monthly", "annual"),
-            defaultValue: "monthly",
-        },
-        benefits_package: {
+        terms_and_conditions: {
             type: DataTypes.TEXT,
             allowNull: true,
         },
         contract_type: {
-            type: DataTypes.ENUM("cdi", "cdd", "stage", "prestation", "apprentissage"),
-            defaultValue: "cdi",
+            type: DataTypes.ENUM("permanent", "fixed_term", "temporary", "internship", "consultant"),
+            allowNull: false,
+        },
+        end_date: {
+            type: DataTypes.DATE,
+            allowNull: true,
         },
         start_date: {
             type: DataTypes.DATE,
             allowNull: false,
         },
-        probation_period_months: {
-            type: DataTypes.INTEGER,
-            defaultValue: 3,
-        },
-        work_schedule: {
-            type: DataTypes.STRING(255),
-            allowNull: true,
-        },
-        remote_work_policy: {
-            type: DataTypes.TEXT,
-            allowNull: true,
-        },
         offer_letter_path: {
             type: DataTypes.STRING(500),
             allowNull: true,
         },
-        offer_sent_date: {
-            type: DataTypes.DATE,
-            allowNull: true,
-        },
-        offer_expiry_date: {
-            type: DataTypes.DATE,
-            allowNull: true,
-        },
         status: {
-            type: DataTypes.ENUM("draft", "pending_approval", "approved", "sent", "accepted", "declined", "expired", "cancelled"),
+            type: DataTypes.ENUM("draft", "pending_approval", "approved", "sent", "accepted", "declined", "expired", "withdrawn"),
             defaultValue: "draft",
         },
-        candidate_response_date: {
+        sent_date: {
             type: DataTypes.DATE,
             allowNull: true,
+        },
+        response_deadline: {
+            type: DataTypes.DATE,
+            allowNull: true,
+        },
+        accepted_date: {
+            type: DataTypes.DATE,
+            allowNull: true,
+        },
+        declined_reason: {
+            type: DataTypes.TEXT,
+            allowNull: true,
+        },
+        approved_by: {
+            type: DataTypes.UUID,
+            allowNull: true,
+            references: {
+                model: "users",
+                key: "id",
+            },
+        },
+        approval_date: {
+            type: DataTypes.DATE,
+            allowNull: true,
+        },
+        created_by: {
+            type: DataTypes.UUID,
+            allowNull: false,
+            references: {
+                model: "users",
+                key: "id",
+            },
         },
         candidate_comments: {
             type: DataTypes.TEXT,

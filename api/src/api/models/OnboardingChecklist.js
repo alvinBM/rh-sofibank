@@ -25,15 +25,15 @@ const OnboardingChecklist = sequelize.define(
                 key: "id",
             },
         },
-        checklist_name: {
-            type: DataTypes.STRING(255),
-            allowNull: false,
+        status: {
+            type: DataTypes.ENUM("pending", "in_progress", "completed"),
+            defaultValue: "pending",
         },
         start_date: {
             type: DataTypes.DATE,
             allowNull: false,
         },
-        target_completion_date: {
+        expected_completion_date: {
             type: DataTypes.DATE,
             allowNull: true,
         },
@@ -41,15 +41,7 @@ const OnboardingChecklist = sequelize.define(
             type: DataTypes.DATE,
             allowNull: true,
         },
-        status: {
-            type: DataTypes.ENUM("not_started", "in_progress", "completed", "on_hold"),
-            defaultValue: "not_started",
-        },
-        completion_percentage: {
-            type: DataTypes.INTEGER,
-            defaultValue: 0,
-        },
-        assigned_hr_id: {
+        assigned_mentor_id: {
             type: DataTypes.UUID,
             allowNull: true,
             references: {
@@ -57,9 +49,13 @@ const OnboardingChecklist = sequelize.define(
                 key: "id",
             },
         },
-        notes: {
-            type: DataTypes.TEXT,
-            allowNull: true,
+        created_by: {
+            type: DataTypes.UUID,
+            allowNull: false,
+            references: {
+                model: "users",
+                key: "id",
+            },
         },
     },
     {

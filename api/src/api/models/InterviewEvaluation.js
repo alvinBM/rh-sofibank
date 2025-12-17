@@ -25,32 +25,28 @@ const InterviewEvaluation = sequelize.define(
                 key: "id",
             },
         },
-        technical_skills: {
+        technical_skills_score: {
             type: DataTypes.INTEGER,
             allowNull: true,
         },
-        communication: {
+        communication_score: {
             type: DataTypes.INTEGER,
             allowNull: true,
         },
-        problem_solving: {
+        problem_solving_score: {
             type: DataTypes.INTEGER,
             allowNull: true,
         },
-        cultural_fit: {
+        cultural_fit_score: {
             type: DataTypes.INTEGER,
             allowNull: true,
         },
-        motivation: {
-            type: DataTypes.INTEGER,
-            allowNull: true,
-        },
-        experience_relevance: {
+        experience_score: {
             type: DataTypes.INTEGER,
             allowNull: true,
         },
         overall_score: {
-            type: DataTypes.DECIMAL(5, 2),
+            type: DataTypes.INTEGER,
             allowNull: true,
         },
         strengths: {
@@ -61,19 +57,15 @@ const InterviewEvaluation = sequelize.define(
             type: DataTypes.TEXT,
             allowNull: true,
         },
-        detailed_notes: {
+        recommendation: {
+            type: DataTypes.ENUM("highly_recommended", "recommended", "maybe", "not_recommended", "reject"),
+            allowNull: false,
+        },
+        comments: {
             type: DataTypes.TEXT,
             allowNull: true,
         },
-        recommendation: {
-            type: DataTypes.ENUM("strongly_recommend", "recommend", "neutral", "not_recommend", "strongly_not_recommend"),
-            allowNull: true,
-        },
-        decision: {
-            type: DataTypes.ENUM("advance", "reject", "pending"),
-            allowNull: true,
-        },
-        submitted_date: {
+        evaluation_date: {
             type: DataTypes.DATE,
             defaultValue: DataTypes.NOW,
         },
