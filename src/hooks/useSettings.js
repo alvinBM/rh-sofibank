@@ -14,6 +14,10 @@ import {
     createDirection,
     updateDirection,
     deleteDirection,
+    fetchDepartments,
+    createDepartment,
+    updateDepartment,
+    deleteDepartment,
     fetchServices,
     createService,
     updateService,
@@ -169,6 +173,42 @@ export const useDeleteDirection = () => {
         mutationFn: deleteDirection,
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["directions"] });
+        },
+    });
+};
+
+// ==================== DEPARTMENTS HOOKS ====================
+
+export const useGetDepartments = () => {
+    return useQuery({
+        queryKey: ["departments"],
+        queryFn: fetchDepartments,
+    });
+};
+
+export const useCreateDepartment = () => {
+    return useMutation({
+        mutationFn: createDepartment,
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["departments"] });
+        },
+    });
+};
+
+export const useUpdateDepartment = () => {
+    return useMutation({
+        mutationFn: ({ departmentId, departmentData }) => updateDepartment(departmentId, departmentData),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["departments"] });
+        },
+    });
+};
+
+export const useDeleteDepartment = () => {
+    return useMutation({
+        mutationFn: deleteDepartment,
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["departments"] });
         },
     });
 };

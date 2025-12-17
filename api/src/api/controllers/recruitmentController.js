@@ -120,12 +120,14 @@ export const getRecruitmentPlanById = async (req, res) => {
  */
 export const createRecruitmentPlan = async (req, res) => {
     try {
-        const { year, direction_id, status, positions } = req.body;
+        const { year, direction_id, status, positions, description, total_budget } = req.body;
 
         const plan = await RecruitmentPlan.create({
             year,
             direction_id,
-            status: status || 'draft'
+            status: status || 'draft',
+            created_by: req.userId, // Add the user ID from the auth middleware
+            notes: description || null
         });
 
         // Create positions if provided
@@ -212,7 +214,10 @@ export const submitRecruitmentPlan = async (req, res) => {
             return res.status(400).json({ error: 'Only draft plans can be submitted' });
         }
 
-        await plan.update({ status: 'submitted' });
+        await plan.update({ 
+            status: 'submitted',
+            submitted_date: new Date()
+        });
 
         res.json({ message: 'Recruitment plan submitted for approval', plan });
     } catch (error) {
@@ -228,7 +233,7 @@ export const approveRecruitmentPlan = async (req, res) => {
     try {
         const { id } = req.params;
         const { approve, rejection_reason } = req.body;
-        const approverId = req.user.id;
+        const approverId = req.userId; // Use req.userId from auth middleware
 
         const plan = await RecruitmentPlan.findByPk(id);
         if (!plan) {

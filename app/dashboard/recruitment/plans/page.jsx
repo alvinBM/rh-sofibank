@@ -376,41 +376,82 @@ export default function RecruitmentPlanningPage() {
             <ModalHeader>Nouveau Plan de Recrutement</ModalHeader>
             <ModalBody>
               <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <Controller
+                    name="year"
+                    control={createControl}
+                    rules={{ required: "L'année est requise" }}
+                    render={({ field }) => (
+                      <Input
+                        {...field}
+                        type="number"
+                        label="Année"
+                        placeholder="2025"
+                        isRequired
+                        isInvalid={!!createErrors.year}
+                        errorMessage={createErrors.year?.message}
+                      />
+                    )}
+                  />
+                  <Controller
+                    name="direction_id"
+                    control={createControl}
+                    rules={{ required: "La direction est requise" }}
+                    render={({ field }) => (
+                      <Select
+                        {...field}
+                        label="Direction"
+                        placeholder="Sélectionnez une direction"
+                        isRequired
+                        isInvalid={!!createErrors.direction_id}
+                        errorMessage={createErrors.direction_id?.message}
+                      >
+                        {directions?.map((direction) => (
+                          <SelectItem key={direction.id} value={direction.id}>
+                            {direction.name}
+                          </SelectItem>
+                        ))}
+                      </Select>
+                    )}
+                  />
+                </div>
+                
                 <Controller
-                  name="year"
+                  name="description"
                   control={createControl}
-                  rules={{ required: "L'année est requise" }}
+                  render={({ field }) => (
+                    <Textarea
+                      {...field}
+                      label="Description / Objectifs"
+                      placeholder="Décrivez les objectifs et besoins de recrutement pour cette année..."
+                      minRows={3}
+                    />
+                  )}
+                />
+
+                <Controller
+                  name="total_budget"
+                  control={createControl}
                   render={({ field }) => (
                     <Input
                       {...field}
                       type="number"
-                      label="Année"
-                      placeholder="2025"
-                      isInvalid={!!createErrors.year}
-                      errorMessage={createErrors.year?.message}
+                      label="Budget Total Estimé (XAF)"
+                      placeholder="0"
+                      startContent={
+                        <div className="pointer-events-none flex items-center">
+                          <span className="text-default-400 text-small">XAF</span>
+                        </div>
+                      }
                     />
                   )}
                 />
-                <Controller
-                  name="direction_id"
-                  control={createControl}
-                  rules={{ required: "La direction est requise" }}
-                  render={({ field }) => (
-                    <Select
-                      {...field}
-                      label="Direction"
-                      placeholder="Sélectionnez une direction"
-                      isInvalid={!!createErrors.direction_id}
-                      errorMessage={createErrors.direction_id?.message}
-                    >
-                      {directions?.map((direction) => (
-                        <SelectItem key={direction.id} value={direction.id}>
-                          {direction.name}
-                        </SelectItem>
-                      ))}
-                    </Select>
-                  )}
-                />
+
+                <div className="p-3 bg-primary-50 rounded-lg">
+                  <p className="text-sm text-primary-700">
+                    💡 <strong>Note:</strong> Après la création, vous pourrez ajouter des positions spécifiques avec leurs détails (poste, grade, quantité, priorité, budget).
+                  </p>
+                </div>
               </div>
             </ModalBody>
             <ModalFooter>
@@ -669,6 +710,10 @@ export default function RecruitmentPlanningPage() {
               <div className="space-y-6">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
+                    <p className="text-sm text-gray-500">Année</p>
+                    <p className="font-semibold text-lg">{selectedPlanDetails.year}</p>
+                  </div>
+                  <div>
                     <p className="text-sm text-gray-500">Direction</p>
                     <p className="font-semibold">
                       {selectedPlanDetails.direction?.name}
@@ -683,6 +728,22 @@ export default function RecruitmentPlanningPage() {
                       {getStatusLabel(selectedPlanDetails.status)}
                     </Chip>
                   </div>
+                  <div>
+                    <p className="text-sm text-gray-500">Total Positions</p>
+                    <p className="font-semibold">
+                      {selectedPlanDetails.positions?.length || 0}
+                    </p>
+                  </div>
+                  {selectedPlanDetails.submitted_date && (
+                    <div>
+                      <p className="text-sm text-gray-500">Date de soumission</p>
+                      <p className="font-semibold">
+                        {new Date(
+                          selectedPlanDetails.submitted_date
+                        ).toLocaleDateString("fr-FR")}
+                      </p>
+                    </div>
+                  )}
                   {selectedPlanDetails.approver && (
                     <div>
                       <p className="text-sm text-gray-500">Approuvé par</p>
@@ -701,7 +762,24 @@ export default function RecruitmentPlanningPage() {
                       </p>
                     </div>
                   )}
+                  <div>
+                    <p className="text-sm text-gray-500">Date de création</p>
+                    <p className="font-semibold">
+                      {new Date(selectedPlanDetails.created_at).toLocaleDateString("fr-FR")}
+                    </p>
+                  </div>
                 </div>
+
+                {selectedPlanDetails.notes && (
+                  <div className="p-4 bg-gray-50 rounded-lg">
+                    <p className="text-sm font-semibold text-gray-700 mb-2">
+                      Description / Objectifs:
+                    </p>
+                    <p className="text-sm text-gray-600">
+                      {selectedPlanDetails.notes}
+                    </p>
+                  </div>
+                )}
 
                 {selectedPlanDetails.rejection_reason && (
                   <div className="p-4 bg-danger-50 rounded-lg">
