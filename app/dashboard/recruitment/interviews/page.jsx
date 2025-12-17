@@ -29,6 +29,7 @@ import {
   useDisclosure,
   User,
   Divider,
+  Pagination,
 } from "@nextui-org/react";
 import {
   FiCalendar,
@@ -47,11 +48,10 @@ import {
 import { useForm, Controller } from "react-hook-form";
 import { toast } from "react-toastify";
 import {
-  useGetJobApplications,
+  useGetAllInterviews,
   useScheduleInterview,
   useUpdateInterview,
   useSubmitInterviewEvaluation,
-  useGetInterviewsForApplication,
 } from "@/src/hooks/useRecruitment";
 import { useGetEmployees } from "@/src/hooks/useEmployees";
 
@@ -66,19 +66,20 @@ export default function InterviewsPage() {
   const { isOpen: isDetailOpen, onOpen: onDetailOpen, onClose: onDetailClose } = useDisclosure();
   const { isOpen: isEvaluateOpen, onOpen: onEvaluateOpen, onClose: onEvaluateClose } = useDisclosure();
 
-  // Fetching applications with interview status
-  const { data: applicationsData, isLoading } = useGetJobApplications({
+  // Fetching all interviews
+  const { data: interviewsData, isLoading } = useGetAllInterviews({
     page,
     rowsPerPage,
     ...filters,
-    status: "interview",
   });
   const { data: employeesData } = useGetEmployees({ page: 1, rowsPerPage: 1000, query: "", filters: {} });
   
-  const applications = applicationsData?.applications || [];
-  const totalApplications = applicationsData?.total || 0;
+  const interviews = interviewsData?.interviews || [];
+  const totalInterviews = interviewsData?.total || 0;
   const employees = employeesData?.employees || [];
-  const pages = Math.ceil(totalApplications / rowsPerPage);
+  const pages = Math.ceil(totalInterviews / rowsPerPage);
+
+  console.log("Interviews Data ***** :", interviewsData);
 
   const scheduleInterviewMutation = useScheduleInterview();
   const updateInterviewMutation = useUpdateInterview();
@@ -100,10 +101,19 @@ export default function InterviewsPage() {
 
   const onScheduleInterview = async (data) => {
     try {
-      await scheduleInterviewMutation.mutateAsync({
+      const interviewData = {
         application_id: selectedApplication,
-        interviewData: data,
-      });
+        interview_type: data.interview_type,
+        interview_round: data.interview_round || 1,
+        scheduled_date: data.interview_date,
+        duration_minutes: parseInt(data.duration_minutes) || 60,
+        location: data.location,
+        meeting_link: data.meeting_link,
+        interviewer_ids: data.interviewer_ids,
+        notes: data.notes,
+      };
+      
+      await scheduleInterviewMutation.mutateAsync(interviewData);
       toast.success("Entretien programmé avec succès");
       resetSchedule();
       onScheduleClose();
@@ -120,12 +130,14 @@ export default function InterviewsPage() {
       });
       toast.success("Statut mis à jour");
     } catch (error) {
+      console.error("Update interview status error:", error);
       toast.error("Erreur lors de la mise à jour");
     }
   };
 
   const onEvaluateInterview = async (data) => {
     try {
+      console.log("Evaluation data to send:", data);
       await evaluateInterviewMutation.mutateAsync({
         interviewId: selectedInterview.id,
         evaluationData: data,
@@ -134,6 +146,7 @@ export default function InterviewsPage() {
       resetEvaluate();
       onEvaluateClose();
     } catch (error) {
+      console.error("Error submitting evaluation:", error);
       toast.error(error.response?.data?.error || "Erreur lors de l'évaluation");
     }
   };
@@ -182,22 +195,22 @@ export default function InterviewsPage() {
 
   const getRecommendationColor = (recommendation) => {
     const colors = {
-      strong_hire: "success",
-      hire: "success",
+      highly_recommended: "success",
+      recommended: "success",
       maybe: "warning",
-      no_hire: "danger",
-      strong_no_hire: "danger",
+      not_recommended: "danger",
+      reject: "danger",
     };
     return colors[recommendation] || "default";
   };
 
   const getRecommendationLabel = (recommendation) => {
     const labels = {
-      strong_hire: "Embaucher Fortement",
-      hire: "Embaucher",
+      highly_recommended: "Fortement Recommandé",
+      recommended: "Recommandé",
       maybe: "Peut-être",
-      no_hire: "Ne pas embaucher",
-      strong_no_hire: "Rejeter Fortement",
+      not_recommended: "Non Recommandé",
+      reject: "Rejeter",
     };
     return labels[recommendation] || recommendation;
   };
@@ -205,16 +218,20 @@ export default function InterviewsPage() {
   // Group interviews by application
   const groupedInterviews = React.useMemo(() => {
     const grouped = {};
-    applications?.forEach((app) => {
-      if (app.interviews && app.interviews.length > 0) {
-        grouped[app.id] = {
-          application: app,
-          interviews: app.interviews,
-        };
+    interviews?.forEach((interview) => {
+      if (interview.application) {
+        const appId = interview.application.id;
+        if (!grouped[appId]) {
+          grouped[appId] = {
+            application: interview.application,
+            interviews: [],
+          };
+        }
+        grouped[appId].interviews.push(interview);
       }
     });
     return Object.values(grouped);
-  }, [applications]);
+  }, [interviews]);
 
   return (
     <div className="space-y-6">
@@ -336,10 +353,10 @@ export default function InterviewsPage() {
                               <FiClock className="text-gray-400" />
                               <div>
                                 <p className="font-semibold">
-                                  {new Date(interview.interview_date).toLocaleDateString("fr-FR")}
+                                  {new Date(interview.scheduled_date).toLocaleDateString("fr-FR")}
                                 </p>
                                 <p className="text-xs text-gray-500">
-                                  {new Date(interview.interview_date).toLocaleTimeString("fr-FR", {
+                                  {new Date(interview.scheduled_date).toLocaleTimeString("fr-FR", {
                                     hour: "2-digit",
                                     minute: "2-digit",
                                   })}
@@ -358,22 +375,7 @@ export default function InterviewsPage() {
                             </Chip>
                           </TableCell>
                           <TableCell>
-                            {interview.interviewers?.length > 0 ? (
-                              <div className="flex flex-col gap-1">
-                                {interview.interviewers.slice(0, 2).map((interviewer) => (
-                                  <span key={interviewer.id} className="text-sm">
-                                    {interviewer.username}
-                                  </span>
-                                ))}
-                                {interview.interviewers.length > 2 && (
-                                  <span className="text-xs text-gray-500">
-                                    +{interview.interviewers.length - 2} autres
-                                  </span>
-                                )}
-                              </div>
-                            ) : (
-                              <span className="text-sm text-gray-400">Non assigné</span>
-                            )}
+                            ---
                           </TableCell>
                           <TableCell>
                             <Chip
@@ -385,19 +387,24 @@ export default function InterviewsPage() {
                             </Chip>
                           </TableCell>
                           <TableCell>
-                            {interview.evaluation ? (
-                              <div className="flex items-center gap-2">
-                                <Chip
-                                  size="sm"
-                                  color={getRecommendationColor(interview.evaluation.recommendation)}
-                                  variant="flat"
-                                >
-                                  {interview.evaluation.overall_rating}/5
-                                </Chip>
-                              </div>
-                            ) : (
-                              <span className="text-sm text-gray-400">Non évalué</span>
-                            )}
+                            {(() => {
+                              const evaluations = interview.evaluations || [];
+                              const latestEval = evaluations.length > 0 ? evaluations[evaluations.length - 1] : null;
+                              
+                              return latestEval ? (
+                                <div className="flex items-center gap-2">
+                                  <Chip
+                                    size="sm"
+                                    color={getRecommendationColor(latestEval.recommendation)}
+                                    variant="flat"
+                                  >
+                                    {latestEval.overall_rating || latestEval.overall_score || 'N/A'}/5
+                                  </Chip>
+                                </div>
+                              ) : (
+                                <span className="text-sm text-gray-400">Non évalué</span>
+                              );
+                            })()}
                           </TableCell>
                           <TableCell>
                             <Dropdown>
@@ -440,7 +447,8 @@ export default function InterviewsPage() {
                                     Marquer comme complété
                                   </DropdownItem>
                                 )}
-                                {interview.status === "completed" && !interview.evaluation && (
+                                {interview.status === "completed" && 
+                                  (!interview.evaluations || interview.evaluations.length === 0) && (
                                   <DropdownItem
                                     key="evaluate"
                                     startContent={<FiStar />}
@@ -479,6 +487,45 @@ export default function InterviewsPage() {
           ))
         )}
       </div>
+
+      {/* Pagination */}
+      {!isLoading && totalInterviews > 0 && (
+        <Card>
+          <CardBody>
+            <div className="flex justify-between items-center">
+              <span className="text-sm text-gray-500">
+                Total: {totalInterviews} entretien(s)
+              </span>
+              <div className="flex gap-2 items-center">
+                <Select
+                  size="sm"
+                  label="Lignes"
+                  selectedKeys={[String(rowsPerPage)]}
+                  onChange={(e) => {
+                    setRowsPerPage(Number(e.target.value));
+                    setPage(1);
+                  }}
+                  className="w-24"
+                >
+                  <SelectItem key="10" value="10">10</SelectItem>
+                  <SelectItem key="20" value="20">20</SelectItem>
+                  <SelectItem key="50" value="50">50</SelectItem>
+                  <SelectItem key="100" value="100">100</SelectItem>
+                </Select>
+                <Pagination
+                  isCompact
+                  showControls
+                  showShadow
+                  color="danger"
+                  page={page}
+                  total={pages}
+                  onChange={setPage}
+                />
+              </div>
+            </div>
+          </CardBody>
+        </Card>
+      )}
 
       {/* Schedule Interview Modal */}
       <Modal isOpen={isScheduleOpen} onClose={onScheduleClose} size="2xl">
@@ -603,7 +650,7 @@ export default function InterviewsPage() {
                   <div>
                     <p className="text-sm text-gray-500">Date et Heure</p>
                     <p className="font-semibold">
-                      {new Date(selectedInterview.interview_date).toLocaleString("fr-FR")}
+                      {new Date(selectedInterview.scheduled_date).toLocaleString("fr-FR")}
                     </p>
                   </div>
                   <div>
@@ -645,59 +692,62 @@ export default function InterviewsPage() {
                   </div>
                 )}
 
-                {selectedInterview.evaluation && (
-                  <div>
-                    <h4 className="font-semibold mb-4">Évaluation</h4>
-                    <div className="space-y-3">
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <p className="text-sm text-gray-500">Note Globale</p>
-                          <p className="font-semibold text-lg">
-                            {selectedInterview.evaluation.overall_rating}/5
-                          </p>
+                {(() => {
+                  const evaluations = selectedInterview.evaluations || [];
+                  const latestEval = evaluations.length > 0 ? evaluations[evaluations.length - 1] : null;
+                  
+                  return latestEval && (
+                    <div>
+                      <h4 className="font-semibold mb-4">Évaluation</h4>
+                      <div className="space-y-3">
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <p className="text-sm text-gray-500">Note Globale</p>
+                            <p className="font-semibold text-lg">
+                              {latestEval.overall_rating || latestEval.overall_score || 'N/A'}/5
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-sm text-gray-500">Recommandation</p>
+                            <Chip
+                              color={getRecommendationColor(latestEval.recommendation)}
+                              variant="flat"
+                            >
+                              {getRecommendationLabel(latestEval.recommendation)}
+                            </Chip>
+                          </div>
                         </div>
-                        <div>
-                          <p className="text-sm text-gray-500">Recommandation</p>
-                          <Chip
-                            color={getRecommendationColor(
-                              selectedInterview.evaluation.recommendation
-                            )}
-                            variant="flat"
-                          >
-                            {getRecommendationLabel(selectedInterview.evaluation.recommendation)}
-                          </Chip>
-                        </div>
+
+                        {latestEval.strengths && (
+                          <div>
+                            <p className="text-sm text-gray-500">Points Forts</p>
+                            <p className="text-sm bg-success-50 p-3 rounded-lg">
+                              {latestEval.strengths}
+                            </p>
+                          </div>
+                        )}
+
+                        {latestEval.weaknesses && (
+                          <div>
+                            <p className="text-sm text-gray-500">Points Faibles</p>
+                            <p className="text-sm bg-warning-50 p-3 rounded-lg">
+                              {latestEval.weaknesses}
+                            </p>
+                          </div>
+                        )}
+
+                        {latestEval.comments && (
+                          <div>
+                            <p className="text-sm text-gray-500">Commentaires</p>
+                            <p className="text-sm whitespace-pre-wrap bg-gray-50 p-3 rounded-lg">
+                              {latestEval.comments}
+                            </p>
+                          </div>
+                        )}
                       </div>
-
-                      {selectedInterview.evaluation.strengths && (
-                        <div>
-                          <p className="text-sm text-gray-500">Points Forts</p>
-                          <p className="text-sm bg-success-50 p-3 rounded-lg">
-                            {selectedInterview.evaluation.strengths}
-                          </p>
-                        </div>
-                      )}
-
-                      {selectedInterview.evaluation.weaknesses && (
-                        <div>
-                          <p className="text-sm text-gray-500">Points Faibles</p>
-                          <p className="text-sm bg-warning-50 p-3 rounded-lg">
-                            {selectedInterview.evaluation.weaknesses}
-                          </p>
-                        </div>
-                      )}
-
-                      {selectedInterview.evaluation.comments && (
-                        <div>
-                          <p className="text-sm text-gray-500">Commentaires</p>
-                          <p className="text-sm whitespace-pre-wrap bg-gray-50 p-3 rounded-lg">
-                            {selectedInterview.evaluation.comments}
-                          </p>
-                        </div>
-                      )}
                     </div>
-                  </div>
-                )}
+                  );
+                })()}
               </div>
             </ModalBody>
             <ModalFooter>
@@ -816,20 +866,20 @@ export default function InterviewsPage() {
                       isInvalid={!!evaluateErrors.recommendation}
                       errorMessage={evaluateErrors.recommendation?.message}
                     >
-                      <SelectItem key="strong_hire" value="strong_hire">
-                        Embaucher Fortement
+                      <SelectItem key="highly_recommended" value="highly_recommended">
+                        Fortement Recommandé
                       </SelectItem>
-                      <SelectItem key="hire" value="hire">
-                        Embaucher
+                      <SelectItem key="recommended" value="recommended">
+                        Recommandé
                       </SelectItem>
                       <SelectItem key="maybe" value="maybe">
                         Peut-être
                       </SelectItem>
-                      <SelectItem key="no_hire" value="no_hire">
-                        Ne pas embaucher
+                      <SelectItem key="not_recommended" value="not_recommended">
+                        Non Recommandé
                       </SelectItem>
-                      <SelectItem key="strong_no_hire" value="strong_no_hire">
-                        Rejeter Fortement
+                      <SelectItem key="reject" value="reject">
+                        Rejeter
                       </SelectItem>
                     </Select>
                   )}

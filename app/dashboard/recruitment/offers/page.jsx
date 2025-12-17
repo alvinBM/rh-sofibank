@@ -168,7 +168,7 @@ export default function EmploymentOffersPage() {
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-bold">Offres d'Emploi</h1>
+          <h1 className="text-2xl font-bold">Contrats & Offres d'Emploi</h1>
           <p className="text-sm text-gray-500">
             Gestion des offres d'emploi et contrats de travail
           </p>
