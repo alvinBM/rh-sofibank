@@ -63,7 +63,7 @@ const authController = {
       if (!isPasswordValid) {
         return res.status(200).json({
           status: 401,
-          message: 'Email ou mot de passe incorrect'
+          message: 'Email ou mot de passe incorrect (password)'
         });
       }
 
@@ -74,8 +74,8 @@ const authController = {
           email: user.email,
           roles: user.roles.map(r => r.code)
         },
-        process.env.JWT_SECRET,
-        { expiresIn: '24h' }
+        process.env.RANDOM_TOKEN_SECRET,
+        { expiresIn: process.env.EXPIRE_TOKEN || '24h' }
       );
 
       // Update last login

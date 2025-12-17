@@ -1,0 +1,827 @@
+{
+	"info": {
+		"name": "RH Sofibank API",
+		"description": "Collection complète pour tester l'API RH Sofibank",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"version": "1.0.0"
+	},
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:3600/api",
+			"type": "string"
+		},
+		{
+			"key": "token",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "employee_id",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "leave_request_id",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "attendance_id",
+			"value": "",
+			"type": "string"
+		}
+	],
+	"auth": {
+		"type": "bearer",
+		"bearer": [
+			{
+				"key": "token",
+				"value": "{{token}}",
+				"type": "string"
+			}
+		]
+	},
+	"item": [
+		{
+			"name": "Authentication",
+			"item": [
+				{
+					"name": "Login",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    var jsonData = pm.response.json();",
+									"    pm.collectionVariables.set('token', jsonData.data.token);",
+									"    pm.collectionVariables.set('employee_id', jsonData.data.user.employee.id);",
+									"    console.log('Token saved:', jsonData.data.token);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"admin@sofibank.com\",\n  \"password\": \"password123\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/auth/login",
+							"host": ["{{baseUrl}}"],
+							"path": ["auth", "login"]
+						},
+						"description": "Connexion utilisateur. Utiliser:\n- admin@sofibank.com / password123\n- rh.manager@sofibank.com / password123\n- supervisor@sofibank.com / password123\n- employee1@sofibank.com / password123"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Profile",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/auth/profile",
+							"host": ["{{baseUrl}}"],
+							"path": ["auth", "profile"]
+						},
+						"description": "Récupérer le profil de l'utilisateur connecté"
+					},
+					"response": []
+				},
+				{
+					"name": "Change Password",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"current_password\": \"password123\",\n  \"new_password\": \"newpassword123\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/auth/change-password",
+							"host": ["{{baseUrl}}"],
+							"path": ["auth", "change-password"]
+						},
+						"description": "Changer le mot de passe de l'utilisateur connecté"
+					},
+					"response": []
+				},
+				{
+					"name": "Update Profile",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"firstname\": \"Jean\",\n  \"lastname\": \"Dupont\",\n  \"phone\": \"+243 123 456 789\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/auth/profile",
+							"host": ["{{baseUrl}}"],
+							"path": ["auth", "profile"]
+						},
+						"description": "Mettre à jour le profil utilisateur"
+					},
+					"response": []
+				},
+				{
+					"name": "Verify Token",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/auth/verify",
+							"host": ["{{baseUrl}}"],
+							"path": ["auth", "verify"]
+						},
+						"description": "Vérifier si le token est valide"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Employees",
+			"item": [
+				{
+					"name": "Get All Employees",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/employees?page=1&limit=10",
+							"host": ["{{baseUrl}}"],
+							"path": ["employees"],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "limit",
+									"value": "10"
+								},
+								{
+									"key": "search",
+									"value": "",
+									"disabled": true
+								},
+								{
+									"key": "direction_id",
+									"value": "",
+									"disabled": true
+								},
+								{
+									"key": "service_id",
+									"value": "",
+									"disabled": true
+								},
+								{
+									"key": "employment_status",
+									"value": "active",
+									"disabled": true
+								},
+								{
+									"key": "contract_type",
+									"value": "permanent",
+									"disabled": true
+								}
+							]
+						},
+						"description": "Liste paginée des employés avec filtres"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Employee by ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/employees/{{employee_id}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["employees", "{{employee_id}}"]
+						},
+						"description": "Détails d'un employé spécifique"
+					},
+					"response": []
+				},
+				{
+					"name": "Create Employee",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"first_name\": \"Jean\",\n  \"last_name\": \"Dupont\",\n  \"email\": \"jean.dupont@sofibank.com\",\n  \"phone\": \"+243 123 456 789\",\n  \"date_of_birth\": \"1990-05-15\",\n  \"gender\": \"male\",\n  \"address\": \"123 Rue de la Paix, Kinshasa\",\n  \"hire_date\": \"2024-01-15\",\n  \"job_position_id\": \"uuid-here\",\n  \"grade_id\": \"uuid-here\",\n  \"direction_id\": \"uuid-here\",\n  \"service_id\": \"uuid-here\",\n  \"contract_type\": \"permanent\",\n  \"employment_status\": \"active\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/employees",
+							"host": ["{{baseUrl}}"],
+							"path": ["employees"]
+						},
+						"description": "Créer un nouvel employé"
+					},
+					"response": []
+				},
+				{
+					"name": "Update Employee",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"first_name\": \"Jean\",\n  \"last_name\": \"Dupont\",\n  \"phone\": \"+243 987 654 321\",\n  \"address\": \"456 Avenue de la Liberté, Kinshasa\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/employees/{{employee_id}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["employees", "{{employee_id}}"]
+						},
+						"description": "Mettre à jour les informations d'un employé"
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Employee",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/employees/{{employee_id}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["employees", "{{employee_id}}"]
+						},
+						"description": "Supprimer un employé (soft delete)"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Employee Statistics",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/employees/statistics",
+							"host": ["{{baseUrl}}"],
+							"path": ["employees", "statistics"]
+						},
+						"description": "Statistiques globales des employés"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Employee Subordinates",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/employees/{{employee_id}}/subordinates",
+							"host": ["{{baseUrl}}"],
+							"path": ["employees", "{{employee_id}}", "subordinates"]
+						},
+						"description": "Liste des subordonnés d'un superviseur"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Leave Management",
+			"item": [
+				{
+					"name": "Get All Leave Types",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/leave/types",
+							"host": ["{{baseUrl}}"],
+							"path": ["leave", "types"]
+						},
+						"description": "Liste de tous les types de congés"
+					},
+					"response": []
+				},
+				{
+					"name": "Create Leave Type",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Congé Spécial\",\n  \"code\": \"SPECIAL\",\n  \"days_per_year\": 5,\n  \"requires_approval\": true,\n  \"is_paid\": true,\n  \"description\": \"Congé pour événements spéciaux\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/leave/types",
+							"host": ["{{baseUrl}}"],
+							"path": ["leave", "types"]
+						},
+						"description": "Créer un nouveau type de congé (Admin only)"
+					},
+					"response": []
+				},
+				{
+					"name": "Get All Leave Requests",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/leave/requests?page=1&limit=10&status=pending_supervisor",
+							"host": ["{{baseUrl}}"],
+							"path": ["leave", "requests"],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "limit",
+									"value": "10"
+								},
+								{
+									"key": "status",
+									"value": "pending_supervisor",
+									"description": "draft, pending_supervisor, pending_hr, approved, rejected, cancelled"
+								},
+								{
+									"key": "employee_id",
+									"value": "",
+									"disabled": true
+								},
+								{
+									"key": "leave_type_id",
+									"value": "",
+									"disabled": true
+								},
+								{
+									"key": "start_date",
+									"value": "",
+									"disabled": true
+								},
+								{
+									"key": "end_date",
+									"value": "",
+									"disabled": true
+								}
+							]
+						},
+						"description": "Liste paginée des demandes de congés"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Leave Request by ID",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    var jsonData = pm.response.json();",
+									"    if (jsonData.data && jsonData.data.id) {",
+									"        pm.collectionVariables.set('leave_request_id', jsonData.data.id);",
+									"    }",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/leave/requests/{{leave_request_id}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["leave", "requests", "{{leave_request_id}}"]
+						},
+						"description": "Détails d'une demande de congé"
+					},
+					"response": []
+				},
+				{
+					"name": "Create Leave Request",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"    var jsonData = pm.response.json();",
+									"    pm.collectionVariables.set('leave_request_id', jsonData.data.id);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"leave_type_id\": \"uuid-here\",\n  \"start_date\": \"2024-02-01\",\n  \"end_date\": \"2024-02-05\",\n  \"reason\": \"Congé annuel planifié\",\n  \"contact_during_leave\": \"+243 123 456 789\",\n  \"address_during_leave\": \"Lubumbashi\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/leave/requests",
+							"host": ["{{baseUrl}}"],
+							"path": ["leave", "requests"]
+						},
+						"description": "Créer une nouvelle demande de congé (status: draft)"
+					},
+					"response": []
+				},
+				{
+					"name": "Submit Leave Request",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/leave/requests/{{leave_request_id}}/submit",
+							"host": ["{{baseUrl}}"],
+							"path": ["leave", "requests", "{{leave_request_id}}", "submit"]
+						},
+						"description": "Soumettre la demande pour approbation (draft → pending_supervisor)"
+					},
+					"response": []
+				},
+				{
+					"name": "Approve Leave Request (Supervisor)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"action\": \"approve\",\n  \"comments\": \"Approuvé par le superviseur\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/leave/requests/{{leave_request_id}}/process",
+							"host": ["{{baseUrl}}"],
+							"path": ["leave", "requests", "{{leave_request_id}}", "process"]
+						},
+						"description": "Approuver (supervisor: pending_supervisor → pending_hr)"
+					},
+					"response": []
+				},
+				{
+					"name": "Reject Leave Request",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"action\": \"reject\",\n  \"comments\": \"Refusé: période trop chargée\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/leave/requests/{{leave_request_id}}/process",
+							"host": ["{{baseUrl}}"],
+							"path": ["leave", "requests", "{{leave_request_id}}", "process"]
+						},
+						"description": "Rejeter la demande (n'importe quel statut → rejected)"
+					},
+					"response": []
+				},
+				{
+					"name": "Approve Leave Request (HR)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"action\": \"approve\",\n  \"comments\": \"Approuvé par RH\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/leave/requests/{{leave_request_id}}/process",
+							"host": ["{{baseUrl}}"],
+							"path": ["leave", "requests", "{{leave_request_id}}", "process"]
+						},
+						"description": "Approbation finale RH (pending_hr → approved)"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Employee Leave Balance",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/leave/balance/{{employee_id}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["leave", "balance", "{{employee_id}}"]
+						},
+						"description": "Solde de congés d'un employé"
+					},
+					"response": []
+				},
+				{
+					"name": "Initialize Leave Balances",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"employee_id\": \"{{employee_id}}\",\n  \"year\": 2024\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/leave/balance/initialize",
+							"host": ["{{baseUrl}}"],
+							"path": ["leave", "balance", "initialize"]
+						},
+						"description": "Initialiser les soldes de congés pour un employé"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Attendance",
+			"item": [
+				{
+					"name": "Get All Attendance Records",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/attendance?page=1&limit=10&start_date=2024-01-01&end_date=2024-12-31",
+							"host": ["{{baseUrl}}"],
+							"path": ["attendance"],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "limit",
+									"value": "10"
+								},
+								{
+									"key": "employee_id",
+									"value": "",
+									"disabled": true
+								},
+								{
+									"key": "start_date",
+									"value": "2024-01-01"
+								},
+								{
+									"key": "end_date",
+									"value": "2024-12-31"
+								},
+								{
+									"key": "status",
+									"value": "present",
+									"description": "present, absent, late, half_day, on_leave, holiday",
+									"disabled": true
+								}
+							]
+						},
+						"description": "Liste paginée des enregistrements de présence"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Attendance by ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/attendance/{{attendance_id}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["attendance", "{{attendance_id}}"]
+						},
+						"description": "Détails d'un enregistrement de présence"
+					},
+					"response": []
+				},
+				{
+					"name": "Check In",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200 || pm.response.code === 201) {",
+									"    var jsonData = pm.response.json();",
+									"    if (jsonData.data && jsonData.data.id) {",
+									"        pm.collectionVariables.set('attendance_id', jsonData.data.id);",
+									"    }",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"employee_id\": \"{{employee_id}}\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/attendance/check-in",
+							"host": ["{{baseUrl}}"],
+							"path": ["attendance", "check-in"]
+						},
+						"description": "Pointer l'arrivée (check-in) d'un employé"
+					},
+					"response": []
+				},
+				{
+					"name": "Check Out",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"employee_id\": \"{{employee_id}}\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/attendance/check-out",
+							"host": ["{{baseUrl}}"],
+							"path": ["attendance", "check-out"]
+						},
+						"description": "Pointer le départ (check-out) d'un employé"
+					},
+					"response": []
+				},
+				{
+					"name": "Create/Update Attendance",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"employee_id\": \"{{employee_id}}\",\n  \"date\": \"2024-01-15\",\n  \"check_in_time\": \"08:00:00\",\n  \"check_out_time\": \"17:00:00\",\n  \"status\": \"present\",\n  \"notes\": \"Journée normale\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/attendance",
+							"host": ["{{baseUrl}}"],
+							"path": ["attendance"]
+						},
+						"description": "Créer ou mettre à jour un enregistrement de présence"
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Attendance",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/attendance/{{attendance_id}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["attendance", "{{attendance_id}}"]
+						},
+						"description": "Supprimer un enregistrement de présence"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Attendance Statistics",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/attendance/statistics?start_date=2024-01-01&end_date=2024-12-31",
+							"host": ["{{baseUrl}}"],
+							"path": ["attendance", "statistics"],
+							"query": [
+								{
+									"key": "start_date",
+									"value": "2024-01-01"
+								},
+								{
+									"key": "end_date",
+									"value": "2024-12-31"
+								}
+							]
+						},
+						"description": "Statistiques de présence globales"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Employee Attendance Summary",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/attendance/employee/{{employee_id}}/summary?start_date=2024-01-01&end_date=2024-12-31",
+							"host": ["{{baseUrl}}"],
+							"path": ["attendance", "employee", "{{employee_id}}", "summary"],
+							"query": [
+								{
+									"key": "start_date",
+									"value": "2024-01-01"
+								},
+								{
+									"key": "end_date",
+									"value": "2024-12-31"
+								}
+							]
+						},
+						"description": "Résumé de présence d'un employé"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Health Check",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:3600/health",
+					"protocol": "http",
+					"host": ["localhost"],
+					"port": "3600",
+					"path": ["health"]
+				},
+				"description": "Vérifier si l'API est en ligne"
+			},
+			"response": []
+		}
+	]
+}

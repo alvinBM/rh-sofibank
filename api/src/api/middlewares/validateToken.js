@@ -16,11 +16,11 @@ const validateToken = async (req, res, next) => {
         if (!token) {
             return res.status(200).json({
                 status: 401,
-                message: 'Token invalide. Veuillez vous reconnecter.'
+                message: 'Token invalide. Veuillez vous reconnecter svp'
             });
         }
 
-        const decodedToken = jwt.verify(token, process.env.JWT_SECRET);
+        const decodedToken = jwt.verify(token, process.env.RANDOM_TOKEN_SECRET);
         req.user = decodedToken;
         next();
     } catch (error) {
@@ -30,6 +30,8 @@ const validateToken = async (req, res, next) => {
                 message: 'Votre session a expiré. Veuillez vous reconnecter pour continuer.'
             });
         }
+
+        console.log('Token verification error:', error);
         
         return res.status(200).json({
             status: 401,
