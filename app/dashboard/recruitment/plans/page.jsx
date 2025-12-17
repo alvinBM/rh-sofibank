@@ -345,11 +345,11 @@ export default function RecruitmentPlanningPage() {
                                         <Input
                                             {...field}
                                             type="number"
-                                            label="Budget Total Estimé (CFD)"
+                                            label="Budget Total Estimé (CDF)"
                                             placeholder="0"
                                             startContent={
                                                 <div className="pointer-events-none flex items-center">
-                                                    <span className="text-default-400 text-small">CFD</span>
+                                                    <span className="text-default-400 text-small">CDF</span>
                                                 </div>
                                             }
                                         />
@@ -451,7 +451,7 @@ export default function RecruitmentPlanningPage() {
                                     )}
                                 />
                                 <Controller name="expected_start_date" control={positionControl} render={({ field }) => <Input {...field} type="date" label="Date de début souhaitée" />} />
-                                <Controller name="budget_allocated" control={positionControl} render={({ field }) => <Input {...field} type="number" label="Budget Alloué (CFD)" placeholder="0" />} />
+                                <Controller name="budget_allocated" control={positionControl} render={({ field }) => <Input {...field} type="number" label="Budget Alloué (CDF)" placeholder="0" />} />
                                 <div className="col-span-2">
                                     <Controller name="justification" control={positionControl} render={({ field }) => <Textarea {...field} label="Justification" placeholder="Décrivez la justification de ce besoin..." rows={4} />} />
                                 </div>
@@ -597,7 +597,7 @@ export default function RecruitmentPlanningPage() {
                                                                 {pos.priority || "N/A"}
                                                             </Chip>
                                                         </TableCell>
-                                                        <TableCell>{pos.budget_allocated ? `${parseInt(pos.budget_allocated).toLocaleString()} CFD` : "N/A"}</TableCell>
+                                                        <TableCell>{pos.budget_allocated ? `${parseInt(pos.budget_allocated).toLocaleString()} CDF` : "N/A"}</TableCell>
                                                         {selectedPlanDetails.status === "draft" && (
                                                             <TableCell>
                                                                 <Button isIconOnly size="sm" color="danger" variant="light" onPress={() => onDeletePosition(pos.id)}>

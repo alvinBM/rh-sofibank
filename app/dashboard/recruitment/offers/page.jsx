@@ -254,7 +254,7 @@ export default function EmploymentOffersPage() {
                     </TableCell>
                     <TableCell>
                       <p className="font-semibold">
-                        {parseInt(offer.offered_salary).toLocaleString()} CFD
+                        {parseInt(offer.offered_salary).toLocaleString()} CDF
                       </p>
                     </TableCell>
                     <TableCell>
@@ -425,7 +425,7 @@ export default function EmploymentOffersPage() {
                       <Input
                         {...field}
                         type="number"
-                        label="Salaire Offert (CFD)"
+                        label="Salaire Offert (CDF)"
                         placeholder="0"
                         isInvalid={!!createErrors.offered_salary}
                         errorMessage={createErrors.offered_salary?.message}
@@ -436,7 +436,7 @@ export default function EmploymentOffersPage() {
                     name="bonus"
                     control={createControl}
                     render={({ field }) => (
-                      <Input {...field} type="number" label="Bonus (CFD)" placeholder="0" />
+                      <Input {...field} type="number" label="Bonus (CDF)" placeholder="0" />
                     )}
                   />
                   <Controller
@@ -656,14 +656,14 @@ export default function EmploymentOffersPage() {
                     <div>
                       <p className="text-sm text-gray-500">Salaire</p>
                       <p className="font-semibold text-lg">
-                        {parseInt(selectedOffer.offered_salary).toLocaleString()} CFD
+                        {parseInt(selectedOffer.offered_salary).toLocaleString()} CDF
                       </p>
                     </div>
                     {selectedOffer.bonus && (
                       <div>
                         <p className="text-sm text-gray-500">Bonus</p>
                         <p className="font-semibold">
-                          {parseInt(selectedOffer.bonus).toLocaleString()} CFD
+                          {parseInt(selectedOffer.bonus).toLocaleString()} CDF
                         </p>
                       </div>
                     )}

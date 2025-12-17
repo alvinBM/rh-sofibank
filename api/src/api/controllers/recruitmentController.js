@@ -829,9 +829,7 @@ export const createPublicJobApplication = async (req, res) => {
 
         let additionalDocsPaths = [];
         if (files.additional_documents && files.additional_documents.length > 0) {
-            additionalDocsPaths = files.additional_documents.map((file) =>
-                file.path.replace("public/", "")
-            );
+            additionalDocsPaths = files.additional_documents.map((file) => file.path.replace("public/", ""));
         }
 
         // Create application
@@ -1061,7 +1059,11 @@ export const scheduleInterview = async (req, res) => {
             ],
         });
 
-        res.status(201).json(createdInterview);
+        res.status(201).json({
+            status: 200,
+            message: "Interview scheduled successfully",
+            interview: createdInterview,
+        });
     } catch (error) {
         console.error("Error scheduling interview:", error);
         res.status(500).json({ error: "Failed to schedule interview" });
@@ -1207,9 +1209,7 @@ export const getEmploymentOffers = async (req, res) => {
         if (direction_id) where.direction_id = direction_id;
         if (application_id) where.application_id = application_id;
         if (query) {
-            where[Op.or] = [
-                { offer_number: { [Op.like]: `%${query}%` } },
-            ];
+            where[Op.or] = [{ offer_number: { [Op.like]: `%${query}%` } }];
         }
 
         const result = await EmploymentOffer.findAndCountAll({
@@ -1525,7 +1525,7 @@ export const respondToOffer = async (req, res) => {
         // If accepted, create employee record and user account
         let newEmployee = null;
         let newUser = null;
-        
+
         if (accept && offer.application) {
             try {
                 // Generate employee number
@@ -1617,9 +1617,7 @@ export const getOnboardingChecklists = async (req, res) => {
                 {
                     model: OnboardingTask,
                     as: "tasks",
-                    include: [
-                        { model: User, as: "assigned_user" },
-                    ],
+                    include: [{ model: User, as: "assigned_user" }],
                 },
             ],
             order: [["start_date", "DESC"]],
@@ -1648,9 +1646,7 @@ export const getOnboardingChecklistById = async (req, res) => {
                 {
                     model: OnboardingTask,
                     as: "tasks",
-                    include: [
-                        { model: User, as: "assigned_user" },
-                    ],
+                    include: [{ model: User, as: "assigned_user" }],
                     order: [["order_index", "ASC"]],
                 },
             ],
@@ -1825,9 +1821,7 @@ export const updateOnboardingTask = async (req, res) => {
         });
 
         const updatedTask = await OnboardingTask.findByPk(taskId, {
-            include: [
-                { model: User, as: "assigned_user" },
-            ],
+            include: [{ model: User, as: "assigned_user" }],
         });
 
         res.json(updatedTask);
