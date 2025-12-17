@@ -212,7 +212,7 @@ export default function PositionsPage() {
   }
 
   return (
-    <PermissionGuard requiredPermission="settings_manage">
+    <PermissionGuard requiredPermissions={["positions_manage", "settings_access"]}>
       <div className="p-6">
         <div className="flex flex-col gap-4">
           <div className="flex justify-between items-center">

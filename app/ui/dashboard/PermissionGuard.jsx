@@ -39,6 +39,7 @@ const PermissionGuard = ({
 
     // Vérifier si l'utilisateur est RH ou DRH ou SUPER_ADMIN
     const isDRH = user?.main_roles?.some((role) => role.role_code === "RH") || user?.main_roles?.some((role) => role.role_code === "DRH") || user?.main_roles?.some((role) => role.role_code === "SUPER_ADMIN");
+    console.log("PermissionGuard - isDRH:", isDRH);
 
     // Si le compte est expiré, afficher un message
     if (isAccountExpired) {

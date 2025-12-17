@@ -323,6 +323,7 @@ CREATE TABLE holidays (
     date DATE NOT NULL UNIQUE,
     year INT NOT NULL,
     is_recurring BOOLEAN DEFAULT FALSE,
+    description TEXT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     INDEX idx_date (date),
     INDEX idx_year (year)

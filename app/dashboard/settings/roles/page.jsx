@@ -295,7 +295,7 @@ export default function RolesPage() {
   }
 
   return (
-    <PermissionGuard requiredPermission="settings_manage">
+    <PermissionGuard requiredPermissions={["roles_manage", "settings_access"]}>
       <div className="p-6">
         <Table
           aria-label="Table des rôles"

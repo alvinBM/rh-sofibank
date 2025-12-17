@@ -325,7 +325,7 @@ export default function UsersPage() {
   }
 
   return (
-    <PermissionGuard requiredPermission="settings_manage">
+    <PermissionGuard requiredPermissions={[]}>
       <div className="p-6">
         <Table
           aria-label="Table des utilisateurs"

@@ -307,7 +307,7 @@ export default function OrganizationPage() {
   }, []);
 
   return (
-    <PermissionGuard requiredPermission="settings_manage">
+    <PermissionGuard requiredPermissions={["org_manage", "settings_access"]}>
       <div className="p-6">
         <div className="flex flex-col gap-4">
           <div className="flex justify-between items-center">

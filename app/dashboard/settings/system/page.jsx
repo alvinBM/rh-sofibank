@@ -275,7 +275,7 @@ export default function SystemPage() {
   }
 
   return (
-    <PermissionGuard requiredPermission="settings_manage">
+    <PermissionGuard requiredPermissions={[]}>
       <div className="p-6">
         <div className="flex flex-col gap-4">
           <div className="flex justify-between items-center">

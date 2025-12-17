@@ -5,15 +5,24 @@ import {
     updateUser,
     deleteUser,
     toggleUserStatus,
+    fetchRoles,
+    createRole,
+    updateRole,
+    deleteRole,
+    fetchPermissions,
+    fetchDirections,
     createDirection,
     updateDirection,
     deleteDirection,
+    fetchServices,
     createService,
     updateService,
     deleteService,
+    fetchGrades,
     createGrade,
     updateGrade,
     deleteGrade,
+    fetchJobPositions,
     createJobPosition,
     updateJobPosition,
     deleteJobPosition,
@@ -30,11 +39,12 @@ import {
     updateSystemParameter,
     createSystemParameter,
     deleteSystemParameter,
-} from "../services/apis/settingsService";
+} from "../services/apis/settingsApiService";
 import queryClient from "../lib/react-query-client";
 
-// Users Hooks
-export const useGetUsers = ({ page = 1, rowsPerPage = 10, query = "" }) => {
+// ==================== USERS HOOKS ====================
+
+export const useGetUsers = ({ page = 1, rowsPerPage = 10, query = "" } = {}) => {
     const offset = (page - 1) * rowsPerPage;
 
     return useQuery({
@@ -80,7 +90,62 @@ export const useToggleUserStatus = () => {
     });
 };
 
-// Directions Hooks
+// ==================== ROLES & PERMISSIONS HOOKS ====================
+
+export const useGetRoles = ({ page = 1, rowsPerPage = 100, query = "" } = {}) => {
+    const offset = (page - 1) * rowsPerPage;
+
+    return useQuery({
+        queryKey: ["settings-roles", { page, rowsPerPage, query }],
+        queryFn: () => fetchRoles({ offset, limit: rowsPerPage, query }),
+        keepPreviousData: true,
+    });
+};
+
+export const useCreateRole = () => {
+    return useMutation({
+        mutationFn: createRole,
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["settings-roles"] });
+        },
+    });
+};
+
+export const useUpdateRole = () => {
+    return useMutation({
+        mutationFn: ({ roleId, roleData }) => updateRole(roleId, roleData),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["settings-roles"] });
+        },
+    });
+};
+
+export const useDeleteRole = () => {
+    return useMutation({
+        mutationFn: deleteRole,
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["settings-roles"] });
+        },
+    });
+};
+
+export const useGetPermissions = () => {
+    return useQuery({
+        queryKey: ["settings-permissions"],
+        queryFn: fetchPermissions,
+        staleTime: 5 * 60 * 1000, // 5 minutes
+    });
+};
+
+// ==================== DIRECTIONS HOOKS ====================
+
+export const useGetDirections = () => {
+    return useQuery({
+        queryKey: ["directions"],
+        queryFn: fetchDirections,
+    });
+};
+
 export const useCreateDirection = () => {
     return useMutation({
         mutationFn: createDirection,
@@ -108,7 +173,15 @@ export const useDeleteDirection = () => {
     });
 };
 
-// Services Hooks
+// ==================== SERVICES HOOKS ====================
+
+export const useGetServices = (directionId = null) => {
+    return useQuery({
+        queryKey: ["services", directionId],
+        queryFn: () => fetchServices(directionId),
+    });
+};
+
 export const useCreateService = () => {
     return useMutation({
         mutationFn: createService,
@@ -136,7 +209,15 @@ export const useDeleteService = () => {
     });
 };
 
-// Grades Hooks
+// ==================== GRADES HOOKS ====================
+
+export const useGetGrades = () => {
+    return useQuery({
+        queryKey: ["grades"],
+        queryFn: fetchGrades,
+    });
+};
+
 export const useCreateGrade = () => {
     return useMutation({
         mutationFn: createGrade,
@@ -164,7 +245,15 @@ export const useDeleteGrade = () => {
     });
 };
 
-// Job Positions Hooks
+// ==================== JOB POSITIONS HOOKS ====================
+
+export const useGetJobPositions = () => {
+    return useQuery({
+        queryKey: ["job_positions"],
+        queryFn: fetchJobPositions,
+    });
+};
+
 export const useCreateJobPosition = () => {
     return useMutation({
         mutationFn: createJobPosition,
@@ -192,8 +281,9 @@ export const useDeleteJobPosition = () => {
     });
 };
 
-// Holidays Hooks
-export const useGetHolidays = ({ page = 1, rowsPerPage = 100, query = "", year = null }) => {
+// ==================== HOLIDAYS HOOKS ====================
+
+export const useGetHolidays = ({ page = 1, rowsPerPage = 100, query = "", year = null } = {}) => {
     const offset = (page - 1) * rowsPerPage;
 
     return useQuery({
@@ -230,8 +320,9 @@ export const useDeleteHoliday = () => {
     });
 };
 
-// Biometric Terminals Hooks
-export const useGetBiometricTerminals = ({ page = 1, rowsPerPage = 100, query = "" }) => {
+// ==================== BIOMETRIC TERMINALS HOOKS ====================
+
+export const useGetBiometricTerminals = ({ page = 1, rowsPerPage = 100, query = "" } = {}) => {
     const offset = (page - 1) * rowsPerPage;
 
     return useQuery({
@@ -274,8 +365,9 @@ export const useTestBiometricConnection = () => {
     });
 };
 
-// System Parameters Hooks
-export const useGetSystemParameters = ({ page = 1, rowsPerPage = 100, query = "" }) => {
+// ==================== SYSTEM PARAMETERS HOOKS ====================
+
+export const useGetSystemParameters = ({ page = 1, rowsPerPage = 100, query = "" } = {}) => {
     const offset = (page - 1) * rowsPerPage;
 
     return useQuery({
