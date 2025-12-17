@@ -5,10 +5,13 @@ import * as recruitmentService from '../services/apis/recruitmentService';
 // RECRUITMENT PLANS HOOKS
 // ========================================
 
-export const useGetRecruitmentPlans = (params = {}) => {
+export const useGetRecruitmentPlans = ({ page = 1, rowsPerPage = 10, ...filters } = {}) => {
+  const offset = (page - 1) * rowsPerPage;
+  const limit = rowsPerPage;
+  
   return useQuery({
-    queryKey: ['recruitment-plans', params],
-    queryFn: () => recruitmentService.getRecruitmentPlans(params),
+    queryKey: ['recruitment-plans', page, rowsPerPage, filters],
+    queryFn: () => recruitmentService.getRecruitmentPlans({ offset, limit, ...filters }),
   });
 };
 
@@ -97,10 +100,13 @@ export const useDeletePlanPosition = () => {
 // JOB POSTINGS HOOKS
 // ========================================
 
-export const useGetJobPostings = (params = {}) => {
+export const useGetJobPostings = ({ page = 1, rowsPerPage = 10, ...filters } = {}) => {
+  const offset = (page - 1) * rowsPerPage;
+  const limit = rowsPerPage;
+  
   return useQuery({
-    queryKey: ['job-postings', params],
-    queryFn: () => recruitmentService.getJobPostings(params),
+    queryKey: ['job-postings', page, rowsPerPage, filters],
+    queryFn: () => recruitmentService.getJobPostings({ offset, limit, ...filters }),
   });
 };
 
@@ -156,13 +162,13 @@ export const useCloseJobPosting = () => {
 };
 
 // ========================================
-// JOB APPLICATIONS HOOKS
-// ========================================
-
-export const useGetJobApplications = (params = {}) => {
+export const useGetJobApplications = ({ page = 1, rowsPerPage = 10, ...filters } = {}) => {
+  const offset = (page - 1) * rowsPerPage;
+  const limit = rowsPerPage;
+  
   return useQuery({
-    queryKey: ['job-applications', params],
-    queryFn: () => recruitmentService.getJobApplications(params),
+    queryKey: ['job-applications', page, rowsPerPage, filters],
+    queryFn: () => recruitmentService.getJobApplications({ offset, limit, ...filters }),
   });
 };
 

@@ -68,7 +68,7 @@ const EmploymentOffer = sequelize.define(
         },
         currency: {
             type: DataTypes.STRING(10),
-            defaultValue: "XAF",
+            defaultValue: "CFD",
         },
         salary_frequency: {
             type: DataTypes.ENUM("hourly", "monthly", "annual"),

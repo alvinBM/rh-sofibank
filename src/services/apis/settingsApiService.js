@@ -58,12 +58,54 @@ export const toggleUserStatus = async (id, isActive) => {
 
 // ==================== ROLES & PERMISSIONS ====================
 
-export const fetchRoles = async ({ offset = 0, limit = 100, query = '' } = {}) => {
+export const fetchDirections = async ({ offset = 0, limit = 100, query = '' } = {}) => {
   try {
-    const response = await apiClient.get('/settings/roles', { offset, limit, query });
-    return response;
+    const response = await apiClient.get('/settings/directions', { offset, limit, query });
+    return response.data || [];
   } catch (error) {
-    console.error('Fetch roles error:', error);
+    console.error('Fetch directions error:', error);
+    throw error;
+  }
+};
+
+// ==================== DEPARTMENTS ====================
+
+export const fetchDepartments = async ({ offset = 0, limit = 100, query = '' } = {}) => {
+  try {
+    const response = await apiClient.get('/settings/departments', { offset, limit, query });
+    return response.data || [];
+  } catch (error) {
+    console.error('Fetch departments error:', error);
+    throw error;
+  }
+};
+
+export const createDepartment = async (payload) => {
+  try {
+    const response = await apiClient.post('/settings/departments', payload);
+    return response.data;
+  } catch (error) {
+    console.error('Create department error:', error);
+    throw error;
+  }
+};
+
+export const updateDepartment = async (id, payload) => {
+  try {
+    const response = await apiClient.put(`/settings/departments/${id}`, payload);
+    return response.data;
+  } catch (error) {
+    console.error('Update department error:', error);
+    throw error;
+  }
+};
+
+export const deleteDepartment = async (id) => {
+  try {
+    const response = await apiClient.delete(`/settings/departments/${id}`);
+    return response.data;
+  } catch (error) {
+    console.error('Delete department error:', error);
     throw error;
   }
 };
@@ -109,16 +151,6 @@ export const fetchPermissions = async () => {
 };
 
 // ==================== DIRECTIONS ====================
-
-export const fetchDirections = async () => {
-  try {
-    const response = await apiClient.get('/settings/directions');
-    return response.data || [];
-  } catch (error) {
-    console.error('Fetch directions error:', error);
-    throw error;
-  }
-};
 
 export const createDirection = async (payload) => {
   try {
@@ -411,6 +443,16 @@ export const deleteSystemParameter = async (id) => {
     return response.data;
   } catch (error) {
     console.error('Delete system parameter error:', error);
+    throw error;
+  }
+};
+
+export const fetchRoles = async () => {
+  try {
+    const response = await apiClient.get('/settings/roles');
+    return response || [];
+  } catch (error) {
+    console.error('Fetch roles error:', error);
     throw error;
   }
 };

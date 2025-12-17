@@ -40,16 +40,28 @@ export const sectionItems = [
                 requiredPermission: "recruitment_view",
                 items: [
                     {
-                        key: "job-openings",
+                        key: "recruitment-dashboard",
+                        icon: "solar:pie-chart-linear",
+                        href: "/dashboard/recruitment",
+                        title: "Tableau de bord",
+                    },
+                    {
+                        key: "recruitment-plans",
+                        icon: "solar:document-linear",
+                        href: "/dashboard/recruitment/plans",
+                        title: "Plans de recrutement",
+                    },
+                    {
+                        key: "job-postings",
                         icon: "solar:case-minimalistic-linear",
-                        href: "/dashboard/recruitment/job-openings",
-                        title: "Postes vacants",
+                        href: "/dashboard/recruitment/jobs",
+                        title: "Offres d'emploi",
                     },
                     {
                         key: "candidates",
                         icon: "solar:user-check-linear",
                         href: "/dashboard/recruitment/candidates",
-                        title: "Candidats",
+                        title: "Candidatures",
                     },
                     {
                         key: "interviews",
@@ -58,10 +70,16 @@ export const sectionItems = [
                         title: "Entretiens",
                     },
                     {
-                        key: "job-offers",
+                        key: "employment-offers",
                         icon: "solar:document-text-linear",
                         href: "/dashboard/recruitment/offers",
-                        title: "Offres d'emploi",
+                        title: "Contrats",
+                    },
+                    {
+                        key: "onboarding",
+                        icon: "solar:checklist-minimalistic-linear",
+                        href: "/dashboard/recruitment/onboarding",
+                        title: "Intégration",
                     },
                 ],
             },
