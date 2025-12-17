@@ -198,7 +198,7 @@ Le module de recrutement et onboarding de SofiBank SIRH est une solution complè
 - `job_position_id`, `grade_id`, `service_id`, `direction_id`
 - `manager_id` : Superviseur
 - `offered_salary` : Salaire offert
-- `currency` : Devise (XAF par défaut)
+- `currency` : Devise (CFD par défaut)
 - `salary_frequency` : hourly | monthly | annual
 - `benefits_package` : Package d'avantages
 - `contract_type` : cdi | cdd | stage | prestation | apprentissage
@@ -426,7 +426,7 @@ Le module de recrutement et onboarding de SofiBank SIRH est une solution complè
 
 ### 5. Offre d'Emploi (Avril)
 1. RH crée une offre d'emploi pour le meilleur candidat
-2. Renseigne : salaire 800 000 XAF, CDI, Grade C2, date début 01/05/2025
+2. Renseigne : salaire 800 000 CFD, CDI, Grade C2, date début 01/05/2025
 3. Soumet pour approbation du DRH
 4. DRH approuve
 5. Système génère un PDF signé de l'offre

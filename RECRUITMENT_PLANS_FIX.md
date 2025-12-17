@@ -71,10 +71,10 @@ const approverId = req.userId; // ✅ Utilisation de req.userId du middleware
 ```jsx
 <Input
   type="number"
-  label="Budget Total Estimé (XAF)"
+  label="Budget Total Estimé (CFD)"
   placeholder="0"
   startContent={
-    <span className="text-default-400 text-small">XAF</span>
+    <span className="text-default-400 text-small">CFD</span>
   }
 />
 ```
@@ -130,7 +130,7 @@ const approverId = req.userId; // ✅ Utilisation de req.userId du middleware
 | **Année** | Number | ✅ Oui | Année du plan (ex: 2025) |
 | **Direction** | Select | ✅ Oui | Direction concernée |
 | **Description / Objectifs** | Textarea | ❌ Non | Objectifs et besoins détaillés |
-| **Budget Total Estimé** | Number | ❌ Non | Budget global alloué (XAF) |
+| **Budget Total Estimé** | Number | ❌ Non | Budget global alloué (CFD) |
 
 ### Formulaire d'Ajout de Position
 
@@ -142,7 +142,7 @@ const approverId = req.userId; // ✅ Utilisation de req.userId du middleware
 | **Quantité** | Number | ✅ Oui | Nombre de postes |
 | **Priorité** | Select | ✅ Oui | Faible/Moyenne/Haute/Urgente |
 | **Date de début** | Date | ❌ Non | Date souhaitée de prise de poste |
-| **Budget Alloué** | Number | ❌ Non | Budget pour ce poste (XAF) |
+| **Budget Alloué** | Number | ❌ Non | Budget pour ce poste (CFD) |
 | **Justification** | Textarea | ❌ Non | Justification du besoin |
 
 ---
@@ -206,7 +206,7 @@ const approverId = req.userId; // ✅ Utilisation de req.userId du middleware
 │ └────────────────────────────┘ │
 │                                │
 │ Budget Total Estimé:           │
-│ XAF [________________]         │
+│ CFD [________________]         │
 │                                │
 │ ┌────────────────────────────┐ │
 │ │ 💡 Note: Après création,   │ │

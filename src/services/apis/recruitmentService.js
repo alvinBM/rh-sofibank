@@ -7,10 +7,26 @@ import apiClient from "../api-client";
 /**
  * Get all recruitment plans with filters
  */
-export const getRecruitmentPlans = async (params = {}) => {
-    const { year, direction_id, status } = params;
-    const { data } = await apiClient.get("/recruitment/plans?" + (year ? `year=${year}&` : "") + (direction_id ? `direction_id=${direction_id}&` : "") + (status ? `status=${status}&` : ""));
-    return data;
+export const getRecruitmentPlans = async ({ offset = 0, limit = 10, year, direction_id, status, query } = {}) => {
+    let requestUrl = `/recruitment/plans?offset=${offset}&limit=${limit}`;
+    
+    if (year) requestUrl += `&year=${year}`;
+    if (direction_id) requestUrl += `&direction_id=${direction_id}`;
+    if (status) requestUrl += `&status=${status}`;
+    if (query) requestUrl += `&query=${query}`;
+
+    const data = await apiClient.get(requestUrl);
+
+    console.log("RECRUITMENT PLANS DATA ", data);
+
+    if (data.status === 200) {
+        return {
+            plans: data.plans,
+            total: data.total
+        };
+    } else {
+        throw new Error(data.message || 'Failed to fetch recruitment plans');
+    }
 };
 
 /**
@@ -84,9 +100,24 @@ export const deletePlanPosition = async (positionId) => {
 /**
  * Get all job postings with filters
  */
-export const getJobPostings = async (params = {}) => {
-    const { data } = await apiClient.get("/recruitment/postings", { params });
-    return data;
+export const getJobPostings = async ({ offset = 0, limit = 10, status, plan_id, job_position_id, query } = {}) => {
+    let requestUrl = `/recruitment/postings?offset=${offset}&limit=${limit}`;
+    
+    if (status) requestUrl += `&status=${status}`;
+    if (plan_id) requestUrl += `&plan_id=${plan_id}`;
+    if (job_position_id) requestUrl += `&job_position_id=${job_position_id}`;
+    if (query) requestUrl += `&query=${query}`;
+
+    const { data } = await apiClient.get(requestUrl);
+
+    if (data.status === 200) {
+        return {
+            postings: data.postings,
+            total: data.total
+        };
+    } else {
+        throw new Error(data.message || 'Failed to fetch job postings');
+    }
 };
 
 /**
@@ -136,9 +167,26 @@ export const closeJobPosting = async (id, closeData) => {
 /**
  * Get all job applications with filters
  */
-export const getJobApplications = async (params = {}) => {
-    const { data } = await apiClient.get("/recruitment/applications", { params });
-    return data;
+export const getJobApplications = async ({ offset = 0, limit = 10, status, posting_id, assigned_to, query, sort, order } = {}) => {
+    let requestUrl = `/recruitment/applications?offset=${offset}&limit=${limit}`;
+    
+    if (status) requestUrl += `&status=${status}`;
+    if (posting_id) requestUrl += `&posting_id=${posting_id}`;
+    if (assigned_to) requestUrl += `&assigned_to=${assigned_to}`;
+    if (query) requestUrl += `&query=${query}`;
+    if (sort) requestUrl += `&sort=${sort}`;
+    if (order) requestUrl += `&order=${order}`;
+
+    const { data } = await apiClient.get(requestUrl);
+
+    if (data.status === 200) {
+        return {
+            applications: data.applications,
+            total: data.total
+        };
+    } else {
+        throw new Error(data.message || 'Failed to fetch job applications');
+    }
 };
 
 /**

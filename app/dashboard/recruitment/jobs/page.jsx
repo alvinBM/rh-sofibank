@@ -473,14 +473,14 @@ export default function JobPostingsPage() {
                     name="salary_range_min"
                     control={createControl}
                     render={({ field }) => (
-                      <Input {...field} type="number" label="Salaire Min (XAF)" placeholder="0" />
+                      <Input {...field} type="number" label="Salaire Min (CFD)" placeholder="0" />
                     )}
                   />
                   <Controller
                     name="salary_range_max"
                     control={createControl}
                     render={({ field }) => (
-                      <Input {...field} type="number" label="Salaire Max (XAF)" placeholder="0" />
+                      <Input {...field} type="number" label="Salaire Max (CFD)" placeholder="0" />
                     )}
                   />
                 </div>
@@ -608,13 +608,13 @@ export default function JobPostingsPage() {
                       <p className="text-sm text-gray-500">Fourchette Salariale</p>
                       <p className="font-semibold">
                         {selectedPosting.salary_range_min
-                          ? `${parseInt(selectedPosting.salary_range_min).toLocaleString()} XAF`
+                          ? `${parseInt(selectedPosting.salary_range_min).toLocaleString()} CFD`
                           : ""}{" "}
                         {selectedPosting.salary_range_min && selectedPosting.salary_range_max
                           ? "-"
                           : ""}{" "}
                         {selectedPosting.salary_range_max
-                          ? `${parseInt(selectedPosting.salary_range_max).toLocaleString()} XAF`
+                          ? `${parseInt(selectedPosting.salary_range_max).toLocaleString()} CFD`
                           : ""}
                       </p>
                     </div>
