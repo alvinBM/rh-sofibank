@@ -1071,6 +1071,73 @@ export const scheduleInterview = async (req, res) => {
 };
 
 /**
+ * Get all interviews with filters and pagination
+ */
+export const getAllInterviews = async (req, res) => {
+    try {
+        let { offset = 0, limit = 10, status, type, date, query } = req.query;
+        offset = parseInt(offset);
+        limit = parseInt(limit);
+        const stringQuery = query ? query.trim() : "";
+
+        const where = {};
+        if (status) where.status = status;
+        if (type) where.interview_type = type;
+        if (date) {
+            const startDate = new Date(date);
+            const endDate = new Date(date);
+            endDate.setDate(endDate.getDate() + 1);
+            where.scheduled_date = {
+                [Op.gte]: startDate,
+                [Op.lt]: endDate,
+            };
+        }
+
+        const result = await JobInterview.findAndCountAll({
+            offset,
+            limit,
+            where,
+            include: [
+                {
+                    model: JobApplication,
+                    as: "application",
+                    include: [
+                        { model: JobPosting, as: "job_posting" },
+                    ],
+                    where: stringQuery
+                        ? {
+                              [Op.or]: [
+                                  { first_name: { [Op.like]: `%${stringQuery}%` } },
+                                  { last_name: { [Op.like]: `%${stringQuery}%` } },
+                                  { email: { [Op.like]: `%${stringQuery}%` } },
+                              ],
+                          }
+                        : undefined,
+                },
+                { model: User, as: "scheduler" },
+                {
+                    model: InterviewEvaluation,
+                    as: "evaluations",
+                    include: [{ model: User, as: "evaluator" }],
+                },
+            ],
+            order: [["scheduled_date", "DESC"]],
+            distinct: true,
+        });
+
+        res.json({
+            status: 200,
+            message: "Entretiens trouvés",
+            total: result.count,
+            interviews: result.rows,
+        });
+    } catch (error) {
+        console.error("Error fetching all interviews:", error);
+        res.status(500).json({ error: "Failed to fetch interviews" });
+    }
+};
+
+/**
  * Get interviews for an application
  */
 export const getInterviewsForApplication = async (req, res) => {

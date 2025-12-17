@@ -113,6 +113,9 @@ router.post("/applications/:id/rate", checkPermission("recruitment.edit"), recru
 // INTERVIEW ROUTES (Stage 3)
 // ========================================
 
+// Get all interviews with filters and pagination
+router.get("/interviews", checkPermission("recruitment.view"), recruitmentController.getAllInterviews);
+
 // Get interviews for application
 router.get("/applications/:applicationId/interviews", checkPermission("recruitment.view"), recruitmentController.getInterviewsForApplication);
 
