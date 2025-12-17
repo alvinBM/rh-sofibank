@@ -1,11 +1,9 @@
 "use client";
 
 import React, { useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
 import {
   Card,
   CardBody,
-  CardHeader,
   Button,
   Table,
   TableHeader,
@@ -22,388 +20,301 @@ import {
   Select,
   SelectItem,
   Spinner,
-  User,
-  Progress,
   Modal,
   ModalContent,
   ModalHeader,
   ModalBody,
   ModalFooter,
   Textarea,
+  useDisclosure,
+  Avatar,
+  Progress,
   Tabs,
   Tab,
-  useDisclosure,
-  Divider,
+  User,
 } from "@nextui-org/react";
 import {
   FiPlus,
   FiSearch,
   FiMoreVertical,
   FiEye,
-  FiCalendar,
+  FiUserCheck,
   FiStar,
+  FiCalendar,
+  FiMail,
+  FiPhone,
   FiFileText,
   FiDownload,
-  FiEdit,
-  FiTrash2,
-  FiPhone,
-  FiMail,
-  FiUser,
-  FiClock,
-  FiCheckCircle,
 } from "react-icons/fi";
 import { useForm, Controller } from "react-hook-form";
 import { toast } from "react-toastify";
 import {
-  useGetCandidates,
-  useGetCandidateById,
-  useUpdateCandidate,
-  useDeleteCandidate,
-  useCreateInterview,
-  useCreateJobOffer,
+  useGetJobApplications,
+  useGetJobApplicationById,
+  useUpdateJobApplication,
+  useAssignApplication,
+  useRateApplication,
+  useScheduleInterview,
+  useGetJobPostings,
 } from "@/src/hooks/useRecruitment";
-import { useGetJobOpenings } from "@/src/hooks/useRecruitment";
-import PermissionGuard from "@/app/ui/dashboard/PermissionGuard";
-
-const STATUS_COLORS = {
-  new: "danger",
-  screening: "warning",
-  interview_scheduled: "secondary",
-  interviewed: "secondary",
-  shortlisted: "success",
-  offer_made: "success",
-  hired: "success",
-  rejected: "danger",
-  withdrawn: "default",
-};
-
-const STATUS_LABELS = {
-  new: "Nouveau",
-  screening: "Présélection",
-  interview_scheduled: "Entretien Planifié",
-  interviewed: "Interviewé",
-  shortlisted: "Liste Restreinte",
-  offer_made: "Offre Faite",
-  hired: "Embauché",
-  rejected: "Rejeté",
-  withdrawn: "Retiré",
-};
-
-const SOURCE_OPTIONS = [
-  { value: "website", label: "Site Web" },
-  { value: "linkedin", label: "LinkedIn" },
-  { value: "referral", label: "Référence" },
-  { value: "job_board", label: "Job Board" },
-  { value: "direct", label: "Direct" },
-  { value: "other", label: "Autre" },
-];
+import { useGetEmployees } from "@/src/hooks/useEmployees";
 
 export default function CandidatesPage() {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const jobId = searchParams.get("job");
+  const [filters, setFilters] = useState({});
+  const [selectedApplication, setSelectedApplication] = useState(null);
+  const [activeTab, setActiveTab] = useState("info");
 
-  const [filters, setFilters] = useState({
-    job_opening_id: jobId || "",
-    status: "",
-  });
-  const [searchQuery, setSearchQuery] = useState("");
-  const [selectedCandidate, setSelectedCandidate] = useState(null);
-  const { isOpen, onOpen, onClose } = useDisclosure();
-  const { isOpen: isEditOpen, onOpen: onEditOpen, onClose: onEditClose } = useDisclosure();
+  const { isOpen: isDetailOpen, onOpen: onDetailOpen, onClose: onDetailClose } = useDisclosure();
+  const { isOpen: isAssignOpen, onOpen: onAssignOpen, onClose: onAssignClose } = useDisclosure();
+  const { isOpen: isRateOpen, onOpen: onRateOpen, onClose: onRateClose } = useDisclosure();
   const { isOpen: isInterviewOpen, onOpen: onInterviewOpen, onClose: onInterviewClose } = useDisclosure();
 
-  const { data: candidates, isLoading } = useGetCandidates(filters);
-  const { data: jobOpenings } = useGetJobOpenings({});
-  const { data: candidateDetail, isLoading: isDetailLoading } = useGetCandidateById(selectedCandidate?.id);
+  const { data: applications, isLoading } = useGetJobApplications(filters);
+  const { data: jobPostings } = useGetJobPostings({ status: "published" });
+  const { data: employees } = useGetEmployees();
 
-  const updateCandidateMutation = useUpdateCandidate();
-  const deleteCandidateMutation = useDeleteCandidate();
-  const createInterviewMutation = useCreateInterview();
-  const createOfferMutation = useCreateJobOffer();
+  const updateApplicationMutation = useUpdateJobApplication();
+  const assignApplicationMutation = useAssignApplication();
+  const rateApplicationMutation = useRateApplication();
+  const scheduleInterviewMutation = useScheduleInterview();
 
-  const { control, handleSubmit, reset, formState: { errors } } = useForm({
-    defaultValues: {
-      status: "",
-      internal_notes: "",
-      overall_score: "",
-    }
-  });
+  const {
+    control: assignControl,
+    handleSubmit: handleAssignSubmit,
+    reset: resetAssign,
+  } = useForm();
 
-  const { control: interviewControl, handleSubmit: handleInterviewSubmit, reset: resetInterview } = useForm({
-    defaultValues: {
-      interview_type: "",
-      scheduled_date: "",
-      scheduled_time: "",
-      notes: "",
-    }
-  });
+  const {
+    control: rateControl,
+    handleSubmit: handleRateSubmit,
+    reset: resetRate,
+  } = useForm();
 
-  const handleOpenDetail = (candidate) => {
-    setSelectedCandidate(candidate);
-    onOpen();
-  };
+  const {
+    control: interviewControl,
+    handleSubmit: handleInterviewSubmit,
+    reset: resetInterview,
+  } = useForm();
 
-  const handleCloseDetail = () => {
-    setSelectedCandidate(null);
-    onClose();
-  };
-
-  const handleOpenEdit = (candidate) => {
-    setSelectedCandidate(candidate);
-    reset({
-      status: candidate.status || "",
-      internal_notes: candidate.internal_notes || "",
-      overall_score: candidate.overall_score || "",
-    });
-    onEditOpen();
-  };
-
-  const handleOpenInterview = (candidate) => {
-    setSelectedCandidate(candidate);
-    resetInterview({
-      interview_type: "",
-      scheduled_date: "",
-      scheduled_time: "",
-      notes: "",
-    });
-    onInterviewOpen();
-  };
-
-  const onSubmit = async (data) => {
+  const onUpdateStatus = async (applicationId, newStatus) => {
     try {
-      await updateCandidateMutation.mutateAsync({
-        id: selectedCandidate.id,
-        updates: data,
+      await updateApplicationMutation.mutateAsync({
+        id: applicationId,
+        applicationData: { status: newStatus },
       });
-      toast.success("Candidat mis à jour avec succès");
-      onEditClose();
+      toast.success("Statut mis à jour");
     } catch (error) {
       toast.error("Erreur lors de la mise à jour");
-      console.error(error);
     }
   };
 
-  const onInterviewSubmit = async (data) => {
+  const onAssignApplication = async (data) => {
     try {
-      const scheduledDateTime = new Date(`${data.scheduled_date}T${data.scheduled_time}`);
-      await createInterviewMutation.mutateAsync({
-        candidate_id: selectedCandidate.id,
-        interview_type: data.interview_type,
-        scheduled_date: scheduledDateTime.toISOString(),
-        duration: 60,
-        notes: data.notes,
-        status: "scheduled",
+      await assignApplicationMutation.mutateAsync({
+        id: selectedApplication.id,
+        recruiter_id: data.recruiter_id,
       });
-      toast.success("Entretien planifié avec succès");
+      toast.success("Recruteur assigné");
+      resetAssign();
+      onAssignClose();
+    } catch (error) {
+      toast.error("Erreur lors de l'assignation");
+    }
+  };
+
+  const onRateApplication = async (data) => {
+    try {
+      await rateApplicationMutation.mutateAsync({
+        id: selectedApplication.id,
+        rating: parseInt(data.rating),
+        notes: data.notes,
+      });
+      toast.success("Évaluation enregistrée");
+      resetRate();
+      onRateClose();
+    } catch (error) {
+      toast.error("Erreur lors de l'évaluation");
+    }
+  };
+
+  const onScheduleInterview = async (data) => {
+    try {
+      await scheduleInterviewMutation.mutateAsync({
+        application_id: selectedApplication.id,
+        interviewData: data,
+      });
+      toast.success("Entretien programmé");
+      resetInterview();
       onInterviewClose();
     } catch (error) {
-      toast.error("Erreur lors de la planification");
-      console.error(error);
+      toast.error("Erreur lors de la programmation");
     }
   };
 
-  const handleMakeOffer = async (candidate) => {
-    try {
-      router.push(`/dashboard/recruitment/offers?candidate=${candidate.id}`);
-    } catch (error) {
-      toast.error("Erreur lors de la création de l'offre");
-      console.error(error);
-    }
+  const getStatusColor = (status) => {
+    const colors = {
+      new: "primary",
+      screening: "secondary",
+      interview: "warning",
+      offer: "success",
+      hired: "success",
+      rejected: "danger",
+      withdrawn: "default",
+    };
+    return colors[status] || "default";
   };
 
-  const handleDelete = async (candidateId) => {
-    if (window.confirm("Êtes-vous sûr de vouloir supprimer ce candidat ?")) {
-      try {
-        await deleteCandidateMutation.mutateAsync(candidateId);
-        toast.success("Candidat supprimé avec succès");
-      } catch (error) {
-        toast.error("Erreur lors de la suppression");
-        console.error(error);
-      }
-    }
+  const getStatusLabel = (status) => {
+    const labels = {
+      new: "Nouveau",
+      screening: "Présélection",
+      interview: "Entretien",
+      offer: "Offre",
+      hired: "Embauché",
+      rejected: "Rejeté",
+      withdrawn: "Retiré",
+    };
+    return labels[status] || status;
   };
 
-  const getScoreColor = (score) => {
-    if (!score) return "default";
-    if (score >= 8) return "success";
-    if (score >= 6) return "warning";
-    return "danger";
+  const downloadCV = (url) => {
+    window.open(url, "_blank");
   };
-
-  const filteredCandidates = candidates?.filter((candidate) =>
-    searchQuery === "" ||
-    candidate.first_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    candidate.last_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    candidate.email?.toLowerCase().includes(searchQuery.toLowerCase())
-  ) || [];
 
   return (
-    <PermissionGuard requiredPermission="recruitment_manage">
-      <div className="p-6 max-w-7xl mx-auto">
-        <div className="flex justify-between items-center mb-6">
-          <div>
-            <h1 className="text-2xl font-bold">Candidatures</h1>
-            <p className="text-default-500">Gérez vos candidats et leur processus de sélection</p>
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-2xl font-bold">Candidatures</h1>
+          <p className="text-sm text-gray-500">
+            Gestion des candidats et du processus de recrutement
+          </p>
+        </div>
+      </div>
+
+      {/* Filters */}
+      <Card>
+        <CardBody>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <Input
+              placeholder="Rechercher un candidat..."
+              startContent={<FiSearch />}
+              onChange={(e) => setFilters({ ...filters, search: e.target.value })}
+            />
+            <Select
+              label="Offre d'emploi"
+              placeholder="Toutes"
+              onChange={(e) => setFilters({ ...filters, job_posting_id: e.target.value })}
+            >
+              {jobPostings?.map((posting) => (
+                <SelectItem key={posting.id} value={posting.id}>
+                  {posting.job_title}
+                </SelectItem>
+              ))}
+            </Select>
+            <Select
+              label="Statut"
+              placeholder="Tous"
+              onChange={(e) => setFilters({ ...filters, status: e.target.value })}
+            >
+              <SelectItem key="new" value="new">Nouveau</SelectItem>
+              <SelectItem key="screening" value="screening">Présélection</SelectItem>
+              <SelectItem key="interview" value="interview">Entretien</SelectItem>
+              <SelectItem key="offer" value="offer">Offre</SelectItem>
+              <SelectItem key="hired" value="hired">Embauché</SelectItem>
+              <SelectItem key="rejected" value="rejected">Rejeté</SelectItem>
+            </Select>
+            <Select
+              label="Source"
+              placeholder="Toutes"
+              onChange={(e) => setFilters({ ...filters, source: e.target.value })}
+            >
+              <SelectItem key="website" value="website">Site Web</SelectItem>
+              <SelectItem key="linkedin" value="linkedin">LinkedIn</SelectItem>
+              <SelectItem key="referral" value="referral">Recommandation</SelectItem>
+              <SelectItem key="job_board" value="job_board">Site d'emploi</SelectItem>
+              <SelectItem key="other" value="other">Autre</SelectItem>
+            </Select>
           </div>
-          <Button color="danger" startContent={<FiPlus />}>
-            Ajouter Candidat
-          </Button>
-        </div>
+        </CardBody>
+      </Card>
 
-        {/* Stats */}
-        <div className="grid grid-cols-5 gap-4 mb-6">
-          <Card>
-            <CardBody className="text-center">
-              <p className="text-2xl font-bold">{filteredCandidates.filter(c => c.status === "new").length || 0}</p>
-              <p className="text-xs text-default-500">Nouveaux</p>
-            </CardBody>
-          </Card>
-          <Card>
-            <CardBody className="text-center">
-              <p className="text-2xl font-bold">{filteredCandidates.filter(c => c.status === "screening").length || 0}</p>
-              <p className="text-xs text-default-500">Présélection</p>
-            </CardBody>
-          </Card>
-          <Card>
-            <CardBody className="text-center">
-              <p className="text-2xl font-bold">
-                {filteredCandidates.filter(c => c.status === "interview_scheduled" || c.status === "interviewed").length || 0}
-              </p>
-              <p className="text-xs text-default-500">Entretiens</p>
-            </CardBody>
-          </Card>
-          <Card>
-            <CardBody className="text-center">
-              <p className="text-2xl font-bold">{filteredCandidates.filter(c => c.status === "shortlisted").length || 0}</p>
-              <p className="text-xs text-default-500">Liste Restreinte</p>
-            </CardBody>
-          </Card>
-          <Card>
-            <CardBody className="text-center">
-              <p className="text-2xl font-bold">{filteredCandidates.filter(c => c.status === "hired").length || 0}</p>
-              <p className="text-xs text-default-500">Embauchés</p>
-            </CardBody>
-          </Card>
-        </div>
-
-        {/* Filters */}
-        <Card className="mb-6">
-          <CardBody>
-            <div className="flex gap-4">
-              <Input
-                placeholder="Rechercher par nom, email..."
-                startContent={<FiSearch />}
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="flex-1"
-              />
-
-              <Select
-                label="Poste"
-                placeholder="Tous les postes"
-                selectedKeys={filters.job_opening_id ? [filters.job_opening_id] : []}
-                onChange={(e) => setFilters({ ...filters, job_opening_id: e.target.value })}
-                className="w-64"
-              >
-                {(jobOpenings || []).map((job) => (
-                  <SelectItem key={job.id} value={job.id}>
-                    {job.title}
-                  </SelectItem>
-                ))}
-              </Select>
-
-              <Select
-                label="Statut"
-                placeholder="Tous les statuts"
-                selectedKeys={filters.status ? [filters.status] : []}
-                onChange={(e) => setFilters({ ...filters, status: e.target.value })}
-                className="w-56"
-              >
-                {Object.entries(STATUS_LABELS).map(([value, label]) => (
-                  <SelectItem key={value} value={value}>
-                    {label}
-                  </SelectItem>
-                ))}
-              </Select>
-
-              <Button variant="flat" onPress={() => {
-                setFilters({ job_opening_id: "", status: "" });
-                setSearchQuery("");
-              }}>
-                Réinitialiser
-              </Button>
+      {/* Applications Table */}
+      <Card>
+        <CardBody>
+          {isLoading ? (
+            <div className="flex justify-center py-8">
+              <Spinner size="lg" />
             </div>
-          </CardBody>
-        </Card>
-
-        {/* Table */}
-        <Card>
-          <CardBody>
-            <Table aria-label="Candidats">
+          ) : (
+            <Table aria-label="Candidatures">
               <TableHeader>
                 <TableColumn>CANDIDAT</TableColumn>
                 <TableColumn>POSTE</TableColumn>
                 <TableColumn>SOURCE</TableColumn>
-                <TableColumn>DATE CANDIDATURE</TableColumn>
-                <TableColumn>ENTRETIENS</TableColumn>
-                <TableColumn>SCORE</TableColumn>
                 <TableColumn>STATUT</TableColumn>
+                <TableColumn>NOTE</TableColumn>
+                <TableColumn>RECRUTEUR</TableColumn>
+                <TableColumn>DATE DÉPÔT</TableColumn>
                 <TableColumn>ACTIONS</TableColumn>
               </TableHeader>
-              <TableBody
-                items={filteredCandidates}
-                isLoading={isLoading}
-                loadingContent={<Spinner label="Chargement..." />}
-                emptyContent="Aucun candidat trouvé"
-              >
-                {(candidate) => (
-                  <TableRow key={candidate.id}>
+              <TableBody emptyContent="Aucune candidature trouvée">
+                {(applications || []).map((application) => (
+                  <TableRow key={application.id}>
                     <TableCell>
                       <User
-                        name={`${candidate.first_name} ${candidate.last_name}`}
-                        description={candidate.email}
+                        name={`${application.first_name} ${application.last_name}`}
+                        description={application.email}
                         avatarProps={{
-                          name: `${candidate.first_name?.[0]}${candidate.last_name?.[0]}`,
+                          src: application.profile_picture,
+                          name: application.first_name?.[0],
                         }}
                       />
                     </TableCell>
                     <TableCell>
                       <div>
-                        <p className="text-sm font-semibold">{candidate.job_opening?.title}</p>
-                        <p className="text-xs text-default-400">{candidate.job_opening?.job_number}</p>
+                        <p className="font-semibold">{application.job_posting?.job_title}</p>
+                        <p className="text-xs text-gray-500">
+                          {application.job_posting?.reference_number}
+                        </p>
                       </div>
                     </TableCell>
                     <TableCell>
                       <Chip size="sm" variant="flat">
-                        {SOURCE_OPTIONS.find(s => s.value === candidate.source)?.label || candidate.source || "-"}
+                        {application.source}
                       </Chip>
                     </TableCell>
                     <TableCell>
-                      {candidate.application_date
-                        ? new Date(candidate.application_date).toLocaleDateString("fr-FR")
-                        : "-"}
+                      <Chip
+                        size="sm"
+                        color={getStatusColor(application.status)}
+                        variant="flat"
+                      >
+                        {getStatusLabel(application.status)}
+                      </Chip>
                     </TableCell>
-                    <TableCell>{candidate.interviews?.[0]?.count || 0}</TableCell>
                     <TableCell>
-                      {candidate.overall_score ? (
-                        <div className="flex items-center gap-2">
-                          <Progress
-                            value={candidate.overall_score * 10}
-                            color={getScoreColor(candidate.overall_score)}
-                            size="sm"
-                            className="w-20"
-                          />
-                          <span className="text-sm">{candidate.overall_score}/10</span>
+                      {application.rating ? (
+                        <div className="flex items-center gap-1">
+                          <FiStar className="text-warning" />
+                          <span className="font-semibold">{application.rating}/5</span>
                         </div>
                       ) : (
-                        <span className="text-default-400">-</span>
+                        <span className="text-gray-400">N/A</span>
                       )}
                     </TableCell>
                     <TableCell>
-                      <Chip color={STATUS_COLORS[candidate.status]} variant="flat" size="sm">
-                        {STATUS_LABELS[candidate.status]}
-                      </Chip>
+                      {application.recruiter ? (
+                        <span className="text-sm">{application.recruiter.username}</span>
+                      ) : (
+                        <Chip size="sm" variant="flat" color="warning">
+                          Non assigné
+                        </Chip>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {new Date(application.applied_date).toLocaleDateString("fr-FR")}
                     </TableCell>
                     <TableCell>
                       <Dropdown>
@@ -412,505 +323,386 @@ export default function CandidatesPage() {
                             <FiMoreVertical />
                           </Button>
                         </DropdownTrigger>
-                        <DropdownMenu>
+                        <DropdownMenu aria-label="Actions">
                           <DropdownItem
                             key="view"
                             startContent={<FiEye />}
-                            onPress={() => handleOpenDetail(candidate)}
+                            onPress={() => {
+                              setSelectedApplication(application);
+                              onDetailOpen();
+                            }}
                           >
-                            Voir profil complet
+                            Voir le profil
                           </DropdownItem>
                           <DropdownItem
-                            key="edit"
-                            startContent={<FiEdit />}
-                            onPress={() => handleOpenEdit(candidate)}
+                            key="assign"
+                            startContent={<FiUserCheck />}
+                            onPress={() => {
+                              setSelectedApplication(application);
+                              onAssignOpen();
+                            }}
                           >
-                            Modifier statut/notes
+                            Assigner un recruteur
+                          </DropdownItem>
+                          <DropdownItem
+                            key="rate"
+                            startContent={<FiStar />}
+                            onPress={() => {
+                              setSelectedApplication(application);
+                              onRateOpen();
+                            }}
+                          >
+                            Évaluer
                           </DropdownItem>
                           <DropdownItem
                             key="interview"
                             startContent={<FiCalendar />}
-                            onPress={() => handleOpenInterview(candidate)}
+                            onPress={() => {
+                              setSelectedApplication(application);
+                              onInterviewOpen();
+                            }}
                           >
-                            Planifier entretien
+                            Programmer entretien
                           </DropdownItem>
                           <DropdownItem
-                            key="offer"
-                            startContent={<FiFileText />}
-                            onPress={() => handleMakeOffer(candidate)}
+                            key="screening"
+                            onPress={() => onUpdateStatus(application.id, "screening")}
                           >
-                            Faire une offre
+                            → Présélection
                           </DropdownItem>
                           <DropdownItem
-                            key="delete"
-                            startContent={<FiTrash2 />}
-                            onPress={() => handleDelete(candidate.id)}
+                            key="reject"
                             className="text-danger"
                             color="danger"
+                            onPress={() => onUpdateStatus(application.id, "rejected")}
                           >
-                            Supprimer
+                            Rejeter
                           </DropdownItem>
                         </DropdownMenu>
                       </Dropdown>
                     </TableCell>
                   </TableRow>
-                )}
+                ))}
               </TableBody>
             </Table>
-          </CardBody>
-        </Card>
+          )}
+        </CardBody>
+      </Card>
 
-        {/* Modal Detail Candidat */}
+      {/* Application Detail Modal */}
+      {selectedApplication && (
         <Modal
-          isOpen={isOpen}
-          onClose={handleCloseDetail}
-          size="5xl"
+          isOpen={isDetailOpen}
+          onClose={onDetailClose}
+          size="4xl"
           scrollBehavior="inside"
-          classNames={{
-            base: "max-h-[90vh]",
-          }}
         >
           <ModalContent>
-            {(onClose) => (
-              <>
-                <ModalHeader>
-                  <h3 className="text-xl font-bold">Profil du Candidat</h3>
-                </ModalHeader>
-                <ModalBody>
-                  {isDetailLoading ? (
-                    <div className="flex justify-center py-8">
-                      <Spinner label="Chargement des détails..." />
+            <ModalHeader>
+              Profil du Candidat
+            </ModalHeader>
+            <ModalBody>
+              <Tabs
+                selectedKey={activeTab}
+                onSelectionChange={setActiveTab}
+                aria-label="Application details"
+              >
+                <Tab key="info" title="Informations">
+                  <div className="space-y-6 py-4">
+                    {/* Personal Info */}
+                    <div className="flex items-start gap-4">
+                      <Avatar
+                        src={selectedApplication.profile_picture}
+                        name={selectedApplication.first_name?.[0]}
+                        size="lg"
+                        className="w-20 h-20"
+                      />
+                      <div className="flex-1">
+                        <h3 className="text-xl font-bold">
+                          {selectedApplication.first_name} {selectedApplication.last_name}
+                        </h3>
+                        <p className="text-gray-500">{selectedApplication.email}</p>
+                        <p className="text-gray-500">{selectedApplication.phone}</p>
+                      </div>
+                      <Chip
+                        color={getStatusColor(selectedApplication.status)}
+                        variant="flat"
+                      >
+                        {getStatusLabel(selectedApplication.status)}
+                      </Chip>
                     </div>
-                  ) : candidateDetail ? (
-                    <Tabs variant="underlined">
-                      <Tab key="info" title="Informations">
-                        <div className="space-y-4 py-4">
-                          <Card>
-                            <CardBody>
-                              <div className="flex items-start gap-4">
-                                <div className="flex-shrink-0">
-                                  <div className="w-20 h-20 rounded-full bg-danger-100 flex items-center justify-center text-2xl font-bold text-danger">
-                                    {candidateDetail.first_name?.[0]}{candidateDetail.last_name?.[0]}
-                                  </div>
-                                </div>
-                                <div className="flex-1">
-                                  <h3 className="text-xl font-bold">
-                                    {candidateDetail.first_name} {candidateDetail.last_name}
-                                  </h3>
-                                  <p className="text-default-500">{candidateDetail.email}</p>
-                                  <div className="flex gap-4 mt-2">
-                                    <Chip color={STATUS_COLORS[candidateDetail.status]} variant="flat">
-                                      {STATUS_LABELS[candidateDetail.status]}
-                                    </Chip>
-                                    {candidateDetail.overall_score && (
-                                      <Chip color={getScoreColor(candidateDetail.overall_score)} variant="flat">
-                                        Score: {candidateDetail.overall_score}/10
-                                      </Chip>
-                                    )}
-                                  </div>
-                                </div>
-                              </div>
-                            </CardBody>
-                          </Card>
 
-                          <div className="grid grid-cols-2 gap-4">
-                            <Card>
-                              <CardBody>
-                                <div className="flex items-center gap-2 mb-2">
-                                  <FiPhone className="text-default-400" />
-                                  <span className="font-semibold">Téléphone</span>
-                                </div>
-                                <p>{candidateDetail.phone || "-"}</p>
-                              </CardBody>
-                            </Card>
-
-                            <Card>
-                              <CardBody>
-                                <div className="flex items-center gap-2 mb-2">
-                                  <FiMail className="text-default-400" />
-                                  <span className="font-semibold">Email</span>
-                                </div>
-                                <p>{candidateDetail.email}</p>
-                              </CardBody>
-                            </Card>
-
-                            <Card>
-                              <CardBody>
-                                <div className="flex items-center gap-2 mb-2">
-                                  <FiFileText className="text-default-400" />
-                                  <span className="font-semibold">Poste</span>
-                                </div>
-                                <p>{candidateDetail.job_opening?.title}</p>
-                                <p className="text-xs text-default-400">{candidateDetail.job_opening?.job_number}</p>
-                              </CardBody>
-                            </Card>
-
-                            <Card>
-                              <CardBody>
-                                <div className="flex items-center gap-2 mb-2">
-                                  <FiClock className="text-default-400" />
-                                  <span className="font-semibold">Date de candidature</span>
-                                </div>
-                                <p>
-                                  {candidateDetail.application_date
-                                    ? new Date(candidateDetail.application_date).toLocaleDateString("fr-FR")
-                                    : "-"}
-                                </p>
-                              </CardBody>
-                            </Card>
-                          </div>
-
-                          {candidateDetail.cv_url && (
-                            <Card>
-                              <CardBody>
-                                <div className="flex items-center justify-between">
-                                  <div className="flex items-center gap-2">
-                                    <FiFileText className="text-danger" />
-                                    <span className="font-semibold">CV</span>
-                                  </div>
-                                  <Button
-                                    size="sm"
-                                    color="danger"
-                                    variant="flat"
-                                    startContent={<FiDownload />}
-                                    as="a"
-                                    href={candidateDetail.cv_url}
-                                    target="_blank"
-                                  >
-                                    Télécharger
-                                  </Button>
-                                </div>
-                              </CardBody>
-                            </Card>
-                          )}
-
-                          {candidateDetail.cover_letter && (
-                            <Card>
-                              <CardHeader>
-                                <h4 className="font-semibold">Lettre de motivation</h4>
-                              </CardHeader>
-                              <CardBody>
-                                <p className="text-sm whitespace-pre-wrap">{candidateDetail.cover_letter}</p>
-                              </CardBody>
-                            </Card>
-                          )}
-
-                          {candidateDetail.internal_notes && (
-                            <Card>
-                              <CardHeader>
-                                <h4 className="font-semibold">Notes internes</h4>
-                              </CardHeader>
-                              <CardBody>
-                                <p className="text-sm whitespace-pre-wrap">{candidateDetail.internal_notes}</p>
-                              </CardBody>
-                            </Card>
-                          )}
-                        </div>
-                      </Tab>
-
-                      <Tab key="interviews" title={`Entretiens (${candidateDetail.interviews?.length || 0})`}>
-                        <div className="space-y-4 py-4">
-                          {candidateDetail.interviews?.length > 0 ? (
-                            candidateDetail.interviews.map((interview) => (
-                              <Card key={interview.id}>
-                                <CardBody>
-                                  <div className="flex justify-between items-start">
-                                    <div>
-                                      <p className="font-semibold">{interview.interview_type}</p>
-                                      <p className="text-sm text-default-500">
-                                        {new Date(interview.scheduled_date).toLocaleString("fr-FR")}
-                                      </p>
-                                      {interview.notes && (
-                                        <p className="text-sm mt-2">{interview.notes}</p>
-                                      )}
-                                      {interview.feedback && (
-                                        <div className="mt-2 p-2 bg-default-100 rounded">
-                                          <p className="text-sm font-semibold">Feedback:</p>
-                                          <p className="text-sm">{interview.feedback}</p>
-                                          {interview.rating && (
-                                            <p className="text-sm mt-1">
-                                              Note: {"★".repeat(interview.rating)}{"☆".repeat(5 - interview.rating)}
-                                            </p>
-                                          )}
-                                        </div>
-                                      )}
-                                    </div>
-                                    <Chip size="sm" variant="flat">
-                                      {interview.status}
-                                    </Chip>
-                                  </div>
-                                </CardBody>
-                              </Card>
-                            ))
-                          ) : (
-                            <p className="text-center text-default-400 py-8">Aucun entretien planifié</p>
-                          )}
-                        </div>
-                      </Tab>
-
-                      <Tab key="evaluations" title={`Évaluations (${candidateDetail.evaluations?.length || 0})`}>
-                        <div className="space-y-4 py-4">
-                          {candidateDetail.evaluations?.length > 0 ? (
-                            candidateDetail.evaluations.map((evaluation) => (
-                              <Card key={evaluation.id}>
-                                <CardBody>
-                                  <div className="flex justify-between items-start mb-2">
-                                    <div>
-                                      <p className="font-semibold">
-                                        {evaluation.evaluator?.firstname} {evaluation.evaluator?.lastname}
-                                      </p>
-                                      <p className="text-xs text-default-400">
-                                        {new Date(evaluation.created_at).toLocaleDateString("fr-FR")}
-                                      </p>
-                                    </div>
-                                    {evaluation.rating && (
-                                      <div className="flex items-center gap-1">
-                                        <FiStar className="text-warning" />
-                                        <span>{evaluation.rating}/10</span>
-                                      </div>
-                                    )}
-                                  </div>
-                                  {evaluation.comments && (
-                                    <p className="text-sm mt-2">{evaluation.comments}</p>
-                                  )}
-                                </CardBody>
-                              </Card>
-                            ))
-                          ) : (
-                            <p className="text-center text-default-400 py-8">Aucune évaluation</p>
-                          )}
-                        </div>
-                      </Tab>
-
-                      <Tab key="offers" title={`Offres (${candidateDetail.job_offers?.length || 0})`}>
-                        <div className="space-y-4 py-4">
-                          {candidateDetail.job_offers?.length > 0 ? (
-                            candidateDetail.job_offers.map((offer) => (
-                              <Card key={offer.id}>
-                                <CardBody>
-                                  <div className="flex justify-between items-start">
-                                    <div>
-                                      <p className="font-semibold">
-                                        Salaire: {parseInt(offer.salary_offered || 0).toLocaleString()} FC
-                                      </p>
-                                      <p className="text-sm text-default-500">
-                                        Date de début: {offer.start_date ? new Date(offer.start_date).toLocaleDateString("fr-FR") : "-"}
-                                      </p>
-                                      {offer.benefits && offer.benefits.length > 0 && (
-                                        <div className="flex gap-1 mt-2 flex-wrap">
-                                          {offer.benefits.map((benefit, idx) => (
-                                            <Chip key={idx} size="sm" variant="flat">{benefit}</Chip>
-                                          ))}
-                                        </div>
-                                      )}
-                                    </div>
-                                    <Chip color={STATUS_COLORS[offer.status] || "default"} variant="flat">
-                                      {offer.status}
-                                    </Chip>
-                                  </div>
-                                </CardBody>
-                              </Card>
-                            ))
-                          ) : (
-                            <p className="text-center text-default-400 py-8">Aucune offre faite</p>
-                          )}
-                        </div>
-                      </Tab>
-                    </Tabs>
-                  ) : null}
-                </ModalBody>
-                <ModalFooter>
-                  <Button variant="light" onPress={handleCloseDetail}>
-                    Fermer
-                  </Button>
-                  <Button
-                    color="danger"
-                    startContent={<FiEdit />}
-                    onPress={() => {
-                      handleCloseDetail();
-                      handleOpenEdit(selectedCandidate);
-                    }}
-                  >
-                    Modifier
-                  </Button>
-                </ModalFooter>
-              </>
-            )}
-          </ModalContent>
-        </Modal>
-
-        {/* Modal Edit */}
-        <Modal isOpen={isEditOpen} onClose={onEditClose} size="2xl">
-          <ModalContent>
-            {(onClose) => (
-              <form onSubmit={handleSubmit(onSubmit)}>
-                <ModalHeader>
-                  <h3 className="text-xl font-bold">Modifier le Candidat</h3>
-                </ModalHeader>
-                <ModalBody>
-                  <div className="space-y-4">
-                    <Controller
-                      name="status"
-                      control={control}
-                      rules={{ required: "Statut requis" }}
-                      render={({ field }) => (
-                        <Select
-                          {...field}
-                          label="Statut"
-                          placeholder="Sélectionnez le statut"
-                          isRequired
-                          errorMessage={errors.status?.message}
-                          isInvalid={!!errors.status}
-                          selectedKeys={field.value ? [field.value] : []}
-                          onSelectionChange={(keys) => field.onChange(Array.from(keys)[0])}
-                        >
-                          {Object.entries(STATUS_LABELS).map(([value, label]) => (
-                            <SelectItem key={value} value={value}>
-                              {label}
-                            </SelectItem>
-                          ))}
-                        </Select>
-                      )}
-                    />
-
-                    <Controller
-                      name="overall_score"
-                      control={control}
-                      render={({ field }) => (
-                        <Select
-                          {...field}
-                          label="Score global (1-10)"
-                          placeholder="Attribuer une note"
-                          selectedKeys={field.value ? [String(field.value)] : []}
-                          onSelectionChange={(keys) => field.onChange(Array.from(keys)[0])}
-                        >
-                          {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((score) => (
-                            <SelectItem key={String(score)} value={String(score)}>
-                              {score} - {"★".repeat(Math.ceil(score / 2))}{"☆".repeat(5 - Math.ceil(score / 2))}
-                            </SelectItem>
-                          ))}
-                        </Select>
-                      )}
-                    />
-
-                    <Controller
-                      name="internal_notes"
-                      control={control}
-                      render={({ field }) => (
-                        <Textarea
-                          {...field}
-                          label="Notes internes"
-                          placeholder="Ajoutez des notes sur ce candidat..."
-                          minRows={4}
-                        />
-                      )}
-                    />
-                  </div>
-                </ModalBody>
-                <ModalFooter>
-                  <Button variant="light" onPress={onEditClose}>
-                    Annuler
-                  </Button>
-                  <Button
-                    color="danger"
-                    type="submit"
-                    isLoading={updateCandidateMutation.isPending}
-                  >
-                    Mettre à jour
-                  </Button>
-                </ModalFooter>
-              </form>
-            )}
-          </ModalContent>
-        </Modal>
-
-        {/* Modal Interview Rapide */}
-        <Modal isOpen={isInterviewOpen} onClose={onInterviewClose} size="2xl">
-          <ModalContent>
-            {(onClose) => (
-              <form onSubmit={handleInterviewSubmit(onInterviewSubmit)}>
-                <ModalHeader>
-                  <h3 className="text-xl font-bold">Planifier un Entretien</h3>
-                </ModalHeader>
-                <ModalBody>
-                  <div className="space-y-4">
-                    <Controller
-                      name="interview_type"
-                      control={interviewControl}
-                      render={({ field }) => (
-                        <Select
-                          {...field}
-                          label="Type d'entretien"
-                          placeholder="Sélectionnez le type"
-                          selectedKeys={field.value ? [field.value] : []}
-                          onSelectionChange={(keys) => field.onChange(Array.from(keys)[0])}
-                        >
-                          <SelectItem key="hr_screening" value="hr_screening">Présélection RH</SelectItem>
-                          <SelectItem key="technical" value="technical">Technique</SelectItem>
-                          <SelectItem key="behavioral" value="behavioral">Comportemental</SelectItem>
-                          <SelectItem key="panel" value="panel">Panel</SelectItem>
-                          <SelectItem key="final" value="final">Final</SelectItem>
-                        </Select>
-                      )}
-                    />
-
+                    {/* Application Details */}
                     <div className="grid grid-cols-2 gap-4">
-                      <Controller
-                        name="scheduled_date"
-                        control={interviewControl}
-                        render={({ field }) => (
-                          <Input
-                            {...field}
-                            type="date"
-                            label="Date"
-                          />
-                        )}
-                      />
-
-                      <Controller
-                        name="scheduled_time"
-                        control={interviewControl}
-                        render={({ field }) => (
-                          <Input
-                            {...field}
-                            type="time"
-                            label="Heure"
-                          />
-                        )}
-                      />
+                      <div>
+                        <p className="text-sm text-gray-500">Poste</p>
+                        <p className="font-semibold">
+                          {selectedApplication.job_posting?.job_title}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-gray-500">Source</p>
+                        <p className="font-semibold">{selectedApplication.source}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-gray-500">Date de dépôt</p>
+                        <p className="font-semibold">
+                          {new Date(selectedApplication.applied_date).toLocaleDateString("fr-FR")}
+                        </p>
+                      </div>
+                      {selectedApplication.rating && (
+                        <div>
+                          <p className="text-sm text-gray-500">Évaluation</p>
+                          <div className="flex items-center gap-2">
+                            <Progress
+                              value={(selectedApplication.rating / 5) * 100}
+                              color="warning"
+                              className="max-w-md"
+                            />
+                            <span className="font-semibold">
+                              {selectedApplication.rating}/5
+                            </span>
+                          </div>
+                        </div>
+                      )}
                     </div>
 
-                    <Controller
-                      name="notes"
-                      control={interviewControl}
-                      render={({ field }) => (
-                        <Textarea
-                          {...field}
-                          label="Notes"
-                          placeholder="Notes sur l'entretien..."
-                          minRows={3}
-                        />
-                      )}
-                    />
+                    {/* Cover Letter */}
+                    {selectedApplication.cover_letter && (
+                      <div>
+                        <h4 className="font-semibold mb-2">Lettre de motivation</h4>
+                        <p className="text-sm whitespace-pre-wrap bg-gray-50 p-4 rounded-lg">
+                          {selectedApplication.cover_letter}
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Documents */}
+                    <div>
+                      <h4 className="font-semibold mb-2">Documents</h4>
+                      <div className="flex gap-2">
+                        {selectedApplication.cv_url && (
+                          <Button
+                            size="sm"
+                            variant="flat"
+                            startContent={<FiDownload />}
+                            onPress={() => downloadCV(selectedApplication.cv_url)}
+                          >
+                            Télécharger CV
+                          </Button>
+                        )}
+                        {selectedApplication.portfolio_url && (
+                          <Button
+                            size="sm"
+                            variant="flat"
+                            startContent={<FiFileText />}
+                            onPress={() => window.open(selectedApplication.portfolio_url, "_blank")}
+                          >
+                            Portfolio
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Notes */}
+                    {selectedApplication.notes && (
+                      <div>
+                        <h4 className="font-semibold mb-2">Notes</h4>
+                        <p className="text-sm whitespace-pre-wrap bg-yellow-50 p-4 rounded-lg">
+                          {selectedApplication.notes}
+                        </p>
+                      </div>
+                    )}
                   </div>
-                </ModalBody>
-                <ModalFooter>
-                  <Button variant="light" onPress={onInterviewClose}>
-                    Annuler
-                  </Button>
-                  <Button
-                    color="danger"
-                    type="submit"
-                    isLoading={createInterviewMutation.isPending}
-                  >
-                    Planifier
-                  </Button>
-                </ModalFooter>
-              </form>
-            )}
+                </Tab>
+
+                <Tab key="timeline" title="Historique">
+                  <div className="py-4">
+                    <p className="text-center text-gray-500">
+                      Historique des activités à venir
+                    </p>
+                  </div>
+                </Tab>
+
+                <Tab key="interviews" title="Entretiens">
+                  <div className="py-4">
+                    <p className="text-center text-gray-500">
+                      Liste des entretiens programmés
+                    </p>
+                  </div>
+                </Tab>
+              </Tabs>
+            </ModalBody>
+            <ModalFooter>
+              <Button variant="light" onPress={onDetailClose}>
+                Fermer
+              </Button>
+            </ModalFooter>
           </ModalContent>
         </Modal>
-      </div>
-    </PermissionGuard>
+      )}
+
+      {/* Assign Recruiter Modal */}
+      <Modal isOpen={isAssignOpen} onClose={onAssignClose}>
+        <ModalContent>
+          <form onSubmit={handleAssignSubmit(onAssignApplication)}>
+            <ModalHeader>Assigner un Recruteur</ModalHeader>
+            <ModalBody>
+              <Controller
+                name="recruiter_id"
+                control={assignControl}
+                rules={{ required: "Veuillez sélectionner un recruteur" }}
+                render={({ field }) => (
+                  <Select
+                    {...field}
+                    label="Recruteur"
+                    placeholder="Sélectionnez un recruteur"
+                  >
+                    {employees?.map((employee) => (
+                      <SelectItem key={employee.id} value={employee.id}>
+                        {employee.first_name} {employee.last_name}
+                      </SelectItem>
+                    ))}
+                  </Select>
+                )}
+              />
+            </ModalBody>
+            <ModalFooter>
+              <Button variant="light" onPress={onAssignClose}>
+                Annuler
+              </Button>
+              <Button
+                color="primary"
+                type="submit"
+                isLoading={assignApplicationMutation.isPending}
+              >
+                Assigner
+              </Button>
+            </ModalFooter>
+          </form>
+        </ModalContent>
+      </Modal>
+
+      {/* Rate Application Modal */}
+      <Modal isOpen={isRateOpen} onClose={onRateClose}>
+        <ModalContent>
+          <form onSubmit={handleRateSubmit(onRateApplication)}>
+            <ModalHeader>Évaluer le Candidat</ModalHeader>
+            <ModalBody>
+              <div className="space-y-4">
+                <Controller
+                  name="rating"
+                  control={rateControl}
+                  rules={{ required: "La note est requise" }}
+                  render={({ field }) => (
+                    <Select {...field} label="Note" placeholder="Sélectionnez">
+                      <SelectItem key="1" value="1">1 - Très faible</SelectItem>
+                      <SelectItem key="2" value="2">2 - Faible</SelectItem>
+                      <SelectItem key="3" value="3">3 - Moyen</SelectItem>
+                      <SelectItem key="4" value="4">4 - Bon</SelectItem>
+                      <SelectItem key="5" value="5">5 - Excellent</SelectItem>
+                    </Select>
+                  )}
+                />
+                <Controller
+                  name="notes"
+                  control={rateControl}
+                  render={({ field }) => (
+                    <Textarea
+                      {...field}
+                      label="Notes"
+                      placeholder="Commentaires sur le candidat..."
+                      rows={4}
+                    />
+                  )}
+                />
+              </div>
+            </ModalBody>
+            <ModalFooter>
+              <Button variant="light" onPress={onRateClose}>
+                Annuler
+              </Button>
+              <Button
+                color="primary"
+                type="submit"
+                isLoading={rateApplicationMutation.isPending}
+              >
+                Enregistrer
+              </Button>
+            </ModalFooter>
+          </form>
+        </ModalContent>
+      </Modal>
+
+      {/* Schedule Interview Modal */}
+      <Modal isOpen={isInterviewOpen} onClose={onInterviewClose} size="2xl">
+        <ModalContent>
+          <form onSubmit={handleInterviewSubmit(onScheduleInterview)}>
+            <ModalHeader>Programmer un Entretien</ModalHeader>
+            <ModalBody>
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <Controller
+                    name="interview_date"
+                    control={interviewControl}
+                    rules={{ required: "La date est requise" }}
+                    render={({ field }) => (
+                      <Input {...field} type="datetime-local" label="Date et Heure" />
+                    )}
+                  />
+                  <Controller
+                    name="duration_minutes"
+                    control={interviewControl}
+                    defaultValue={60}
+                    render={({ field }) => (
+                      <Input {...field} type="number" label="Durée (minutes)" />
+                    )}
+                  />
+                </div>
+                <Controller
+                  name="interview_type"
+                  control={interviewControl}
+                  rules={{ required: "Le type est requis" }}
+                  render={({ field }) => (
+                    <Select {...field} label="Type d'entretien" placeholder="Sélectionnez">
+                      <SelectItem key="phone" value="phone">Téléphonique</SelectItem>
+                      <SelectItem key="video" value="video">Visioconférence</SelectItem>
+                      <SelectItem key="in_person" value="in_person">En personne</SelectItem>
+                      <SelectItem key="technical" value="technical">Test technique</SelectItem>
+                    </Select>
+                  )}
+                />
+                <Controller
+                  name="location"
+                  control={interviewControl}
+                  render={({ field }) => (
+                    <Input {...field} label="Lieu / Lien" placeholder="Adresse ou URL" />
+                  )}
+                />
+                <Controller
+                  name="notes"
+                  control={interviewControl}
+                  render={({ field }) => (
+                    <Textarea {...field} label="Notes" placeholder="Instructions..." rows={4} />
+                  )}
+                />
+              </div>
+            </ModalBody>
+            <ModalFooter>
+              <Button variant="light" onPress={onInterviewClose}>
+                Annuler
+              </Button>
+              <Button
+                color="primary"
+                type="submit"
+                isLoading={scheduleInterviewMutation.isPending}
+              >
+                Programmer
+              </Button>
+            </ModalFooter>
+          </form>
+        </ModalContent>
+      </Modal>
+    </div>
   );
 }

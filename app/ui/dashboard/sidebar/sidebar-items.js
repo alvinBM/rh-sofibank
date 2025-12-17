@@ -14,10 +14,10 @@ export const sectionItems = [
             },
             {
                 key: "my-profile",
-                href: "/dashboard/profile",
+                href: "/dashboard/ess/profile",
                 icon: "solar:user-circle-linear",
-                title: "Mon Profil (ESS)",
-                requiredPermission: "ess_access",
+                title: "Mon Espace (ESS)",
+                // requiredPermission: "ess_access",
             },
         ],
     },

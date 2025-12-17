@@ -1,0 +1,1777 @@
+import models from '../models/index.js';
+import { Op } from 'sequelize';
+
+const {
+    RecruitmentPlan,
+    RecruitmentPlanPosition,
+    JobPosting,
+    JobApplication,
+    ApplicationStatusHistory,
+    JobInterview,
+    InterviewEvaluation,
+    EmploymentOffer,
+    OnboardingChecklist,
+    OnboardingTask,
+    OnboardingTaskTemplate,
+    RecruitmentEmail,
+    EmailTemplate,
+    SentEmail,
+    Direction,
+    Service,
+    JobPosition,
+    Grade,
+    Employee,
+    User
+} = models;
+
+// ========================================
+// STAGE 1: ANNUAL RECRUITMENT PLANNING
+// ========================================
+
+/**
+ * Get all recruitment plans with filters
+ */
+export const getRecruitmentPlans = async (req, res) => {
+    try {
+        const { year, direction_id, status } = req.query;
+
+        const where = {};
+        if (year) where.year = year;
+        if (direction_id) where.direction_id = direction_id;
+        if (status) where.status = status;
+
+        const plans = await RecruitmentPlan.findAll({
+            where,
+            include: [
+                {
+                    model: Direction,
+                    as: 'direction',
+                    attributes: ['id', 'name']
+                },
+                {
+                    model: User,
+                    as: 'approver',
+                    attributes: ['id', 'username', 'email']
+                },
+                {
+                    model: RecruitmentPlanPosition,
+                    as: 'positions',
+                    include: [
+                        { model: JobPosition, as: 'job_position' },
+                        { model: Grade, as: 'grade' },
+                        { model: Service, as: 'service' }
+                    ]
+                }
+            ],
+            order: [['year', 'DESC'], ['created_at', 'DESC']]
+        });
+
+        res.json(plans);
+    } catch (error) {
+        console.error('Error fetching recruitment plans:', error);
+        res.status(500).json({ error: 'Failed to fetch recruitment plans' });
+    }
+};
+
+/**
+ * Get a single recruitment plan by ID
+ */
+export const getRecruitmentPlanById = async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        const plan = await RecruitmentPlan.findByPk(id, {
+            include: [
+                {
+                    model: Direction,
+                    as: 'direction',
+                    attributes: ['id', 'name']
+                },
+                {
+                    model: User,
+                    as: 'approver',
+                    attributes: ['id', 'username', 'email']
+                },
+                {
+                    model: RecruitmentPlanPosition,
+                    as: 'positions',
+                    include: [
+                        { model: JobPosition, as: 'job_position' },
+                        { model: Grade, as: 'grade' },
+                        { model: Service, as: 'service' }
+                    ]
+                }
+            ]
+        });
+
+        if (!plan) {
+            return res.status(404).json({ error: 'Recruitment plan not found' });
+        }
+
+        res.json(plan);
+    } catch (error) {
+        console.error('Error fetching recruitment plan:', error);
+        res.status(500).json({ error: 'Failed to fetch recruitment plan' });
+    }
+};
+
+/**
+ * Create a new recruitment plan
+ */
+export const createRecruitmentPlan = async (req, res) => {
+    try {
+        const { year, direction_id, status, positions } = req.body;
+
+        const plan = await RecruitmentPlan.create({
+            year,
+            direction_id,
+            status: status || 'draft'
+        });
+
+        // Create positions if provided
+        if (positions && positions.length > 0) {
+            const positionsData = positions.map(pos => ({
+                ...pos,
+                recruitment_plan_id: plan.id
+            }));
+            await RecruitmentPlanPosition.bulkCreate(positionsData);
+        }
+
+        const createdPlan = await RecruitmentPlan.findByPk(plan.id, {
+            include: [
+                { model: Direction, as: 'direction' },
+                {
+                    model: RecruitmentPlanPosition,
+                    as: 'positions',
+                    include: [
+                        { model: JobPosition, as: 'job_position' },
+                        { model: Grade, as: 'grade' },
+                        { model: Service, as: 'service' }
+                    ]
+                }
+            ]
+        });
+
+        res.status(201).json(createdPlan);
+    } catch (error) {
+        console.error('Error creating recruitment plan:', error);
+        res.status(500).json({ error: 'Failed to create recruitment plan' });
+    }
+};
+
+/**
+ * Update a recruitment plan
+ */
+export const updateRecruitmentPlan = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const updates = req.body;
+
+        const plan = await RecruitmentPlan.findByPk(id);
+        if (!plan) {
+            return res.status(404).json({ error: 'Recruitment plan not found' });
+        }
+
+        await plan.update(updates);
+
+        const updatedPlan = await RecruitmentPlan.findByPk(id, {
+            include: [
+                { model: Direction, as: 'direction' },
+                {
+                    model: RecruitmentPlanPosition,
+                    as: 'positions',
+                    include: [
+                        { model: JobPosition, as: 'job_position' },
+                        { model: Grade, as: 'grade' },
+                        { model: Service, as: 'service' }
+                    ]
+                }
+            ]
+        });
+
+        res.json(updatedPlan);
+    } catch (error) {
+        console.error('Error updating recruitment plan:', error);
+        res.status(500).json({ error: 'Failed to update recruitment plan' });
+    }
+};
+
+/**
+ * Submit recruitment plan for approval
+ */
+export const submitRecruitmentPlan = async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        const plan = await RecruitmentPlan.findByPk(id);
+        if (!plan) {
+            return res.status(404).json({ error: 'Recruitment plan not found' });
+        }
+
+        if (plan.status !== 'draft') {
+            return res.status(400).json({ error: 'Only draft plans can be submitted' });
+        }
+
+        await plan.update({ status: 'submitted' });
+
+        res.json({ message: 'Recruitment plan submitted for approval', plan });
+    } catch (error) {
+        console.error('Error submitting recruitment plan:', error);
+        res.status(500).json({ error: 'Failed to submit recruitment plan' });
+    }
+};
+
+/**
+ * Approve or reject recruitment plan
+ */
+export const approveRecruitmentPlan = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { approve, rejection_reason } = req.body;
+        const approverId = req.user.id;
+
+        const plan = await RecruitmentPlan.findByPk(id);
+        if (!plan) {
+            return res.status(404).json({ error: 'Recruitment plan not found' });
+        }
+
+        if (plan.status !== 'submitted') {
+            return res.status(400).json({ error: 'Only submitted plans can be approved/rejected' });
+        }
+
+        const updateData = {
+            status: approve ? 'approved' : 'rejected',
+            approved_by: approverId,
+            approved_date: new Date()
+        };
+
+        if (!approve && rejection_reason) {
+            updateData.rejection_reason = rejection_reason;
+        }
+
+        await plan.update(updateData);
+
+        res.json({ message: `Recruitment plan ${approve ? 'approved' : 'rejected'}`, plan });
+    } catch (error) {
+        console.error('Error approving recruitment plan:', error);
+        res.status(500).json({ error: 'Failed to approve recruitment plan' });
+    }
+};
+
+/**
+ * Add position to recruitment plan
+ */
+export const addPositionToPlan = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const positionData = req.body;
+
+        const plan = await RecruitmentPlan.findByPk(id);
+        if (!plan) {
+            return res.status(404).json({ error: 'Recruitment plan not found' });
+        }
+
+        const position = await RecruitmentPlanPosition.create({
+            ...positionData,
+            recruitment_plan_id: id
+        });
+
+        const createdPosition = await RecruitmentPlanPosition.findByPk(position.id, {
+            include: [
+                { model: JobPosition, as: 'job_position' },
+                { model: Grade, as: 'grade' },
+                { model: Service, as: 'service' }
+            ]
+        });
+
+        res.status(201).json(createdPosition);
+    } catch (error) {
+        console.error('Error adding position to plan:', error);
+        res.status(500).json({ error: 'Failed to add position to plan' });
+    }
+};
+
+/**
+ * Update position in recruitment plan
+ */
+export const updatePlanPosition = async (req, res) => {
+    try {
+        const { positionId } = req.params;
+        const updates = req.body;
+
+        const position = await RecruitmentPlanPosition.findByPk(positionId);
+        if (!position) {
+            return res.status(404).json({ error: 'Position not found' });
+        }
+
+        await position.update(updates);
+
+        const updatedPosition = await RecruitmentPlanPosition.findByPk(positionId, {
+            include: [
+                { model: JobPosition, as: 'job_position' },
+                { model: Grade, as: 'grade' },
+                { model: Service, as: 'service' }
+            ]
+        });
+
+        res.json(updatedPosition);
+    } catch (error) {
+        console.error('Error updating position:', error);
+        res.status(500).json({ error: 'Failed to update position' });
+    }
+};
+
+/**
+ * Delete position from recruitment plan
+ */
+export const deletePlanPosition = async (req, res) => {
+    try {
+        const { positionId } = req.params;
+
+        const position = await RecruitmentPlanPosition.findByPk(positionId);
+        if (!position) {
+            return res.status(404).json({ error: 'Position not found' });
+        }
+
+        await position.destroy();
+
+        res.json({ message: 'Position deleted successfully' });
+    } catch (error) {
+        console.error('Error deleting position:', error);
+        res.status(500).json({ error: 'Failed to delete position' });
+    }
+};
+
+// ========================================
+// STAGE 2: JOB POSTINGS
+// ========================================
+
+/**
+ * Get all job postings with filters
+ */
+export const getJobPostings = async (req, res) => {
+    try {
+        const { status, direction_id, service_id, search } = req.query;
+
+        const where = {};
+        if (status) where.status = status;
+        if (direction_id) where.direction_id = direction_id;
+        if (service_id) where.service_id = service_id;
+        if (search) {
+            where[Op.or] = [
+                { title: { [Op.like]: `%${search}%` } },
+                { reference_code: { [Op.like]: `%${search}%` } }
+            ];
+        }
+
+        const postings = await JobPosting.findAll({
+            where,
+            include: [
+                { model: Direction, as: 'direction' },
+                { model: Service, as: 'service' },
+                { model: JobPosition, as: 'job_position' },
+                { model: User, as: 'creator' },
+                {
+                    model: JobApplication,
+                    as: 'applications',
+                    attributes: ['id', 'status']
+                }
+            ],
+            order: [['created_at', 'DESC']]
+        });
+
+        res.json(postings);
+    } catch (error) {
+        console.error('Error fetching job postings:', error);
+        res.status(500).json({ error: 'Failed to fetch job postings' });
+    }
+};
+
+/**
+ * Get a single job posting by ID
+ */
+export const getJobPostingById = async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        const posting = await JobPosting.findByPk(id, {
+            include: [
+                { model: Direction, as: 'direction' },
+                { model: Service, as: 'service' },
+                { model: JobPosition, as: 'job_position' },
+                { model: User, as: 'creator' },
+                {
+                    model: RecruitmentPlanPosition,
+                    as: 'plan_position',
+                    include: [
+                        { model: RecruitmentPlan, as: 'recruitment_plan' }
+                    ]
+                }
+            ]
+        });
+
+        if (!posting) {
+            return res.status(404).json({ error: 'Job posting not found' });
+        }
+
+        res.json(posting);
+    } catch (error) {
+        console.error('Error fetching job posting:', error);
+        res.status(500).json({ error: 'Failed to fetch job posting' });
+    }
+};
+
+/**
+ * Create a new job posting
+ */
+export const createJobPosting = async (req, res) => {
+    try {
+        const postingData = req.body;
+        const createdBy = req.user.id;
+
+        // Generate unique reference code
+        const year = new Date().getFullYear();
+        const count = await JobPosting.count({
+            where: {
+                reference_code: {
+                    [Op.like]: `JOB-${year}-%`
+                }
+            }
+        });
+        const referenceCode = `JOB-${year}-${String(count + 1).padStart(4, '0')}`;
+
+        const posting = await JobPosting.create({
+            ...postingData,
+            reference_code: referenceCode,
+            created_by: createdBy,
+            status: postingData.status || 'draft'
+        });
+
+        const createdPosting = await JobPosting.findByPk(posting.id, {
+            include: [
+                { model: Direction, as: 'direction' },
+                { model: Service, as: 'service' },
+                { model: JobPosition, as: 'job_position' },
+                { model: User, as: 'creator' }
+            ]
+        });
+
+        res.status(201).json(createdPosting);
+    } catch (error) {
+        console.error('Error creating job posting:', error);
+        res.status(500).json({ error: 'Failed to create job posting' });
+    }
+};
+
+/**
+ * Update a job posting
+ */
+export const updateJobPosting = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const updates = req.body;
+
+        const posting = await JobPosting.findByPk(id);
+        if (!posting) {
+            return res.status(404).json({ error: 'Job posting not found' });
+        }
+
+        await posting.update(updates);
+
+        const updatedPosting = await JobPosting.findByPk(id, {
+            include: [
+                { model: Direction, as: 'direction' },
+                { model: Service, as: 'service' },
+                { model: JobPosition, as: 'job_position' },
+                { model: User, as: 'creator' }
+            ]
+        });
+
+        res.json(updatedPosting);
+    } catch (error) {
+        console.error('Error updating job posting:', error);
+        res.status(500).json({ error: 'Failed to update job posting' });
+    }
+};
+
+/**
+ * Publish a job posting
+ */
+export const publishJobPosting = async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        const posting = await JobPosting.findByPk(id);
+        if (!posting) {
+            return res.status(404).json({ error: 'Job posting not found' });
+        }
+
+        if (posting.status !== 'draft') {
+            return res.status(400).json({ error: 'Only draft postings can be published' });
+        }
+
+        await posting.update({
+            status: 'published',
+            published_date: new Date()
+        });
+
+        res.json({ message: 'Job posting published successfully', posting });
+    } catch (error) {
+        console.error('Error publishing job posting:', error);
+        res.status(500).json({ error: 'Failed to publish job posting' });
+    }
+};
+
+/**
+ * Close a job posting
+ */
+export const closeJobPosting = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { close_reason } = req.body;
+
+        const posting = await JobPosting.findByPk(id);
+        if (!posting) {
+            return res.status(404).json({ error: 'Job posting not found' });
+        }
+
+        const status = close_reason === 'filled' ? 'filled' : close_reason === 'cancelled' ? 'cancelled' : 'closed';
+
+        await posting.update({
+            status,
+            closed_date: new Date()
+        });
+
+        res.json({ message: 'Job posting closed successfully', posting });
+    } catch (error) {
+        console.error('Error closing job posting:', error);
+        res.status(500).json({ error: 'Failed to close job posting' });
+    }
+};
+
+// ========================================
+// STAGE 3: JOB APPLICATIONS
+// ========================================
+
+/**
+ * Get all job applications with filters
+ */
+export const getJobApplications = async (req, res) => {
+    try {
+        const { job_posting_id, status, assigned_to, search } = req.query;
+
+        const where = {};
+        if (job_posting_id) where.job_posting_id = job_posting_id;
+        if (status) where.status = status;
+        if (assigned_to) where.assigned_to = assigned_to;
+        if (search) {
+            where[Op.or] = [
+                { first_name: { [Op.like]: `%${search}%` } },
+                { last_name: { [Op.like]: `%${search}%` } },
+                { email: { [Op.like]: `%${search}%` } },
+                { application_number: { [Op.like]: `%${search}%` } }
+            ];
+        }
+
+        const applications = await JobApplication.findAll({
+            where,
+            include: [
+                {
+                    model: JobPosting,
+                    as: 'job_posting',
+                    include: [
+                        { model: JobPosition, as: 'job_position' },
+                        { model: Direction, as: 'direction' }
+                    ]
+                },
+                { model: User, as: 'assigned_user' },
+                {
+                    model: JobInterview,
+                    as: 'interviews',
+                    include: [
+                        {
+                            model: InterviewEvaluation,
+                            as: 'evaluations'
+                        }
+                    ]
+                }
+            ],
+            order: [['applied_date', 'DESC']]
+        });
+
+        res.json(applications);
+    } catch (error) {
+        console.error('Error fetching job applications:', error);
+        res.status(500).json({ error: 'Failed to fetch job applications' });
+    }
+};
+
+/**
+ * Get a single job application by ID
+ */
+export const getJobApplicationById = async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        const application = await JobApplication.findByPk(id, {
+            include: [
+                {
+                    model: JobPosting,
+                    as: 'job_posting',
+                    include: [
+                        { model: JobPosition, as: 'job_position' },
+                        { model: Direction, as: 'direction' },
+                        { model: Service, as: 'service' }
+                    ]
+                },
+                { model: User, as: 'assigned_user' },
+                {
+                    model: ApplicationStatusHistory,
+                    as: 'status_history',
+                    include: [{ model: User, as: 'changer' }],
+                    order: [['changed_at', 'DESC']]
+                },
+                {
+                    model: JobInterview,
+                    as: 'interviews',
+                    include: [
+                        { model: User, as: 'scheduler' },
+                        {
+                            model: InterviewEvaluation,
+                            as: 'evaluations',
+                            include: [{ model: User, as: 'evaluator' }]
+                        }
+                    ]
+                },
+                {
+                    model: EmploymentOffer,
+                    as: 'offers',
+                    include: [
+                        { model: JobPosition, as: 'job_position' },
+                        { model: Grade, as: 'grade' },
+                        { model: User, as: 'creator' }
+                    ]
+                }
+            ]
+        });
+
+        if (!application) {
+            return res.status(404).json({ error: 'Job application not found' });
+        }
+
+        res.json(application);
+    } catch (error) {
+        console.error('Error fetching job application:', error);
+        res.status(500).json({ error: 'Failed to fetch job application' });
+    }
+};
+
+/**
+ * Create a new job application (for manual entry or API)
+ */
+export const createJobApplication = async (req, res) => {
+    try {
+        const applicationData = req.body;
+
+        // Generate unique application number
+        const year = new Date().getFullYear();
+        const month = String(new Date().getMonth() + 1).padStart(2, '0');
+        const count = await JobApplication.count({
+            where: {
+                application_number: {
+                    [Op.like]: `APP-${year}${month}-%`
+                }
+            }
+        });
+        const applicationNumber = `APP-${year}${month}-${String(count + 1).padStart(4, '0')}`;
+
+        const application = await JobApplication.create({
+            ...applicationData,
+            application_number: applicationNumber,
+            status: 'new',
+            applied_date: new Date()
+        });
+
+        const createdApplication = await JobApplication.findByPk(application.id, {
+            include: [
+                {
+                    model: JobPosting,
+                    as: 'job_posting',
+                    include: [{ model: JobPosition, as: 'job_position' }]
+                }
+            ]
+        });
+
+        res.status(201).json(createdApplication);
+    } catch (error) {
+        console.error('Error creating job application:', error);
+        res.status(500).json({ error: 'Failed to create job application' });
+    }
+};
+
+/**
+ * Update job application
+ */
+export const updateJobApplication = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const updates = req.body;
+
+        const application = await JobApplication.findByPk(id);
+        if (!application) {
+            return res.status(404).json({ error: 'Job application not found' });
+        }
+
+        // If status is changing, create history record
+        if (updates.status && updates.status !== application.status) {
+            await ApplicationStatusHistory.create({
+                application_id: id,
+                previous_status: application.status,
+                new_status: updates.status,
+                changed_by: req.user.id,
+                reason: updates.status_change_reason,
+                notes: updates.status_change_notes
+            });
+
+            updates.last_status_change = new Date();
+        }
+
+        await application.update(updates);
+
+        const updatedApplication = await JobApplication.findByPk(id, {
+            include: [
+                { model: JobPosting, as: 'job_posting' },
+                { model: User, as: 'assigned_user' },
+                {
+                    model: ApplicationStatusHistory,
+                    as: 'status_history',
+                    include: [{ model: User, as: 'changer' }]
+                }
+            ]
+        });
+
+        res.json(updatedApplication);
+    } catch (error) {
+        console.error('Error updating job application:', error);
+        res.status(500).json({ error: 'Failed to update job application' });
+    }
+};
+
+/**
+ * Assign application to user
+ */
+export const assignApplication = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { assigned_to } = req.body;
+
+        const application = await JobApplication.findByPk(id);
+        if (!application) {
+            return res.status(404).json({ error: 'Job application not found' });
+        }
+
+        await application.update({ assigned_to });
+
+        const updatedApplication = await JobApplication.findByPk(id, {
+            include: [
+                { model: JobPosting, as: 'job_posting' },
+                { model: User, as: 'assigned_user' }
+            ]
+        });
+
+        res.json({ message: 'Application assigned successfully', application: updatedApplication });
+    } catch (error) {
+        console.error('Error assigning application:', error);
+        res.status(500).json({ error: 'Failed to assign application' });
+    }
+};
+
+/**
+ * Add rating and notes to application
+ */
+export const rateApplication = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { rating, notes } = req.body;
+
+        const application = await JobApplication.findByPk(id);
+        if (!application) {
+            return res.status(404).json({ error: 'Job application not found' });
+        }
+
+        await application.update({ rating, notes });
+
+        res.json({ message: 'Application rated successfully', application });
+    } catch (error) {
+        console.error('Error rating application:', error);
+        res.status(500).json({ error: 'Failed to rate application' });
+    }
+};
+
+// ========================================
+// STAGE 3B: INTERVIEWS & EVALUATIONS
+// ========================================
+
+/**
+ * Schedule an interview
+ */
+export const scheduleInterview = async (req, res) => {
+    try {
+        const interviewData = req.body;
+        const scheduledBy = req.user.id;
+
+        const interview = await JobInterview.create({
+            ...interviewData,
+            scheduled_by: scheduledBy,
+            status: 'scheduled'
+        });
+
+        // Update application status
+        const application = await JobApplication.findByPk(interviewData.application_id);
+        if (application && application.status === 'new') {
+            await application.update({
+                status: 'interview_scheduled',
+                last_status_change: new Date()
+            });
+
+            await ApplicationStatusHistory.create({
+                application_id: interviewData.application_id,
+                previous_status: application.status,
+                new_status: 'interview_scheduled',
+                changed_by: scheduledBy,
+                reason: 'Interview scheduled'
+            });
+        }
+
+        const createdInterview = await JobInterview.findByPk(interview.id, {
+            include: [
+                {
+                    model: JobApplication,
+                    as: 'application',
+                    include: [{ model: JobPosting, as: 'job_posting' }]
+                },
+                { model: User, as: 'scheduler' }
+            ]
+        });
+
+        res.status(201).json(createdInterview);
+    } catch (error) {
+        console.error('Error scheduling interview:', error);
+        res.status(500).json({ error: 'Failed to schedule interview' });
+    }
+};
+
+/**
+ * Get interviews for an application
+ */
+export const getInterviewsForApplication = async (req, res) => {
+    try {
+        const { applicationId } = req.params;
+
+        const interviews = await JobInterview.findAll({
+            where: { application_id: applicationId },
+            include: [
+                { model: User, as: 'scheduler' },
+                {
+                    model: InterviewEvaluation,
+                    as: 'evaluations',
+                    include: [{ model: User, as: 'evaluator' }]
+                }
+            ],
+            order: [['scheduled_date', 'ASC']]
+        });
+
+        res.json(interviews);
+    } catch (error) {
+        console.error('Error fetching interviews:', error);
+        res.status(500).json({ error: 'Failed to fetch interviews' });
+    }
+};
+
+/**
+ * Update interview
+ */
+export const updateInterview = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const updates = req.body;
+
+        const interview = await JobInterview.findByPk(id);
+        if (!interview) {
+            return res.status(404).json({ error: 'Interview not found' });
+        }
+
+        await interview.update(updates);
+
+        const updatedInterview = await JobInterview.findByPk(id, {
+            include: [
+                { model: JobApplication, as: 'application' },
+                { model: User, as: 'scheduler' },
+                {
+                    model: InterviewEvaluation,
+                    as: 'evaluations',
+                    include: [{ model: User, as: 'evaluator' }]
+                }
+            ]
+        });
+
+        res.json(updatedInterview);
+    } catch (error) {
+        console.error('Error updating interview:', error);
+        res.status(500).json({ error: 'Failed to update interview' });
+    }
+};
+
+/**
+ * Submit interview evaluation
+ */
+export const submitInterviewEvaluation = async (req, res) => {
+    try {
+        const evaluationData = req.body;
+        const evaluatorId = req.user.id;
+
+        // Calculate overall score
+        const {
+            technical_skills,
+            communication,
+            problem_solving,
+            cultural_fit,
+            motivation,
+            experience_relevance
+        } = evaluationData;
+
+        const scores = [
+            technical_skills,
+            communication,
+            problem_solving,
+            cultural_fit,
+            motivation,
+            experience_relevance
+        ].filter(score => score !== null && score !== undefined);
+
+        const overall_score = scores.length > 0
+            ? (scores.reduce((sum, score) => sum + score, 0) / scores.length).toFixed(2)
+            : null;
+
+        const evaluation = await InterviewEvaluation.create({
+            ...evaluationData,
+            evaluator_id: evaluatorId,
+            overall_score,
+            submitted_date: new Date()
+        });
+
+        const createdEvaluation = await InterviewEvaluation.findByPk(evaluation.id, {
+            include: [
+                {
+                    model: JobInterview,
+                    as: 'interview',
+                    include: [{ model: JobApplication, as: 'application' }]
+                },
+                { model: User, as: 'evaluator' }
+            ]
+        });
+
+        res.status(201).json(createdEvaluation);
+    } catch (error) {
+        console.error('Error submitting evaluation:', error);
+        res.status(500).json({ error: 'Failed to submit evaluation' });
+    }
+};
+
+/**
+ * Get evaluations for an interview
+ */
+export const getEvaluationsForInterview = async (req, res) => {
+    try {
+        const { interviewId } = req.params;
+
+        const evaluations = await InterviewEvaluation.findAll({
+            where: { interview_id: interviewId },
+            include: [
+                { model: User, as: 'evaluator', attributes: ['id', 'username', 'email'] }
+            ],
+            order: [['submitted_date', 'DESC']]
+        });
+
+        res.json(evaluations);
+    } catch (error) {
+        console.error('Error fetching evaluations:', error);
+        res.status(500).json({ error: 'Failed to fetch evaluations' });
+    }
+};
+
+// ========================================
+// STAGE 4: EMPLOYMENT OFFERS
+// ========================================
+
+/**
+ * Get all employment offers with filters
+ */
+export const getEmploymentOffers = async (req, res) => {
+    try {
+        const { status, direction_id, application_id } = req.query;
+
+        const where = {};
+        if (status) where.status = status;
+        if (direction_id) where.direction_id = direction_id;
+        if (application_id) where.application_id = application_id;
+
+        const offers = await EmploymentOffer.findAll({
+            where,
+            include: [
+                {
+                    model: JobApplication,
+                    as: 'application',
+                    include: [{ model: JobPosting, as: 'job_posting' }]
+                },
+                { model: JobPosition, as: 'job_position' },
+                { model: Grade, as: 'grade' },
+                { model: Service, as: 'service' },
+                { model: Direction, as: 'direction' },
+                { model: Employee, as: 'manager' },
+                { model: User, as: 'approver' },
+                { model: User, as: 'creator' }
+            ],
+            order: [['created_at', 'DESC']]
+        });
+
+        res.json(offers);
+    } catch (error) {
+        console.error('Error fetching employment offers:', error);
+        res.status(500).json({ error: 'Failed to fetch employment offers' });
+    }
+};
+
+/**
+ * Get a single employment offer by ID
+ */
+export const getEmploymentOfferById = async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        const offer = await EmploymentOffer.findByPk(id, {
+            include: [
+                {
+                    model: JobApplication,
+                    as: 'application',
+                    include: [
+                        {
+                            model: JobPosting,
+                            as: 'job_posting',
+                            include: [{ model: JobPosition, as: 'job_position' }]
+                        }
+                    ]
+                },
+                { model: JobPosition, as: 'job_position' },
+                { model: Grade, as: 'grade' },
+                { model: Service, as: 'service' },
+                { model: Direction, as: 'direction' },
+                { model: Employee, as: 'manager' },
+                { model: User, as: 'approver' },
+                { model: User, as: 'creator' }
+            ]
+        });
+
+        if (!offer) {
+            return res.status(404).json({ error: 'Employment offer not found' });
+        }
+
+        res.json(offer);
+    } catch (error) {
+        console.error('Error fetching employment offer:', error);
+        res.status(500).json({ error: 'Failed to fetch employment offer' });
+    }
+};
+
+/**
+ * Create a new employment offer
+ */
+export const createEmploymentOffer = async (req, res) => {
+    try {
+        const offerData = req.body;
+        const createdBy = req.user.id;
+
+        // Generate unique offer number
+        const year = new Date().getFullYear();
+        const count = await EmploymentOffer.count({
+            where: {
+                offer_number: {
+                    [Op.like]: `OFFER-${year}-%`
+                }
+            }
+        });
+        const offerNumber = `OFFER-${year}-${String(count + 1).padStart(4, '0')}`;
+
+        const offer = await EmploymentOffer.create({
+            ...offerData,
+            offer_number: offerNumber,
+            created_by: createdBy,
+            status: offerData.status || 'draft'
+        });
+
+        // Update application status
+        if (offerData.application_id) {
+            const application = await JobApplication.findByPk(offerData.application_id);
+            if (application) {
+                await application.update({
+                    status: 'offer_pending',
+                    last_status_change: new Date()
+                });
+
+                await ApplicationStatusHistory.create({
+                    application_id: offerData.application_id,
+                    previous_status: application.status,
+                    new_status: 'offer_pending',
+                    changed_by: createdBy,
+                    reason: 'Employment offer created'
+                });
+            }
+        }
+
+        const createdOffer = await EmploymentOffer.findByPk(offer.id, {
+            include: [
+                { model: JobApplication, as: 'application' },
+                { model: JobPosition, as: 'job_position' },
+                { model: Grade, as: 'grade' },
+                { model: Service, as: 'service' },
+                { model: Direction, as: 'direction' }
+            ]
+        });
+
+        res.status(201).json(createdOffer);
+    } catch (error) {
+        console.error('Error creating employment offer:', error);
+        res.status(500).json({ error: 'Failed to create employment offer' });
+    }
+};
+
+/**
+ * Update employment offer
+ */
+export const updateEmploymentOffer = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const updates = req.body;
+
+        const offer = await EmploymentOffer.findByPk(id);
+        if (!offer) {
+            return res.status(404).json({ error: 'Employment offer not found' });
+        }
+
+        await offer.update(updates);
+
+        const updatedOffer = await EmploymentOffer.findByPk(id, {
+            include: [
+                { model: JobApplication, as: 'application' },
+                { model: JobPosition, as: 'job_position' },
+                { model: Grade, as: 'grade' },
+                { model: Service, as: 'service' },
+                { model: Direction, as: 'direction' }
+            ]
+        });
+
+        res.json(updatedOffer);
+    } catch (error) {
+        console.error('Error updating employment offer:', error);
+        res.status(500).json({ error: 'Failed to update employment offer' });
+    }
+};
+
+/**
+ * Approve employment offer
+ */
+export const approveEmploymentOffer = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const approverId = req.user.id;
+
+        const offer = await EmploymentOffer.findByPk(id);
+        if (!offer) {
+            return res.status(404).json({ error: 'Employment offer not found' });
+        }
+
+        if (offer.status !== 'pending_approval') {
+            return res.status(400).json({ error: 'Only pending offers can be approved' });
+        }
+
+        await offer.update({
+            status: 'approved',
+            approved_by: approverId,
+            approved_date: new Date()
+        });
+
+        res.json({ message: 'Employment offer approved', offer });
+    } catch (error) {
+        console.error('Error approving employment offer:', error);
+        res.status(500).json({ error: 'Failed to approve employment offer' });
+    }
+};
+
+/**
+ * Send employment offer to candidate
+ */
+export const sendEmploymentOffer = async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        const offer = await EmploymentOffer.findByPk(id, {
+            include: [
+                {
+                    model: JobApplication,
+                    as: 'application'
+                }
+            ]
+        });
+
+        if (!offer) {
+            return res.status(404).json({ error: 'Employment offer not found' });
+        }
+
+        if (offer.status !== 'approved') {
+            return res.status(400).json({ error: 'Only approved offers can be sent' });
+        }
+
+        await offer.update({
+            status: 'sent',
+            offer_sent_date: new Date()
+        });
+
+        // Update application status
+        if (offer.application_id) {
+            await JobApplication.update(
+                {
+                    status: 'offer_sent',
+                    last_status_change: new Date()
+                },
+                { where: { id: offer.application_id } }
+            );
+
+            await ApplicationStatusHistory.create({
+                application_id: offer.application_id,
+                previous_status: 'offer_pending',
+                new_status: 'offer_sent',
+                changed_by: req.user.id,
+                reason: 'Employment offer sent to candidate'
+            });
+        }
+
+        res.json({ message: 'Employment offer sent successfully', offer });
+    } catch (error) {
+        console.error('Error sending employment offer:', error);
+        res.status(500).json({ error: 'Failed to send employment offer' });
+    }
+};
+
+/**
+ * Candidate response to offer (accept/decline)
+ */
+export const respondToOffer = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { accept, comments } = req.body;
+
+        const offer = await EmploymentOffer.findByPk(id);
+        if (!offer) {
+            return res.status(404).json({ error: 'Employment offer not found' });
+        }
+
+        if (offer.status !== 'sent') {
+            return res.status(400).json({ error: 'Cannot respond to this offer' });
+        }
+
+        const newStatus = accept ? 'accepted' : 'declined';
+
+        await offer.update({
+            status: newStatus,
+            candidate_response_date: new Date(),
+            candidate_comments: comments
+        });
+
+        // Update application status
+        if (offer.application_id) {
+            const appStatus = accept ? 'offer_accepted' : 'offer_declined';
+            await JobApplication.update(
+                {
+                    status: appStatus,
+                    last_status_change: new Date()
+                },
+                { where: { id: offer.application_id } }
+            );
+
+            await ApplicationStatusHistory.create({
+                application_id: offer.application_id,
+                previous_status: 'offer_sent',
+                new_status: appStatus,
+                changed_by: req.user.id,
+                reason: `Candidate ${accept ? 'accepted' : 'declined'} offer`,
+                notes: comments
+            });
+        }
+
+        res.json({ message: `Offer ${accept ? 'accepted' : 'declined'} successfully`, offer });
+    } catch (error) {
+        console.error('Error responding to offer:', error);
+        res.status(500).json({ error: 'Failed to respond to offer' });
+    }
+};
+
+// ========================================
+// STAGE 5: ONBOARDING
+// ========================================
+
+/**
+ * Get all onboarding checklists
+ */
+export const getOnboardingChecklists = async (req, res) => {
+    try {
+        const { employee_id, status } = req.query;
+
+        const where = {};
+        if (employee_id) where.employee_id = employee_id;
+        if (status) where.status = status;
+
+        const checklists = await OnboardingChecklist.findAll({
+            where,
+            include: [
+                { model: Employee, as: 'employee' },
+                { model: EmploymentOffer, as: 'employment_offer' },
+                { model: User, as: 'assigned_hr' },
+                {
+                    model: OnboardingTask,
+                    as: 'tasks',
+                    include: [
+                        { model: User, as: 'assigned_user' },
+                        { model: User, as: 'completer' }
+                    ]
+                }
+            ],
+            order: [['start_date', 'DESC']]
+        });
+
+        res.json(checklists);
+    } catch (error) {
+        console.error('Error fetching onboarding checklists:', error);
+        res.status(500).json({ error: 'Failed to fetch onboarding checklists' });
+    }
+};
+
+/**
+ * Get a single onboarding checklist by ID
+ */
+export const getOnboardingChecklistById = async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        const checklist = await OnboardingChecklist.findByPk(id, {
+            include: [
+                { model: Employee, as: 'employee' },
+                { model: EmploymentOffer, as: 'employment_offer' },
+                { model: User, as: 'assigned_hr' },
+                {
+                    model: OnboardingTask,
+                    as: 'tasks',
+                    include: [
+                        { model: OnboardingTaskTemplate, as: 'template' },
+                        { model: User, as: 'assigned_user' },
+                        { model: User, as: 'completer' }
+                    ],
+                    order: [['order_index', 'ASC']]
+                }
+            ]
+        });
+
+        if (!checklist) {
+            return res.status(404).json({ error: 'Onboarding checklist not found' });
+        }
+
+        res.json(checklist);
+    } catch (error) {
+        console.error('Error fetching onboarding checklist:', error);
+        res.status(500).json({ error: 'Failed to fetch onboarding checklist' });
+    }
+};
+
+/**
+ * Create onboarding checklist from templates
+ */
+export const createOnboardingChecklist = async (req, res) => {
+    try {
+        const { employee_id, employment_offer_id, checklist_name, start_date, assigned_hr_id } = req.body;
+
+        // Calculate target completion date (30 days from start)
+        const targetDate = new Date(start_date);
+        targetDate.setDate(targetDate.getDate() + 30);
+
+        const checklist = await OnboardingChecklist.create({
+            employee_id,
+            employment_offer_id,
+            checklist_name: checklist_name || 'New Employee Onboarding',
+            start_date,
+            target_completion_date: targetDate,
+            assigned_hr_id,
+            status: 'not_started'
+        });
+
+        // Get active task templates and create tasks
+        const templates = await OnboardingTaskTemplate.findAll({
+            where: { is_active: true },
+            order: [['order_index', 'ASC']]
+        });
+
+        const tasks = templates.map(template => {
+            const dueDate = new Date(start_date);
+            dueDate.setDate(dueDate.getDate() + template.days_from_start);
+
+            return {
+                checklist_id: checklist.id,
+                task_template_id: template.id,
+                task_name: template.task_name,
+                description: template.description,
+                category: template.category,
+                priority: template.priority,
+                due_date: dueDate,
+                order_index: template.order_index,
+                status: 'pending'
+            };
+        });
+
+        await OnboardingTask.bulkCreate(tasks);
+
+        const createdChecklist = await OnboardingChecklist.findByPk(checklist.id, {
+            include: [
+                { model: Employee, as: 'employee' },
+                { model: User, as: 'assigned_hr' },
+                { model: OnboardingTask, as: 'tasks' }
+            ]
+        });
+
+        res.status(201).json(createdChecklist);
+    } catch (error) {
+        console.error('Error creating onboarding checklist:', error);
+        res.status(500).json({ error: 'Failed to create onboarding checklist' });
+    }
+};
+
+/**
+ * Update onboarding checklist
+ */
+export const updateOnboardingChecklist = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const updates = req.body;
+
+        const checklist = await OnboardingChecklist.findByPk(id);
+        if (!checklist) {
+            return res.status(404).json({ error: 'Onboarding checklist not found' });
+        }
+
+        await checklist.update(updates);
+
+        const updatedChecklist = await OnboardingChecklist.findByPk(id, {
+            include: [
+                { model: Employee, as: 'employee' },
+                { model: User, as: 'assigned_hr' },
+                { model: OnboardingTask, as: 'tasks' }
+            ]
+        });
+
+        res.json(updatedChecklist);
+    } catch (error) {
+        console.error('Error updating onboarding checklist:', error);
+        res.status(500).json({ error: 'Failed to update onboarding checklist' });
+    }
+};
+
+/**
+ * Add task to checklist
+ */
+export const addOnboardingTask = async (req, res) => {
+    try {
+        const { checklistId } = req.params;
+        const taskData = req.body;
+
+        const checklist = await OnboardingChecklist.findByPk(checklistId);
+        if (!checklist) {
+            return res.status(404).json({ error: 'Onboarding checklist not found' });
+        }
+
+        const task = await OnboardingTask.create({
+            ...taskData,
+            checklist_id: checklistId,
+            status: taskData.status || 'pending'
+        });
+
+        const createdTask = await OnboardingTask.findByPk(task.id, {
+            include: [
+                { model: User, as: 'assigned_user' }
+            ]
+        });
+
+        res.status(201).json(createdTask);
+    } catch (error) {
+        console.error('Error adding onboarding task:', error);
+        res.status(500).json({ error: 'Failed to add onboarding task' });
+    }
+};
+
+/**
+ * Update onboarding task
+ */
+export const updateOnboardingTask = async (req, res) => {
+    try {
+        const { taskId } = req.params;
+        const updates = req.body;
+
+        const task = await OnboardingTask.findByPk(taskId);
+        if (!task) {
+            return res.status(404).json({ error: 'Onboarding task not found' });
+        }
+
+        // If marking as completed, set completion date and completer
+        if (updates.status === 'completed' && task.status !== 'completed') {
+            updates.completion_date = new Date();
+            updates.completed_by = req.user.id;
+        }
+
+        await task.update(updates);
+
+        // Recalculate checklist completion percentage
+        const checklist = await OnboardingChecklist.findByPk(task.checklist_id, {
+            include: [{ model: OnboardingTask, as: 'tasks' }]
+        });
+
+        const totalTasks = checklist.tasks.length;
+        const completedTasks = checklist.tasks.filter(t => t.status === 'completed').length;
+        const completionPercentage = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+
+        await checklist.update({
+            completion_percentage: completionPercentage,
+            status: completionPercentage === 100 ? 'completed' : completionPercentage > 0 ? 'in_progress' : 'not_started',
+            actual_completion_date: completionPercentage === 100 ? new Date() : null
+        });
+
+        const updatedTask = await OnboardingTask.findByPk(taskId, {
+            include: [
+                { model: User, as: 'assigned_user' },
+                { model: User, as: 'completer' }
+            ]
+        });
+
+        res.json(updatedTask);
+    } catch (error) {
+        console.error('Error updating onboarding task:', error);
+        res.status(500).json({ error: 'Failed to update onboarding task' });
+    }
+};
+
+/**
+ * Get task templates
+ */
+export const getTaskTemplates = async (req, res) => {
+    try {
+        const templates = await OnboardingTaskTemplate.findAll({
+            where: { is_active: true },
+            order: [['order_index', 'ASC']]
+        });
+
+        res.json(templates);
+    } catch (error) {
+        console.error('Error fetching task templates:', error);
+        res.status(500).json({ error: 'Failed to fetch task templates' });
+    }
+};
+
+/**
+ * Create task template
+ */
+export const createTaskTemplate = async (req, res) => {
+    try {
+        const templateData = req.body;
+
+        const template = await OnboardingTaskTemplate.create(templateData);
+
+        res.status(201).json(template);
+    } catch (error) {
+        console.error('Error creating task template:', error);
+        res.status(500).json({ error: 'Failed to create task template' });
+    }
+};
+
+// ========================================
+// EMAIL TEMPLATES & MANAGEMENT
+// ========================================
+
+/**
+ * Get all email templates
+ */
+export const getEmailTemplates = async (req, res) => {
+    try {
+        const { category } = req.query;
+
+        const where = { is_active: true };
+        if (category) where.category = category;
+
+        const templates = await EmailTemplate.findAll({
+            where,
+            include: [
+                { model: User, as: 'creator', attributes: ['id', 'username'] }
+            ],
+            order: [['template_name', 'ASC']]
+        });
+
+        res.json(templates);
+    } catch (error) {
+        console.error('Error fetching email templates:', error);
+        res.status(500).json({ error: 'Failed to fetch email templates' });
+    }
+};
+
+/**
+ * Get sent emails
+ */
+export const getSentEmails = async (req, res) => {
+    try {
+        const { status, related_entity_type, recipient_email } = req.query;
+
+        const where = {};
+        if (status) where.status = status;
+        if (related_entity_type) where.related_entity_type = related_entity_type;
+        if (recipient_email) where.recipient_email = { [Op.like]: `%${recipient_email}%` };
+
+        const emails = await SentEmail.findAll({
+            where,
+            include: [
+                { model: EmailTemplate, as: 'template' },
+                { model: User, as: 'sender' }
+            ],
+            order: [['sent_date', 'DESC']],
+            limit: 100
+        });
+
+        res.json(emails);
+    } catch (error) {
+        console.error('Error fetching sent emails:', error);
+        res.status(500).json({ error: 'Failed to fetch sent emails' });
+    }
+};
+
+/**
+ * Get recruitment emails (incoming)
+ */
+export const getRecruitmentEmails = async (req, res) => {
+    try {
+        const { processing_status, job_posting_id } = req.query;
+
+        const where = {};
+        if (processing_status) where.processing_status = processing_status;
+        if (job_posting_id) where.job_posting_id = job_posting_id;
+
+        const emails = await RecruitmentEmail.findAll({
+            where,
+            include: [
+                { model: JobPosting, as: 'job_posting' },
+                { model: JobApplication, as: 'application' }
+            ],
+            order: [['received_date', 'DESC']],
+            limit: 100
+        });
+
+        res.json(emails);
+    } catch (error) {
+        console.error('Error fetching recruitment emails:', error);
+        res.status(500).json({ error: 'Failed to fetch recruitment emails' });
+    }
+};
+
+/**
+ * Update recruitment email processing status
+ */
+export const updateRecruitmentEmailStatus = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { processing_status, error_message, application_id } = req.body;
+
+        const email = await RecruitmentEmail.findByPk(id);
+        if (!email) {
+            return res.status(404).json({ error: 'Recruitment email not found' });
+        }
+
+        const updates = {
+            processing_status,
+            processed_date: new Date()
+        };
+
+        if (error_message) updates.error_message = error_message;
+        if (application_id) updates.application_id = application_id;
+
+        await email.update(updates);
+
+        res.json({ message: 'Email status updated', email });
+    } catch (error) {
+        console.error('Error updating recruitment email:', error);
+        res.status(500).json({ error: 'Failed to update recruitment email' });
+    }
+};
+
+// ========================================
+// STATISTICS & REPORTS
+// ========================================
+
+/**
+ * Get recruitment statistics
+ */
+export const getRecruitmentStatistics = async (req, res) => {
+    try {
+        const { year, direction_id } = req.query;
+
+        // Active job postings
+        const activePostings = await JobPosting.count({
+            where: { status: 'published' }
+        });
+
+        // Total applications by status
+        const applicationsByStatus = await JobApplication.findAll({
+            attributes: [
+                'status',
+                [models.sequelize.fn('COUNT', models.sequelize.col('id')), 'count']
+            ],
+            group: ['status']
+        });
+
+        // Interviews scheduled
+        const upcomingInterviews = await JobInterview.count({
+            where: {
+                status: 'scheduled',
+                scheduled_date: {
+                    [Op.gte]: new Date()
+                }
+            }
+        });
+
+        // Pending offers
+        const pendingOffers = await EmploymentOffer.count({
+            where: {
+                status: ['pending_approval', 'approved', 'sent']
+            }
+        });
+
+        // Active onboarding
+        const activeOnboarding = await OnboardingChecklist.count({
+            where: {
+                status: ['not_started', 'in_progress']
+            }
+        });
+
+        res.json({
+            activePostings,
+            applicationsByStatus,
+            upcomingInterviews,
+            pendingOffers,
+            activeOnboarding
+        });
+    } catch (error) {
+        console.error('Error fetching recruitment statistics:', error);
+        res.status(500).json({ error: 'Failed to fetch recruitment statistics' });
+    }
+};
+

@@ -1,475 +1,401 @@
 import apiClient from '../api-client';
 
-// ==================== WORKFORCE PLANNING ====================
+// ========================================
+// STAGE 1: RECRUITMENT PLANS
+// ========================================
 
-export const getWorkforcePlannings = async (filters = {}) => {
-  let query = supabase
-    .from('workforce_planning')
-    .select(`
-      *,
-      direction:directions(id, name, code),
-      submitted_by_user:submitted_by(id, email),
-      hr_reviewed_by_user:hr_reviewed_by(id, email),
-      dg_approved_by_user:dg_approved_by(id, email)
-    `)
-    .order('created_at', { ascending: false });
-
-  if (filters.year) {
-    query = query.eq('year', filters.year);
-  }
-  if (filters.direction_id) {
-    query = query.eq('direction_id', filters.direction_id);
-  }
-  if (filters.status) {
-    query = query.eq('status', filters.status);
-  }
-
-  const { data, error } = await query;
-  if (error) throw error;
+/**
+ * Get all recruitment plans with filters
+ */
+export const getRecruitmentPlans = async (params = {}) => {
+  const { data } = await apiClient.get('/recruitment/plans', { params });
   return data;
 };
 
-export const getWorkforcePlanningById = async (id) => {
-  const { data, error } = await supabase
-    .from('workforce_planning')
-    .select(`
-      *,
-      direction:directions(id, name, code),
-      items:workforce_planning_items(
-        *,
-        job_position:job_positions(id, title, code),
-        grade:grades(id, name, code, base_salary),
-        service:services(id, name, code),
-        replacing_employee:employees!workforce_planning_items_replacing_employee_id_fkey(id, employee_number, first_name, last_name)
-      )
-    `)
-    .eq('id', id)
-    .single();
-
-  if (error) throw error;
+/**
+ * Get a single recruitment plan by ID
+ */
+export const getRecruitmentPlanById = async (id) => {
+  const { data } = await apiClient.get(`/recruitment/plans/${id}`);
   return data;
 };
 
-export const createWorkforcePlanning = async (planningData) => {
-  const { data, error } = await supabase
-    .from('workforce_planning')
-    .insert([planningData])
-    .select()
-    .single();
-
-  if (error) throw error;
+/**
+ * Create a new recruitment plan
+ */
+export const createRecruitmentPlan = async (planData) => {
+  const { data } = await apiClient.post('/recruitment/plans', planData);
   return data;
 };
 
-export const updateWorkforcePlanning = async (id, updates) => {
-  const { data, error } = await supabase
-    .from('workforce_planning')
-    .update(updates)
-    .eq('id', id)
-    .select()
-    .single();
-
-  if (error) throw error;
+/**
+ * Update a recruitment plan
+ */
+export const updateRecruitmentPlan = async (id, updates) => {
+  const { data } = await apiClient.put(`/recruitment/plans/${id}`, updates);
   return data;
 };
 
-export const deleteWorkforcePlanning = async (id) => {
-  const { error } = await supabase
-    .from('workforce_planning')
-    .delete()
-    .eq('id', id);
-
-  if (error) throw error;
-};
-
-// ==================== WORKFORCE PLANNING ITEMS ====================
-
-export const createPlanningItem = async (itemData) => {
-  const { data, error } = await supabase
-    .from('workforce_planning_items')
-    .insert([itemData])
-    .select()
-    .single();
-
-  if (error) throw error;
+/**
+ * Submit recruitment plan for approval
+ */
+export const submitRecruitmentPlan = async (id) => {
+  const { data } = await apiClient.post(`/recruitment/plans/${id}/submit`);
   return data;
 };
 
-export const updatePlanningItem = async (id, updates) => {
-  const { data, error } = await supabase
-    .from('workforce_planning_items')
-    .update(updates)
-    .eq('id', id)
-    .select()
-    .single();
-
-  if (error) throw error;
+/**
+ * Approve or reject recruitment plan
+ */
+export const approveRecruitmentPlan = async (id, approvalData) => {
+  const { data } = await apiClient.post(`/recruitment/plans/${id}/approve`, approvalData);
   return data;
 };
 
-export const deletePlanningItem = async (id) => {
-  const { error } = await supabase
-    .from('workforce_planning_items')
-    .delete()
-    .eq('id', id);
-
-  if (error) throw error;
-};
-
-// ==================== JOB OPENINGS ====================
-
-export const getJobOpenings = async (filters = {}) => {
-  let query = supabase
-    .from('job_openings')
-    .select(`
-      *,
-      job_position:job_positions(id, title, code),
-      direction:directions(id, name, code),
-      service:services(id, name, code),
-      grade:grades(id, name, code, base_salary),
-      created_by_user:created_by(id, email),
-      candidates:candidates(count)
-    `)
-    .order('created_at', { ascending: false });
-
-  if (filters.status) {
-    query = query.eq('status', filters.status);
-  }
-  if (filters.direction_id) {
-    query = query.eq('direction_id', filters.direction_id);
-  }
-  if (filters.is_published !== undefined) {
-    query = query.eq('is_published', filters.is_published);
-  }
-
-  const { data, error } = await query;
-  if (error) throw error;
+/**
+ * Add position to recruitment plan
+ */
+export const addPositionToPlan = async (planId, positionData) => {
+  const { data } = await apiClient.post(`/recruitment/plans/${planId}/positions`, positionData);
   return data;
 };
 
-export const getJobOpeningById = async (id) => {
-  const { data, error } = await supabase
-    .from('job_openings')
-    .select(`
-      *,
-      job_position:job_positions(id, title, code, description),
-      direction:directions(id, name, code),
-      service:services(id, name, code),
-      grade:grades(id, name, code, base_salary),
-      candidates:candidates(*)
-    `)
-    .eq('id', id)
-    .single();
-
-  if (error) throw error;
+/**
+ * Update plan position
+ */
+export const updatePlanPosition = async (positionId, updates) => {
+  const { data } = await apiClient.put(`/recruitment/plan-positions/${positionId}`, updates);
   return data;
 };
 
-export const createJobOpening = async (jobData) => {
-  const { data, error } = await supabase
-    .from('job_openings')
-    .insert([jobData])
-    .select()
-    .single();
-
-  if (error) throw error;
+/**
+ * Delete plan position
+ */
+export const deletePlanPosition = async (positionId) => {
+  const { data } = await apiClient.delete(`/recruitment/plan-positions/${positionId}`);
   return data;
 };
 
-export const updateJobOpening = async (id, updates) => {
-  const { data, error } = await supabase
-    .from('job_openings')
-    .update(updates)
-    .eq('id', id)
-    .select()
-    .single();
+// ========================================
+// STAGE 2: JOB POSTINGS
+// ========================================
 
-  if (error) throw error;
+/**
+ * Get all job postings with filters
+ */
+export const getJobPostings = async (params = {}) => {
+  const { data } = await apiClient.get('/recruitment/postings', { params });
   return data;
 };
 
-export const publishJobOpening = async (id) => {
-  const { data, error } = await supabase
-    .from('job_openings')
-    .update({
-      is_published: true,
-      published_at: new Date().toISOString(),
-      status: 'open'
-    })
-    .eq('id', id)
-    .select()
-    .single();
-
-  if (error) throw error;
+/**
+ * Get a single job posting by ID
+ */
+export const getJobPostingById = async (id) => {
+  const { data } = await apiClient.get(`/recruitment/postings/${id}`);
   return data;
 };
 
-export const deleteJobOpening = async (id) => {
-  const { error } = await supabase
-    .from('job_openings')
-    .delete()
-    .eq('id', id);
-
-  if (error) throw error;
-};
-
-// ==================== CANDIDATES ====================
-
-export const getCandidates = async (filters = {}) => {
-  let query = supabase
-    .from('candidates')
-    .select(`
-      *,
-      job_opening:job_openings!candidates_job_opening_id_fkey(id, title, job_number),
-      interviews:candidate_interviews(count),
-      evaluations:candidate_evaluations(count)
-    `)
-    .order('application_date', { ascending: false });
-
-  if (filters.job_opening_id) {
-    query = query.eq('job_opening_id', filters.job_opening_id);
-  }
-  if (filters.status) {
-    query = query.eq('status', filters.status);
-  }
-
-  const { data, error } = await query;
-  if (error) throw error;
+/**
+ * Create a new job posting
+ */
+export const createJobPosting = async (postingData) => {
+  const { data } = await apiClient.post('/recruitment/postings', postingData);
   return data;
 };
 
-export const getCandidateById = async (id) => {
-  const { data, error } = await supabase
-    .from('candidates')
-    .select(`
-      *,
-      job_opening:job_openings!candidates_job_opening_id_fkey(*),
-      interviews:candidate_interviews(*),
-      evaluations:candidate_evaluations(
-        *,
-        evaluator:evaluator_id(id, email)
-      ),
-      job_offers:job_offers(*)
-    `)
-    .eq('id', id)
-    .single();
-
-  if (error) throw error;
+/**
+ * Update a job posting
+ */
+export const updateJobPosting = async (id, updates) => {
+  const { data } = await apiClient.put(`/recruitment/postings/${id}`, updates);
   return data;
 };
 
-export const createCandidate = async (candidateData) => {
-  const { data, error } = await supabase
-    .from('candidates')
-    .insert([candidateData])
-    .select()
-    .single();
-
-  if (error) throw error;
+/**
+ * Publish a job posting
+ */
+export const publishJobPosting = async (id) => {
+  const { data } = await apiClient.post(`/recruitment/postings/${id}/publish`);
   return data;
 };
 
-export const updateCandidate = async (id, updates) => {
-  const { data, error } = await supabase
-    .from('candidates')
-    .update(updates)
-    .eq('id', id)
-    .select()
-    .single();
-
-  if (error) throw error;
+/**
+ * Close a job posting
+ */
+export const closeJobPosting = async (id, closeData) => {
+  const { data } = await apiClient.post(`/recruitment/postings/${id}/close`, closeData);
   return data;
 };
 
-export const deleteCandidate = async (id) => {
-  const { error } = await supabase
-    .from('candidates')
-    .delete()
-    .eq('id', id);
+// ========================================
+// STAGE 3: JOB APPLICATIONS
+// ========================================
 
-  if (error) throw error;
-};
-
-// ==================== CANDIDATE INTERVIEWS ====================
-
-export const getAllInterviews = async (filters = {}) => {
-  let query = supabase
-    .from('candidate_interviews')
-    .select(`
-      *,
-      candidate:candidates(id, first_name, last_name, candidate_number, email, phone, job_opening:job_openings(id, title, job_number))
-    `)
-    .order('scheduled_date', { ascending: true });
-
-  if (filters.status) {
-    query = query.eq('status', filters.status);
-  }
-  if (filters.interview_type) {
-    query = query.eq('interview_type', filters.interview_type);
-  }
-
-  const { data, error } = await query;
-  if (error) throw error;
+/**
+ * Get all job applications with filters
+ */
+export const getJobApplications = async (params = {}) => {
+  const { data } = await apiClient.get('/recruitment/applications', { params });
   return data;
 };
 
-export const getInterviews = async (candidateId) => {
-  const { data, error } = await supabase
-    .from('candidate_interviews')
-    .select(`
-      *,
-      candidate:candidates(id, first_name, last_name, candidate_number)
-    `)
-    .eq('candidate_id', candidateId)
-    .order('scheduled_date', { ascending: true });
-
-  if (error) throw error;
+/**
+ * Get a single job application by ID
+ */
+export const getJobApplicationById = async (id) => {
+  const { data } = await apiClient.get(`/recruitment/applications/${id}`);
   return data;
 };
 
-export const createInterview = async (interviewData) => {
-  const { data, error } = await supabase
-    .from('candidate_interviews')
-    .insert([interviewData])
-    .select()
-    .single();
-
-  if (error) throw error;
+/**
+ * Create a new job application
+ */
+export const createJobApplication = async (applicationData) => {
+  const { data } = await apiClient.post('/recruitment/applications', applicationData);
   return data;
 };
 
+/**
+ * Update a job application
+ */
+export const updateJobApplication = async (id, updates) => {
+  const { data } = await apiClient.put(`/recruitment/applications/${id}`, updates);
+  return data;
+};
+
+/**
+ * Assign application to user
+ */
+export const assignApplication = async (id, assignData) => {
+  const { data } = await apiClient.post(`/recruitment/applications/${id}/assign`, assignData);
+  return data;
+};
+
+/**
+ * Rate an application
+ */
+export const rateApplication = async (id, ratingData) => {
+  const { data } = await apiClient.post(`/recruitment/applications/${id}/rate`, ratingData);
+  return data;
+};
+
+// ========================================
+// STAGE 3B: INTERVIEWS & EVALUATIONS
+// ========================================
+
+/**
+ * Get interviews for an application
+ */
+export const getInterviewsForApplication = async (applicationId) => {
+  const { data } = await apiClient.get(`/recruitment/applications/${applicationId}/interviews`);
+  return data;
+};
+
+/**
+ * Schedule an interview
+ */
+export const scheduleInterview = async (interviewData) => {
+  const { data } = await apiClient.post('/recruitment/interviews', interviewData);
+  return data;
+};
+
+/**
+ * Update an interview
+ */
 export const updateInterview = async (id, updates) => {
-  const { data, error } = await supabase
-    .from('candidate_interviews')
-    .update(updates)
-    .eq('id', id)
-    .select()
-    .single();
-
-  if (error) throw error;
+  const { data } = await apiClient.put(`/recruitment/interviews/${id}`, updates);
   return data;
 };
 
-// ==================== CANDIDATE EVALUATIONS ====================
-
-export const getEvaluations = async (candidateId) => {
-  const { data, error } = await supabase
-    .from('candidate_evaluations')
-    .select(`
-      *,
-      evaluator:evaluator_id(id, email, firstname, lastname),
-      interview:candidate_interviews(id, interview_type, scheduled_date)
-    `)
-    .eq('candidate_id', candidateId)
-    .order('created_at', { ascending: false });
-
-  if (error) throw error;
+/**
+ * Get evaluations for an interview
+ */
+export const getEvaluationsForInterview = async (interviewId) => {
+  const { data } = await apiClient.get(`/recruitment/interviews/${interviewId}/evaluations`);
   return data;
 };
 
-export const createEvaluation = async (evaluationData) => {
-  const { data, error } = await supabase
-    .from('candidate_evaluations')
-    .insert([evaluationData])
-    .select()
-    .single();
-
-  if (error) throw error;
+/**
+ * Submit interview evaluation
+ */
+export const submitInterviewEvaluation = async (evaluationData) => {
+  const { data } = await apiClient.post('/recruitment/evaluations', evaluationData);
   return data;
 };
 
-export const updateEvaluation = async (id, updates) => {
-  const { data, error } = await supabase
-    .from('candidate_evaluations')
-    .update(updates)
-    .eq('id', id)
-    .select()
-    .single();
+// ========================================
+// STAGE 4: EMPLOYMENT OFFERS
+// ========================================
 
-  if (error) throw error;
+/**
+ * Get all employment offers with filters
+ */
+export const getEmploymentOffers = async (params = {}) => {
+  const { data } = await apiClient.get('/recruitment/offers', { params });
   return data;
 };
 
-// ==================== JOB OFFERS ====================
-
-export const getJobOffers = async (filters = {}) => {
-  let query = supabase
-    .from('job_offers')
-    .select(`
-      *,
-      candidate:candidates(id, first_name, last_name, email, phone),
-      job_opening:job_openings(id, title, job_number),
-      created_by_user:created_by(id, email, firstname, lastname)
-    `)
-    .order('created_at', { ascending: false });
-
-  if (filters.status) {
-    query = query.eq('status', filters.status);
-  }
-  if (filters.candidate_id) {
-    query = query.eq('candidate_id', filters.candidate_id);
-  }
-
-  const { data, error } = await query;
-  if (error) throw error;
+/**
+ * Get a single employment offer by ID
+ */
+export const getEmploymentOfferById = async (id) => {
+  const { data } = await apiClient.get(`/recruitment/offers/${id}`);
   return data;
 };
 
-export const createJobOffer = async (offerData) => {
-  const { data, error } = await supabase
-    .from('job_offers')
-    .insert([offerData])
-    .select()
-    .single();
-
-  if (error) throw error;
+/**
+ * Create a new employment offer
+ */
+export const createEmploymentOffer = async (offerData) => {
+  const { data } = await apiClient.post('/recruitment/offers', offerData);
   return data;
 };
 
-export const updateJobOffer = async (id, updates) => {
-  const { data, error } = await supabase
-    .from('job_offers')
-    .update(updates)
-    .eq('id', id)
-    .select()
-    .single();
-
-  if (error) throw error;
+/**
+ * Update an employment offer
+ */
+export const updateEmploymentOffer = async (id, updates) => {
+  const { data } = await apiClient.put(`/recruitment/offers/${id}`, updates);
   return data;
 };
 
-// ==================== SOCIAL MEDIA POSTS ====================
-
-export const getSocialMediaPosts = async (jobOpeningId) => {
-  const { data, error } = await supabase
-    .from('social_media_posts')
-    .select('*')
-    .eq('job_opening_id', jobOpeningId)
-    .order('created_at', { ascending: false });
-
-  if (error) throw error;
+/**
+ * Approve an employment offer
+ */
+export const approveEmploymentOffer = async (id) => {
+  const { data } = await apiClient.post(`/recruitment/offers/${id}/approve`);
   return data;
 };
 
-export const createSocialMediaPost = async (postData) => {
-  const { data, error } = await supabase
-    .from('social_media_posts')
-    .insert([postData])
-    .select()
-    .single();
-
-  if (error) throw error;
+/**
+ * Send employment offer to candidate
+ */
+export const sendEmploymentOffer = async (id) => {
+  const { data } = await apiClient.post(`/recruitment/offers/${id}/send`);
   return data;
 };
 
-export const updateSocialMediaPost = async (id, updates) => {
-  const { data, error } = await supabase
-    .from('social_media_posts')
-    .update(updates)
-    .eq('id', id)
-    .select()
-    .single();
+/**
+ * Candidate response to offer
+ */
+export const respondToOffer = async (id, responseData) => {
+  const { data } = await apiClient.post(`/recruitment/offers/${id}/respond`, responseData);
+  return data;
+};
 
-  if (error) throw error;
+// ========================================
+// STAGE 5: ONBOARDING
+// ========================================
+
+/**
+ * Get all onboarding checklists with filters
+ */
+export const getOnboardingChecklists = async (params = {}) => {
+  const { data } = await apiClient.get('/recruitment/onboarding', { params });
+  return data;
+};
+
+/**
+ * Get a single onboarding checklist by ID
+ */
+export const getOnboardingChecklistById = async (id) => {
+  const { data } = await apiClient.get(`/recruitment/onboarding/${id}`);
+  return data;
+};
+
+/**
+ * Create a new onboarding checklist
+ */
+export const createOnboardingChecklist = async (checklistData) => {
+  const { data } = await apiClient.post('/recruitment/onboarding', checklistData);
+  return data;
+};
+
+/**
+ * Update an onboarding checklist
+ */
+export const updateOnboardingChecklist = async (id, updates) => {
+  const { data } = await apiClient.put(`/recruitment/onboarding/${id}`, updates);
+  return data;
+};
+
+/**
+ * Add task to checklist
+ */
+export const addOnboardingTask = async (checklistId, taskData) => {
+  const { data } = await apiClient.post(`/recruitment/onboarding/${checklistId}/tasks`, taskData);
+  return data;
+};
+
+/**
+ * Update onboarding task
+ */
+export const updateOnboardingTask = async (taskId, updates) => {
+  const { data } = await apiClient.put(`/recruitment/tasks/${taskId}`, updates);
+  return data;
+};
+
+/**
+ * Get task templates
+ */
+export const getTaskTemplates = async () => {
+  const { data } = await apiClient.get('/recruitment/task-templates');
+  return data;
+};
+
+/**
+ * Create task template
+ */
+export const createTaskTemplate = async (templateData) => {
+  const { data } = await apiClient.post('/recruitment/task-templates', templateData);
+  return data;
+};
+
+// ========================================
+// EMAIL MANAGEMENT
+// ========================================
+
+/**
+ * Get email templates
+ */
+export const getEmailTemplates = async (params = {}) => {
+  const { data } = await apiClient.get('/recruitment/email-templates', { params });
+  return data;
+};
+
+/**
+ * Get sent emails
+ */
+export const getSentEmails = async (params = {}) => {
+  const { data } = await apiClient.get('/recruitment/sent-emails', { params });
+  return data;
+};
+
+/**
+ * Get recruitment emails (incoming)
+ */
+export const getRecruitmentEmails = async (params = {}) => {
+  const { data } = await apiClient.get('/recruitment/recruitment-emails', { params });
+  return data;
+};
+
+/**
+ * Update recruitment email status
+ */
+export const updateRecruitmentEmailStatus = async (id, statusData) => {
+  const { data } = await apiClient.put(`/recruitment/recruitment-emails/${id}`, statusData);
+  return data;
+};
+
+// ========================================
+// STATISTICS & REPORTS
+// ========================================
+
+/**
+ * Get recruitment statistics
+ */
+export const getRecruitmentStatistics = async (params = {}) => {
+  const { data } = await apiClient.get('/recruitment/statistics', { params });
   return data;
 };

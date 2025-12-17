@@ -1,217 +1,241 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import * as recruitmentService from '@/src/services/apis/recruitmentService';
+import * as recruitmentService from '../services/apis/recruitmentService';
 
-// ==================== WORKFORCE PLANNING ====================
+// ========================================
+// RECRUITMENT PLANS HOOKS
+// ========================================
 
-export const useGetWorkforcePlannings = (filters = {}) => {
+export const useGetRecruitmentPlans = (params = {}) => {
   return useQuery({
-    queryKey: ['workforce-plannings', filters],
-    queryFn: () => recruitmentService.getWorkforcePlannings(filters),
+    queryKey: ['recruitment-plans', params],
+    queryFn: () => recruitmentService.getRecruitmentPlans(params),
   });
 };
 
-export const useGetWorkforcePlanningById = (id) => {
+export const useGetRecruitmentPlanById = (id) => {
   return useQuery({
-    queryKey: ['workforce-planning', id],
-    queryFn: () => recruitmentService.getWorkforcePlanningById(id),
+    queryKey: ['recruitment-plan', id],
+    queryFn: () => recruitmentService.getRecruitmentPlanById(id),
     enabled: !!id,
   });
 };
 
-export const useCreateWorkforcePlanning = () => {
+export const useCreateRecruitmentPlan = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: recruitmentService.createWorkforcePlanning,
+    mutationFn: recruitmentService.createRecruitmentPlan,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['workforce-plannings'] });
+      queryClient.invalidateQueries({ queryKey: ['recruitment-plans'] });
     },
   });
 };
 
-export const useUpdateWorkforcePlanning = () => {
+export const useUpdateRecruitmentPlan = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, updates }) => recruitmentService.updateWorkforcePlanning(id, updates),
+    mutationFn: ({ id, updates }) => recruitmentService.updateRecruitmentPlan(id, updates),
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['workforce-plannings'] });
-      queryClient.invalidateQueries({ queryKey: ['workforce-planning', variables.id] });
+      queryClient.invalidateQueries({ queryKey: ['recruitment-plans'] });
+      queryClient.invalidateQueries({ queryKey: ['recruitment-plan', variables.id] });
     },
   });
 };
 
-export const useDeleteWorkforcePlanning = () => {
+export const useSubmitRecruitmentPlan = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: recruitmentService.deleteWorkforcePlanning,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['workforce-plannings'] });
-    },
-  });
-};
-
-// ==================== WORKFORCE PLANNING ITEMS ====================
-
-export const useCreatePlanningItem = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: recruitmentService.createPlanningItem,
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['workforce-planning', variables.planning_id] });
-    },
-  });
-};
-
-export const useUpdatePlanningItem = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: ({ id, updates }) => recruitmentService.updatePlanningItem(id, updates),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['workforce-planning'] });
-    },
-  });
-};
-
-export const useDeletePlanningItem = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: recruitmentService.deletePlanningItem,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['workforce-planning'] });
-    },
-  });
-};
-
-// ==================== JOB OPENINGS ====================
-
-export const useGetJobOpenings = (filters = {}) => {
-  return useQuery({
-    queryKey: ['job-openings', filters],
-    queryFn: () => recruitmentService.getJobOpenings(filters),
-  });
-};
-
-export const useGetJobOpeningById = (id) => {
-  return useQuery({
-    queryKey: ['job-opening', id],
-    queryFn: () => recruitmentService.getJobOpeningById(id),
-    enabled: !!id,
-  });
-};
-
-export const useCreateJobOpening = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: recruitmentService.createJobOpening,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['job-openings'] });
-    },
-  });
-};
-
-export const useUpdateJobOpening = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: ({ id, updates }) => recruitmentService.updateJobOpening(id, updates),
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['job-openings'] });
-      queryClient.invalidateQueries({ queryKey: ['job-opening', variables.id] });
-    },
-  });
-};
-
-export const usePublishJobOpening = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: recruitmentService.publishJobOpening,
+    mutationFn: recruitmentService.submitRecruitmentPlan,
     onSuccess: (_, id) => {
-      queryClient.invalidateQueries({ queryKey: ['job-openings'] });
-      queryClient.invalidateQueries({ queryKey: ['job-opening', id] });
+      queryClient.invalidateQueries({ queryKey: ['recruitment-plans'] });
+      queryClient.invalidateQueries({ queryKey: ['recruitment-plan', id] });
     },
   });
 };
 
-export const useDeleteJobOpening = () => {
+export const useApproveRecruitmentPlan = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: recruitmentService.deleteJobOpening,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['job-openings'] });
+    mutationFn: ({ id, approvalData }) => recruitmentService.approveRecruitmentPlan(id, approvalData),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['recruitment-plans'] });
+      queryClient.invalidateQueries({ queryKey: ['recruitment-plan', variables.id] });
     },
   });
 };
 
-// ==================== CANDIDATES ====================
-
-export const useGetCandidates = (filters = {}) => {
-  return useQuery({
-    queryKey: ['candidates', filters],
-    queryFn: () => recruitmentService.getCandidates(filters),
+export const useAddPositionToPlan = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ planId, positionData }) => recruitmentService.addPositionToPlan(planId, positionData),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['recruitment-plan', variables.planId] });
+    },
   });
 };
 
-export const useGetCandidateById = (id) => {
+export const useUpdatePlanPosition = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ positionId, updates }) => recruitmentService.updatePlanPosition(positionId, updates),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['recruitment-plans'] });
+    },
+  });
+};
+
+export const useDeletePlanPosition = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: recruitmentService.deletePlanPosition,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['recruitment-plans'] });
+    },
+  });
+};
+
+// ========================================
+// JOB POSTINGS HOOKS
+// ========================================
+
+export const useGetJobPostings = (params = {}) => {
   return useQuery({
-    queryKey: ['candidate', id],
-    queryFn: () => recruitmentService.getCandidateById(id),
+    queryKey: ['job-postings', params],
+    queryFn: () => recruitmentService.getJobPostings(params),
+  });
+};
+
+export const useGetJobPostingById = (id) => {
+  return useQuery({
+    queryKey: ['job-posting', id],
+    queryFn: () => recruitmentService.getJobPostingById(id),
     enabled: !!id,
   });
 };
 
-export const useCreateCandidate = () => {
+export const useCreateJobPosting = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: recruitmentService.createCandidate,
+    mutationFn: recruitmentService.createJobPosting,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['candidates'] });
+      queryClient.invalidateQueries({ queryKey: ['job-postings'] });
     },
   });
 };
 
-export const useUpdateCandidate = () => {
+export const useUpdateJobPosting = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, updates }) => recruitmentService.updateCandidate(id, updates),
+    mutationFn: ({ id, updates }) => recruitmentService.updateJobPosting(id, updates),
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['candidates'] });
-      queryClient.invalidateQueries({ queryKey: ['candidate', variables.id] });
+      queryClient.invalidateQueries({ queryKey: ['job-postings'] });
+      queryClient.invalidateQueries({ queryKey: ['job-posting', variables.id] });
     },
   });
 };
 
-export const useDeleteCandidate = () => {
+export const usePublishJobPosting = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: recruitmentService.deleteCandidate,
+    mutationFn: recruitmentService.publishJobPosting,
+    onSuccess: (_, id) => {
+      queryClient.invalidateQueries({ queryKey: ['job-postings'] });
+      queryClient.invalidateQueries({ queryKey: ['job-posting', id] });
+    },
+  });
+};
+
+export const useCloseJobPosting = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, closeData }) => recruitmentService.closeJobPosting(id, closeData),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['job-postings'] });
+      queryClient.invalidateQueries({ queryKey: ['job-posting', variables.id] });
+    },
+  });
+};
+
+// ========================================
+// JOB APPLICATIONS HOOKS
+// ========================================
+
+export const useGetJobApplications = (params = {}) => {
+  return useQuery({
+    queryKey: ['job-applications', params],
+    queryFn: () => recruitmentService.getJobApplications(params),
+  });
+};
+
+export const useGetJobApplicationById = (id) => {
+  return useQuery({
+    queryKey: ['job-application', id],
+    queryFn: () => recruitmentService.getJobApplicationById(id),
+    enabled: !!id,
+  });
+};
+
+export const useCreateJobApplication = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: recruitmentService.createJobApplication,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['candidates'] });
+      queryClient.invalidateQueries({ queryKey: ['job-applications'] });
     },
   });
 };
 
-// ==================== CANDIDATE INTERVIEWS ====================
-
-export const useGetAllInterviews = (filters = {}) => {
-  return useQuery({
-    queryKey: ['all-interviews', filters],
-    queryFn: () => recruitmentService.getAllInterviews(filters),
-  });
-};
-
-export const useGetInterviews = (candidateId) => {
-  return useQuery({
-    queryKey: ['interviews', candidateId],
-    queryFn: () => recruitmentService.getInterviews(candidateId),
-    enabled: !!candidateId,
-  });
-};
-
-export const useCreateInterview = () => {
+export const useUpdateJobApplication = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: recruitmentService.createInterview,
+    mutationFn: ({ id, updates }) => recruitmentService.updateJobApplication(id, updates),
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['interviews', variables.candidate_id] });
-      queryClient.invalidateQueries({ queryKey: ['candidate', variables.candidate_id] });
+      queryClient.invalidateQueries({ queryKey: ['job-applications'] });
+      queryClient.invalidateQueries({ queryKey: ['job-application', variables.id] });
+    },
+  });
+};
+
+export const useAssignApplication = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, assignData }) => recruitmentService.assignApplication(id, assignData),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['job-applications'] });
+      queryClient.invalidateQueries({ queryKey: ['job-application', variables.id] });
+    },
+  });
+};
+
+export const useRateApplication = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, ratingData }) => recruitmentService.rateApplication(id, ratingData),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['job-applications'] });
+      queryClient.invalidateQueries({ queryKey: ['job-application', variables.id] });
+    },
+  });
+};
+
+// ========================================
+// INTERVIEWS HOOKS
+// ========================================
+
+export const useGetInterviewsForApplication = (applicationId) => {
+  return useQuery({
+    queryKey: ['interviews', applicationId],
+    queryFn: () => recruitmentService.getInterviewsForApplication(applicationId),
+    enabled: !!applicationId,
+  });
+};
+
+export const useScheduleInterview = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: recruitmentService.scheduleInterview,
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['interviews', data.application_id] });
+      queryClient.invalidateQueries({ queryKey: ['job-application', data.application_id] });
     },
   });
 };
@@ -220,100 +244,227 @@ export const useUpdateInterview = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ id, updates }) => recruitmentService.updateInterview(id, updates),
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['interviews'] });
-      queryClient.invalidateQueries({ queryKey: ['candidate'] });
+      if (data.application_id) {
+        queryClient.invalidateQueries({ queryKey: ['job-application', data.application_id] });
+      }
     },
   });
 };
 
-// ==================== CANDIDATE EVALUATIONS ====================
-
-export const useGetEvaluations = (candidateId) => {
+export const useGetEvaluationsForInterview = (interviewId) => {
   return useQuery({
-    queryKey: ['evaluations', candidateId],
-    queryFn: () => recruitmentService.getEvaluations(candidateId),
-    enabled: !!candidateId,
+    queryKey: ['interview-evaluations', interviewId],
+    queryFn: () => recruitmentService.getEvaluationsForInterview(interviewId),
+    enabled: !!interviewId,
   });
 };
 
-export const useCreateEvaluation = () => {
+export const useSubmitInterviewEvaluation = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: recruitmentService.createEvaluation,
+    mutationFn: recruitmentService.submitInterviewEvaluation,
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['interview-evaluations', data.interview_id] });
+      queryClient.invalidateQueries({ queryKey: ['interviews'] });
+    },
+  });
+};
+
+// ========================================
+// EMPLOYMENT OFFERS HOOKS
+// ========================================
+
+export const useGetEmploymentOffers = (params = {}) => {
+  return useQuery({
+    queryKey: ['employment-offers', params],
+    queryFn: () => recruitmentService.getEmploymentOffers(params),
+  });
+};
+
+export const useGetEmploymentOfferById = (id) => {
+  return useQuery({
+    queryKey: ['employment-offer', id],
+    queryFn: () => recruitmentService.getEmploymentOfferById(id),
+    enabled: !!id,
+  });
+};
+
+export const useCreateEmploymentOffer = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: recruitmentService.createEmploymentOffer,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['employment-offers'] });
+      queryClient.invalidateQueries({ queryKey: ['job-applications'] });
+    },
+  });
+};
+
+export const useUpdateEmploymentOffer = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, updates }) => recruitmentService.updateEmploymentOffer(id, updates),
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['evaluations', variables.candidate_id] });
-      queryClient.invalidateQueries({ queryKey: ['candidate', variables.candidate_id] });
+      queryClient.invalidateQueries({ queryKey: ['employment-offers'] });
+      queryClient.invalidateQueries({ queryKey: ['employment-offer', variables.id] });
     },
   });
 };
 
-export const useUpdateEvaluation = () => {
+export const useApproveEmploymentOffer = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, updates }) => recruitmentService.updateEvaluation(id, updates),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['evaluations'] });
-      queryClient.invalidateQueries({ queryKey: ['candidate'] });
+    mutationFn: recruitmentService.approveEmploymentOffer,
+    onSuccess: (_, id) => {
+      queryClient.invalidateQueries({ queryKey: ['employment-offers'] });
+      queryClient.invalidateQueries({ queryKey: ['employment-offer', id] });
     },
   });
 };
 
-// ==================== JOB OFFERS ====================
-
-export const useGetJobOffers = (filters = {}) => {
-  return useQuery({
-    queryKey: ['job-offers', filters],
-    queryFn: () => recruitmentService.getJobOffers(filters),
-  });
-};
-
-export const useCreateJobOffer = () => {
+export const useSendEmploymentOffer = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: recruitmentService.createJobOffer,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['job-offers'] });
+    mutationFn: recruitmentService.sendEmploymentOffer,
+    onSuccess: (_, id) => {
+      queryClient.invalidateQueries({ queryKey: ['employment-offers'] });
+      queryClient.invalidateQueries({ queryKey: ['employment-offer', id] });
     },
   });
 };
 
-export const useUpdateJobOffer = () => {
+export const useRespondToOffer = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, updates }) => recruitmentService.updateJobOffer(id, updates),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['job-offers'] });
-    },
-  });
-};
-
-// ==================== SOCIAL MEDIA POSTS ====================
-
-export const useGetSocialMediaPosts = (jobOpeningId) => {
-  return useQuery({
-    queryKey: ['social-media-posts', jobOpeningId],
-    queryFn: () => recruitmentService.getSocialMediaPosts(jobOpeningId),
-    enabled: !!jobOpeningId,
-  });
-};
-
-export const useCreateSocialMediaPost = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: recruitmentService.createSocialMediaPost,
+    mutationFn: ({ id, responseData }) => recruitmentService.respondToOffer(id, responseData),
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['social-media-posts', variables.job_opening_id] });
+      queryClient.invalidateQueries({ queryKey: ['employment-offers'] });
+      queryClient.invalidateQueries({ queryKey: ['employment-offer', variables.id] });
     },
   });
 };
 
-export const useUpdateSocialMediaPost = () => {
+// ========================================
+// ONBOARDING HOOKS
+// ========================================
+
+export const useGetOnboardingChecklists = (params = {}) => {
+  return useQuery({
+    queryKey: ['onboarding-checklists', params],
+    queryFn: () => recruitmentService.getOnboardingChecklists(params),
+  });
+};
+
+export const useGetOnboardingChecklistById = (id) => {
+  return useQuery({
+    queryKey: ['onboarding-checklist', id],
+    queryFn: () => recruitmentService.getOnboardingChecklistById(id),
+    enabled: !!id,
+  });
+};
+
+export const useCreateOnboardingChecklist = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, updates }) => recruitmentService.updateSocialMediaPost(id, updates),
+    mutationFn: recruitmentService.createOnboardingChecklist,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['social-media-posts'] });
+      queryClient.invalidateQueries({ queryKey: ['onboarding-checklists'] });
     },
+  });
+};
+
+export const useUpdateOnboardingChecklist = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, updates }) => recruitmentService.updateOnboardingChecklist(id, updates),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['onboarding-checklists'] });
+      queryClient.invalidateQueries({ queryKey: ['onboarding-checklist', variables.id] });
+    },
+  });
+};
+
+export const useAddOnboardingTask = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ checklistId, taskData }) => recruitmentService.addOnboardingTask(checklistId, taskData),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['onboarding-checklist', variables.checklistId] });
+    },
+  });
+};
+
+export const useUpdateOnboardingTask = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ taskId, updates }) => recruitmentService.updateOnboardingTask(taskId, updates),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['onboarding-checklists'] });
+    },
+  });
+};
+
+export const useGetTaskTemplates = () => {
+  return useQuery({
+    queryKey: ['task-templates'],
+    queryFn: recruitmentService.getTaskTemplates,
+  });
+};
+
+export const useCreateTaskTemplate = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: recruitmentService.createTaskTemplate,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['task-templates'] });
+    },
+  });
+};
+
+// ========================================
+// EMAIL HOOKS
+// ========================================
+
+export const useGetEmailTemplates = (params = {}) => {
+  return useQuery({
+    queryKey: ['email-templates', params],
+    queryFn: () => recruitmentService.getEmailTemplates(params),
+  });
+};
+
+export const useGetSentEmails = (params = {}) => {
+  return useQuery({
+    queryKey: ['sent-emails', params],
+    queryFn: () => recruitmentService.getSentEmails(params),
+  });
+};
+
+export const useGetRecruitmentEmails = (params = {}) => {
+  return useQuery({
+    queryKey: ['recruitment-emails', params],
+    queryFn: () => recruitmentService.getRecruitmentEmails(params),
+  });
+};
+
+export const useUpdateRecruitmentEmailStatus = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, statusData }) => recruitmentService.updateRecruitmentEmailStatus(id, statusData),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['recruitment-emails'] });
+    },
+  });
+};
+
+// ========================================
+// STATISTICS HOOKS
+// ========================================
+
+export const useGetRecruitmentStatistics = (params = {}) => {
+  return useQuery({
+    queryKey: ['recruitment-statistics', params],
+    queryFn: () => recruitmentService.getRecruitmentStatistics(params),
   });
 };
