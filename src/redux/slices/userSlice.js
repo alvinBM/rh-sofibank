@@ -5,7 +5,7 @@ const initialState = {
     userData: null,
     isAuthenticated: !!getCookieFromBrowser("token"),
     token: getCookieFromBrowser("token") || null,
-    currentPage: "Dashboard",
+    currentPage: "Tabelau de bord",
     features: [],
     permissions: [],
 };

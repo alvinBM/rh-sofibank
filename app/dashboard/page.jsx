@@ -33,16 +33,16 @@ const Dashboard = () => {
 
             const response = await fetchDashboardStats();
 
-            console.log("Dashboard stats response **** :", response.success);
+            console.log("Dashboard stats response **** :", response.totalEmployees);
 
             setStats({
-                totalEmployees: response.data.totalEmployees || 0,
-                activeEmployees: response.data.activeEmployees || 0,
-                pendingLeaveRequests: response.data.pendingLeaveRequests || 0,
-                approvedLeaveRequests: response.data.approvedLeaveRequests || 0,
-                employeesByDirection: response.data.employeesByDirection || [],
-                employeesByStatus: response.data.employeesByStatus || [],
-                leaveRequestsByMonth: response.data.leaveRequestsByMonth || [],
+                totalEmployees: response.totalEmployees || 0,
+                activeEmployees: response.activeEmployees || 0,
+                pendingLeaveRequests: response.pendingLeaveRequests || 0,
+                approvedLeaveRequests: response.approvedLeaveRequests || 0,
+                employeesByDirection: response.employeesByDirection || [],
+                employeesByStatus: response.employeesByStatus || [],
+                leaveRequestsByMonth: response.leaveRequestsByMonth || [],
             });
         } catch (error) {
             console.log("Error loading dashboard stats:", error);
@@ -60,8 +60,7 @@ const Dashboard = () => {
     }
 
     return (
-        <div className="w-full flex flex-col gap-6 p-6">
-            <p>{JSON.stringify(stats)}</p>
+        <div className="w-full flex flex-col gap-6">
             <div>
                 <h1 className="text-3xl font-bold">Tableau de Bord</h1>
                 <p className="text-default-500">
@@ -72,8 +71,8 @@ const Dashboard = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 <Card>
                     <CardBody className="flex flex-row items-center gap-4">
-                        <div className="p-3 rounded-lg bg-primary/10">
-                            <Icon icon="mdi:account-group" className="text-primary text-3xl" />
+                        <div className="p-3 rounded-lg bg-red-100">
+                            <Icon icon="mdi:account-group" className="text-red-500 text-3xl" />
                         </div>
                         <div>
                             <p className="text-sm text-default-500">Total Employés</p>
@@ -84,8 +83,8 @@ const Dashboard = () => {
 
                 <Card>
                     <CardBody className="flex flex-row items-center gap-4">
-                        <div className="p-3 rounded-lg bg-success/10">
-                            <Icon icon="mdi:account-check" className="text-success text-3xl" />
+                        <div className="p-3 rounded-lg bg-red-100">
+                            <Icon icon="mdi:account-check" className="text-red-500 text-3xl" />
                         </div>
                         <div>
                             <p className="text-sm text-default-500">Employés Actifs</p>
@@ -96,8 +95,8 @@ const Dashboard = () => {
 
                 <Card>
                     <CardBody className="flex flex-row items-center gap-4">
-                        <div className="p-3 rounded-lg bg-warning/10">
-                            <Icon icon="mdi:clock-alert" className="text-warning text-3xl" />
+                        <div className="p-3 rounded-lg bg-red-100">
+                            <Icon icon="mdi:clock-alert" className="text-red-500 text-3xl" />
                         </div>
                         <div>
                             <p className="text-sm text-default-500">Congés en attente</p>
@@ -108,8 +107,8 @@ const Dashboard = () => {
 
                 <Card>
                     <CardBody className="flex flex-row items-center gap-4">
-                        <div className="p-3 rounded-lg bg-success/10">
-                            <Icon icon="mdi:check-circle" className="text-success text-3xl" />
+                        <div className="p-3 rounded-lg bg-red-100">
+                            <Icon icon="mdi:check-circle" className="text-red-500 text-3xl" />
                         </div>
                         <div>
                             <p className="text-sm text-default-500">Congés approuvés</p>

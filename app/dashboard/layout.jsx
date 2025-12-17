@@ -220,10 +220,12 @@ const Layout = ({ children }) => {
                                     </Button>
                                     <div className="flex items-center gap-2 py-5 pr-4">
                                         <Breadcrumbs className="hidden lg:flex" radius="full">
-                                            <BreadcrumbItem onPress={() => router.push("/dashboard/settings")}>
-                                                <b className="text-2xl font-bold text-red-700 text-center w-full dark:text-red-400">{user?.account?.business_name}</b>
+                                            <BreadcrumbItem>
+                                                <b className="text-xl">{currentPage}</b>
                                             </BreadcrumbItem>
-                                            <BreadcrumbItem>{currentPage}</BreadcrumbItem>
+                                            {/* <BreadcrumbItem onPress={() => router.push("/dashboard/settings")}>
+                                                <b className="text-2xl font-bold text-red-700 text-center w-full dark:text-red-400">{user?.account?.business_name}</b>
+                                            </BreadcrumbItem> */}
                                         </Breadcrumbs>
                                     </div>
                                 </NavbarBrand>
@@ -235,16 +237,14 @@ const Layout = ({ children }) => {
                                     </NavbarItem>
 
                                     {/* Settings */}
-                                    <PermissionCheck requiredPermission="admin">
-                                        <NavbarItem className="flex">
-                                            <Button onPress={() => router.push("/dashboard/settings")} isIconOnly radius="full" variant="light">
-                                                <Icon className="text-default-500" icon="solar:settings-linear" width={24} />
-                                            </Button>
-                                        </NavbarItem>
-                                    </PermissionCheck>
+                                    <NavbarItem className="flex">
+                                        <Button onPress={() => router.push("/dashboard/settings")} isIconOnly radius="full" variant="light">
+                                            <Icon className="text-default-500" icon="solar:settings-linear" width={24} />
+                                        </Button>
+                                    </NavbarItem>
 
                                     {/* Notifications */}
-                                    {/* <NavbarItem className="flex">
+                                    <NavbarItem className="flex">
                                         <Popover offset={12} placement="bottom-end">
                                             <PopoverTrigger>
                                                 <Button disableRipple isIconOnly className="overflow-visible" radius="full" variant="light">
@@ -257,9 +257,9 @@ const Layout = ({ children }) => {
                                                 <NotificationsCard className="w-full shadow-none" />
                                             </PopoverContent>
                                         </Popover>
-                                    </NavbarItem> */}
+                                    </NavbarItem>
                                     {/* User Menu */}
-                                    <NavbarItem className="px-2">
+                                    <NavbarItem className="pl-3 -mt-3">
                                         <Dropdown placement="bottom-end">
                                             <DropdownTrigger>
                                                 <button className="mt-1 h-8 w-8 outline-none transition-transform">
