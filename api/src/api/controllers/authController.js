@@ -1,7 +1,7 @@
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import { Op  } from 'sequelize';
-import models from '../models.js';
+import models from '../models/index.js';
 
 const authController = {
   /**

@@ -1,5 +1,5 @@
 import { Op  } from 'sequelize';
-import models from '../models.js';
+import models from '../models/index.js';
 
 const employeeController = {
   /**
