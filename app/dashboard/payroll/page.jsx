@@ -61,7 +61,7 @@ import { formatDateToFrench } from "@/src/utils/dateUtils";
 
 const STATUS_COLORS = {
   draft: "default",
-  processing: "primary",
+  processing: "danger",
   approved: "success",
   paid: "success",
 };
@@ -206,7 +206,7 @@ export default function PayrollPage() {
     }
   };
 
-  const formatCurrency = (amount, currency = "XOF") => {
+  const formatCurrency = (amount, currency = "CDF") => {
     return new Intl.NumberFormat("fr-FR", {
       style: "currency",
       currency: currency,
@@ -253,7 +253,7 @@ export default function PayrollPage() {
                         <SelectItem key="paid" value="paid">Payé</SelectItem>
                       </Select>
                     </div>
-                    <Button color="primary" startContent={<FiPlus />} onPress={onOpen}>
+                    <Button color="danger" startContent={<FiPlus />} onPress={onOpen}>
                       Créer Exécution
                     </Button>
                   </div>
@@ -306,7 +306,7 @@ export default function PayrollPage() {
                               {run.status === "draft" && (
                                 <Button
                                   size="sm"
-                                  color="primary"
+                                  color="danger"
                                   variant="flat"
                                   onPress={() => {
                                     setSelectedRun(run);
@@ -329,7 +329,7 @@ export default function PayrollPage() {
                               {run.status === "approved" && (
                                 <Button
                                   size="sm"
-                                  color="primary"
+                                  color="danger"
                                   onPress={() => handleDistribute(run.id)}
                                 >
                                   <FiSend /> Distribuer
@@ -351,7 +351,7 @@ export default function PayrollPage() {
                     <p className="text-sm text-default-500">
                       Bons de paiement, bonus, gratifications, déductions
                     </p>
-                    <Button color="primary" startContent={<FiPlus />} onPress={onVariableOpen}>
+                    <Button color="danger" startContent={<FiPlus />} onPress={onVariableOpen}>
                       Ajouter Élément
                     </Button>
                   </div>
@@ -453,14 +453,14 @@ export default function PayrollPage() {
                         />
                         <Select
                           label="Devise"
-                          selectedKeys={settings?.currency ? [settings.currency] : ["XOF"]}
+                          selectedKeys={settings?.currency ? [settings.currency] : ["CDF"]}
                         >
-                          <SelectItem key="XOF" value="XOF">XOF (FCFA)</SelectItem>
+                          <SelectItem key="CDF" value="CDF">CDF (Franc Congalais)</SelectItem>
                           <SelectItem key="USD" value="USD">USD</SelectItem>
                           <SelectItem key="EUR" value="EUR">EUR</SelectItem>
                         </Select>
                       </div>
-                      <Button color="primary" startContent={<FiCheck />}>
+                      <Button color="danger" startContent={<FiCheck />}>
                         Sauvegarder Paramètres
                       </Button>
                     </CardBody>
@@ -510,7 +510,7 @@ export default function PayrollPage() {
                         Les bulletins de paie seront envoyés automatiquement par email le{" "}
                         <strong>{settings?.payment_day || 24}</strong> du mois (ou dernier jour ouvrable si weekend/férié).
                       </p>
-                      <Button color="primary" startContent={<FiSend />}>
+                      <Button color="danger" startContent={<FiSend />}>
                         Envoyer Maintenant
                       </Button>
                     </CardBody>
@@ -556,7 +556,7 @@ export default function PayrollPage() {
             </ModalBody>
             <ModalFooter>
               <Button variant="flat" onPress={onClose}>Annuler</Button>
-              <Button color="primary" onPress={handleCreateRun} isLoading={createRunMutation.isPending}>
+              <Button color="danger" onPress={handleCreateRun} isLoading={createRunMutation.isPending}>
                 Créer
               </Button>
             </ModalFooter>
@@ -592,7 +592,7 @@ export default function PayrollPage() {
             <ModalFooter>
               <Button variant="flat" onPress={onProcessClose}>Annuler</Button>
               <Button
-                color="primary"
+                color="danger"
                 onPress={() => handleProcessRun(selectedRun?.id)}
                 isLoading={processRunMutation.isPending}
               >
@@ -627,7 +627,7 @@ export default function PayrollPage() {
             </ModalBody>
             <ModalFooter>
               <Button variant="flat" onPress={onVariableClose}>Annuler</Button>
-              <Button color="primary" onPress={handleCreateVariable} isLoading={createVariableMutation.isPending}>
+              <Button color="danger" onPress={handleCreateVariable} isLoading={createVariableMutation.isPending}>
                 Ajouter
               </Button>
             </ModalFooter>

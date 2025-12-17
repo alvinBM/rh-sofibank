@@ -13,9 +13,15 @@ import { useDispatch, useSelector } from "react-redux";
 
 //Parametres de provinves, Villes
 const settingOptions = [
-    { key: "accounts", name: "Informations", icon: <Icon icon={"mingcute:building-1-fill"} width={20} />, link: "/dashboard/settings" },
-    { key: "users", name: "Gestion des utilisateurs", icon: <IoPeopleOutline size={20} />, link: "/dashboard/settings/users" },
-    { key: "provinces", name: "Gestion des provinces", icon: <Icon icon={"solar:home-2-linear"} width={20} />, link: "/dashboard/settings/provinces" },
+    { key: "accounts", name: "Informations", icon: <Icon icon={"mingcute:building-1-fill"} width={24} />, link: "/dashboard/settings" },
+    { key: "users", name: "Gestion des utilisateurs", icon: <Icon icon={"solar:users-group-rounded-linear"} width={24} />, link: "/dashboard/settings/users" },
+    { key: "roles", name: "Rôles et Permissions", icon: <Icon icon={"solar:shield-user-linear"} width={24} />, link: "/dashboard/settings/roles" },
+    { key: "organization", name: "Structure organisationnelle", icon: <Icon icon="hugeicons:structure-check" width="24" height="24" />, link: "/dashboard/settings/organization" },
+    { key: "grades", name: "Grades", icon: <Icon icon={"solar:diploma-linear"} width={24} />, link: "/dashboard/settings/grades" },
+    { key: "job-positions", name: "Postes de travail", icon: <Icon icon={"solar:case-linear"} width={24} />, link: "/dashboard/settings/positions" },
+    { key: "holidays", name: "Jours fériés", icon: <Icon icon="solar:calendar-broken" width="24" height="24" />, link: "/dashboard/settings/holidays" },
+    { key: "biometric-devices", name: "Appareils biométriques", icon: <Icon icon="fluent:window-fingerprint-16-regular" width="24" height="24" />, link: "/dashboard/settings/biometric-devices" },
+    { key: "system-settings", name: "Paramètres système", icon: <Icon icon={"solar:tuning-2-linear"} width={24} />, link: "/dashboard/settings/system" },
 ];
 
 const LayoutSettings = ({ children }) => {

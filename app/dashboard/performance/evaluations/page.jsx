@@ -12,7 +12,7 @@ import { useGetEvaluations, useCreateEvaluation, useSubmitSelfEvaluation, useApp
 import { toast } from "react-toastify";
 
 const STATUS_COLORS = {
-  draft: "default", self_evaluation: "warning", supervisor_review: "primary", 
+  draft: "default", self_evaluation: "warning", supervisor_review: "danger", 
   hr_review: "secondary", dg_approval: "warning", completed: "success"
 };
 
@@ -53,7 +53,7 @@ export default function EvaluationsPage() {
             <h1 className="text-3xl font-bold">Évaluations 360°</h1>
             <p className="text-default-500 mt-1">Gestion des évaluations de performance</p>
           </div>
-          <Button color="primary" startContent={<FiPlus />} onPress={onOpen}>
+          <Button color="danger" startContent={<FiPlus />} onPress={onOpen}>
             Nouvelle Évaluation
           </Button>
         </div>
@@ -146,7 +146,7 @@ export default function EvaluationsPage() {
             </ModalBody>
             <ModalFooter>
               <Button variant="flat" onPress={onClose}>Annuler</Button>
-              <Button color="primary" onPress={handleCreate} isLoading={createMutation.isPending}>
+              <Button color="danger" onPress={handleCreate} isLoading={createMutation.isPending}>
                 Créer
               </Button>
             </ModalFooter>

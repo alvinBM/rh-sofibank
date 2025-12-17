@@ -55,14 +55,14 @@ const InvoiceDetail = ({ id }) => {
                 </Button>
                 <div className="flex gap-2">
                     <Button
-                        color="primary"
+                        color="danger"
                         variant="flat"
                         startContent={<Icon icon="lucide:printer" width={20} />}
                     >
                         Imprimer
                     </Button>
                     <Button
-                        color="primary"
+                        color="danger"
                         startContent={<Icon icon="lucide:download" width={20} />}
                     >
                         Télécharger PDF

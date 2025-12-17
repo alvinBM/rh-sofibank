@@ -56,7 +56,7 @@ export default function EmployeeDetailPage() {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen">
         <h2 className="text-xl font-bold text-danger mb-4">Employé introuvable</h2>
-        <Button color="primary" startContent={<FiArrowLeft />} onPress={() => router.back()}>
+        <Button color="danger" startContent={<FiArrowLeft />} onPress={() => router.back()}>
           Retour
         </Button>
       </div>
@@ -76,7 +76,7 @@ export default function EmployeeDetailPage() {
             <FiArrowLeft size={20} />
           </Button>
           <h1 className="text-2xl font-bold flex-1">Fiche Employé</h1>
-          <Button color="primary" startContent={<FiEdit />}>
+          <Button color="danger" startContent={<FiEdit />}>
             Modifier
           </Button>
         </div>
@@ -298,7 +298,7 @@ export default function EmployeeDetailPage() {
               <CardBody>
                 <div className="flex justify-between items-center mb-4">
                   <h3 className="text-lg font-bold">Documents de l'Employé</h3>
-                  <Button color="primary" size="sm">
+                  <Button color="danger" size="sm">
                     Ajouter un Document
                   </Button>
                 </div>

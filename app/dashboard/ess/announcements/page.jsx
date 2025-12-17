@@ -16,7 +16,7 @@ import { useGetInternalAnnouncements, useMarkAnnouncementAsRead } from "@/src/ho
 
 const CATEGORY_COLORS = {
   general: "default",
-  hr: "primary",
+  hr: "danger",
   event: "secondary",
   policy: "warning",
   achievement: "success",
@@ -36,7 +36,7 @@ const CATEGORY_LABELS = {
 
 const PRIORITY_COLORS = {
   low: "default",
-  normal: "primary",
+  normal: "danger",
   high: "warning",
   urgent: "danger",
 };
@@ -57,13 +57,13 @@ export default function AnnouncementsPage() {
     <div className="p-6 max-w-4xl mx-auto">
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
-          <FiBell className="text-3xl text-primary" />
+          <FiBell className="text-3xl text-danger" />
           <div>
             <h1 className="text-2xl font-bold">Communications Internes</h1>
             <p className="text-default-500">Restez informé des actualités de l'entreprise</p>
           </div>
         </div>
-        <Badge content={announcements?.length || 0} color="primary">
+        <Badge content={announcements?.length || 0} color="danger">
           <div className="w-8 h-8" />
         </Badge>
       </div>
@@ -149,7 +149,7 @@ export default function AnnouncementsPage() {
 
                 <Button
                   size="sm"
-                  color="primary"
+                  color="danger"
                   variant="flat"
                   startContent={<FiCheckCircle />}
                   onPress={() => handleMarkAsRead(announcement.id)}

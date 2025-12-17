@@ -32,7 +32,7 @@ import { toast } from "react-toastify";
 
 const STATUS_COLORS = {
   draft: "default",
-  submitted: "primary",
+  submitted: "danger",
   in_review: "warning",
   approved: "success",
   rejected: "danger",
@@ -50,7 +50,7 @@ const STATUS_LABELS = {
 
 const PRIORITY_COLORS = {
   low: "default",
-  medium: "primary",
+  medium: "danger",
   high: "warning",
   urgent: "danger",
 };
@@ -104,7 +104,7 @@ export default function MyRequestsPage() {
           <h1 className="text-2xl font-bold">Mes Demandes RH</h1>
           <p className="text-default-500">Créez et suivez vos demandes administratives</p>
         </div>
-        <Button color="primary" startContent={<FiPlus />} onPress={onOpen}>
+        <Button color="danger" startContent={<FiPlus />} onPress={onOpen}>
           Nouvelle Demande
         </Button>
       </div>
@@ -297,7 +297,7 @@ export default function MyRequestsPage() {
                   Annuler
                 </Button>
                 <Button
-                  color="primary"
+                  color="danger"
                   type="submit"
                   isLoading={createRequest.isPending}
                 >

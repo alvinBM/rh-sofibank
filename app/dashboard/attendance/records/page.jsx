@@ -57,7 +57,7 @@ const STATUS_COLORS = {
   present: "success",
   late: "warning",
   absent: "danger",
-  half_day: "primary",
+  half_day: "danger",
 };
 
 export default function AttendanceRecordsPage() {
@@ -156,7 +156,7 @@ export default function AttendanceRecordsPage() {
             </p>
           </div>
           <Button
-            color="primary"
+            color="danger"
             startContent={<FiRefreshCw />}
             onPress={handleSync}
             isLoading={syncMutation.isPending}
@@ -212,12 +212,12 @@ export default function AttendanceRecordsPage() {
           <Card>
             <CardBody>
               <div className="flex items-center gap-3">
-                <div className="p-3 bg-primary-100 rounded-lg">
-                  <FiUsers className="text-primary text-2xl" />
+                <div className="p-3 bg-danger-100 rounded-lg">
+                  <FiUsers className="text-danger text-2xl" />
                 </div>
                 <div>
                   <p className="text-sm text-default-500">Demi-journée</p>
-                  <p className="text-2xl font-bold text-primary">{summary.total_half_day}</p>
+                  <p className="text-2xl font-bold text-danger">{summary.total_half_day}</p>
                 </div>
               </div>
             </CardBody>
@@ -269,7 +269,7 @@ export default function AttendanceRecordsPage() {
                 ))}
               </Select>
 
-              <Button color="primary" variant="flat" onPress={handleExport}>
+              <Button color="danger" variant="flat" onPress={handleExport}>
                 <FiDownload /> Exporter
               </Button>
             </div>
@@ -288,7 +288,7 @@ export default function AttendanceRecordsPage() {
                       isCompact
                       showControls
                       showShadow
-                      color="primary"
+                      color="danger"
                       page={page}
                       total={pages}
                       onChange={(page) => setPage(page)}

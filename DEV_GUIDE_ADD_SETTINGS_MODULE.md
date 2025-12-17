@@ -434,7 +434,7 @@ export default function ContractsPage() {
             <h1 className="text-2xl font-bold">Types de contrats</h1>
             <p className="text-default-500">Gérer les types de contrats</p>
           </div>
-          <Button color="primary" startContent={<FiPlus />} onPress={handleOpenCreate}>Nouveau contrat</Button>
+          <Button color="danger" startContent={<FiPlus />} onPress={handleOpenCreate}>Nouveau contrat</Button>
         </div>
 
         <Card>
@@ -479,7 +479,7 @@ export default function ContractsPage() {
             </ModalBody>
             <ModalFooter>
               <Button variant="light" onPress={onClose}>Annuler</Button>
-              <Button color="primary" onPress={handleSubmit} isLoading={createContractMutation.isPending || updateContractMutation.isPending}>
+              <Button color="danger" onPress={handleSubmit} isLoading={createContractMutation.isPending || updateContractMutation.isPending}>
                 {editMode ? "Mettre à jour" : "Créer"}
               </Button>
             </ModalFooter>

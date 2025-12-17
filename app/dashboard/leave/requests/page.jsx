@@ -71,7 +71,7 @@ const LEAVE_STATUS_OPTIONS = [
 const LEAVE_STATUS_COLORS = {
   draft: "default",
   pending_backup: "warning",
-  backup_confirmed: "primary",
+  backup_confirmed: "danger",
   pending_supervisor: "warning",
   pending_hr: "warning",
   pending_dg: "warning",
@@ -478,7 +478,7 @@ export default function LeaveRequestsPage() {
       <div className="flex flex-col gap-4">
         <div className="flex justify-between items-center">
           <h1 className="text-2xl font-bold">Demandes de Congés</h1>
-          <Button color="primary" startContent={<FiPlus />} onPress={handleCreateRequest}>
+          <Button color="danger" startContent={<FiPlus />} onPress={handleCreateRequest}>
             Nouvelle Demande
           </Button>
         </div>
@@ -572,7 +572,7 @@ export default function LeaveRequestsPage() {
           isCompact
           showControls
           showShadow
-          color="primary"
+          color="danger"
           page={page}
           total={totalPages}
           onChange={setPage}
@@ -595,7 +595,7 @@ export default function LeaveRequestsPage() {
 
   return (
     <PermissionGuard requiredPermission={["leave_requests_view", "ess_access"]}>
-      <div className="p-6">
+      <div className="p-0">
         <Table
           aria-label="Table des demandes de congés"
           topContent={topContent}
@@ -770,9 +770,9 @@ export default function LeaveRequestsPage() {
                     </div>
 
                     {workingDays > 0 && (
-                      <Card className="bg-primary-50">
+                      <Card className="bg-danger-50">
                         <CardBody>
-                          <p className="text-sm font-semibold text-primary">
+                          <p className="text-sm font-semibold text-danger">
                             Durée: {workingDays} jour(s) ouvrable(s)
                           </p>
                         </CardBody>
@@ -834,7 +834,7 @@ export default function LeaveRequestsPage() {
                     Annuler
                   </Button>
                   <Button
-                    color="primary"
+                    color="danger"
                     onPress={handleSubmitCreate}
                     isLoading={createMutation.isPending || uploadDocMutation.isPending}
                   >

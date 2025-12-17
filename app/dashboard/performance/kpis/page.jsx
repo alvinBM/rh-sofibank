@@ -82,7 +82,7 @@ export default function KPIsPage() {
             <h1 className="text-3xl font-bold">KPIs (Indicateurs de Performance)</h1>
             <p className="text-default-500 mt-1">Configuration des KPIs par fonction/poste</p>
           </div>
-          <Button color="primary" startContent={<FiPlus />} onPress={handleCreate}>
+          <Button color="danger" startContent={<FiPlus />} onPress={handleCreate}>
             Nouveau KPI
           </Button>
         </div>
@@ -132,7 +132,7 @@ export default function KPIsPage() {
                     </TableCell>
                     <TableCell>{kpi.position || "Tous"}</TableCell>
                     <TableCell>
-                      <Chip color="primary" variant="flat">{kpi.weight}%</Chip>
+                      <Chip color="danger" variant="flat">{kpi.weight}%</Chip>
                     </TableCell>
                     <TableCell>{kpi.scale}</TableCell>
                     <TableCell>
@@ -213,7 +213,7 @@ export default function KPIsPage() {
             <ModalFooter>
               <Button variant="flat" onPress={onClose}>Annuler</Button>
               <Button
-                color="primary"
+                color="danger"
                 onPress={handleSubmit}
                 isLoading={createMutation.isPending || updateMutation.isPending}
               >

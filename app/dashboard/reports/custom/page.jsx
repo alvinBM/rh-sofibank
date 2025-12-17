@@ -91,10 +91,10 @@ export default function CustomReportsPage() {
             <p className="text-default-500 mt-1">Créez et planifiez des rapports sur mesure</p>
           </div>
           <div className="flex gap-2">
-            <Button color="primary" variant="flat" startContent={<FiCalendar />} onPress={onScheduleOpen}>
+            <Button color="danger" variant="flat" startContent={<FiCalendar />} onPress={onScheduleOpen}>
               Planifier
             </Button>
-            <Button color="primary" startContent={<FiSave />} onPress={onOpen}>
+            <Button color="danger" startContent={<FiSave />} onPress={onOpen}>
               Sauvegarder Template
             </Button>
           </div>
@@ -166,7 +166,7 @@ export default function CustomReportsPage() {
 
                   <div className="flex gap-2">
                     <Button
-                      color="primary"
+                      color="danger"
                       startContent={<FiPlay />}
                       onPress={handleGenerateReport}
                       isLoading={generateMutation.isPending}
@@ -254,7 +254,7 @@ export default function CustomReportsPage() {
             <ModalFooter>
               <Button variant="flat" onPress={onClose}>Annuler</Button>
               <Button
-                color="primary"
+                color="danger"
                 onPress={handleSaveTemplate}
                 isLoading={createTemplateMutation.isPending}
               >
@@ -286,7 +286,7 @@ export default function CustomReportsPage() {
             <ModalFooter>
               <Button variant="flat" onPress={onScheduleClose}>Annuler</Button>
               <Button
-                color="primary"
+                color="danger"
                 onPress={handleSchedule}
                 isLoading={scheduleMutation.isPending}
               >

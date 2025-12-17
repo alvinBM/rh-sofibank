@@ -510,7 +510,7 @@ const settingsController = {
   updateUser: async (req, res) => {
     try {
       const { id } = req.params;
-      const { email, password, role_ids, employee_data } = req.body;
+      const { email, phone, password, role_ids, employee_data } = req.body;
 
       const user = await models.User.findByPk(id);
       if (!user) {
@@ -521,7 +521,7 @@ const settingsController = {
       }
 
       // Update user basic info
-      const updateData = { email };
+      const updateData = { email, phone };
       if (password) {
         updateData.password = password;
       }
@@ -655,6 +655,7 @@ const settingsController = {
         offset: parseInt(offset),
         limit: parseInt(limit),
         order: [['name', 'ASC']],
+        distinct: true,
       });
 
       return res.json({
@@ -833,6 +834,87 @@ const settingsController = {
       return res.json({
         status: 500,
         message: 'Erreur lors de la récupération des permissions',
+      });
+    }
+  },
+
+  getRolePermissions: async (req, res) => {
+    try {
+      const { id } = req.params;
+
+      const role = await models.Role.findByPk(id, {
+        include: [
+          {
+            model: models.Permission,
+            as: 'permissions',
+            through: { attributes: [] },
+          },
+        ],
+      });
+
+      if (!role) {
+        return res.json({
+          status: 404,
+          message: 'Rôle non trouvé',
+        });
+      }
+
+      return res.json({
+        status: 200,
+        message: 'Permissions du rôle récupérées avec succès',
+        data: role.permissions,
+      });
+    } catch (error) {
+      console.error('Get role permissions error:', error);
+      return res.json({
+        status: 500,
+        message: 'Erreur lors de la récupération des permissions du rôle',
+      });
+    }
+  },
+
+  updateRolePermissions: async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { permission_ids } = req.body;
+
+      const role = await models.Role.findByPk(id);
+      if (!role) {
+        return res.json({
+          status: 404,
+          message: 'Rôle non trouvé',
+        });
+      }
+
+      // Update permissions
+      if (permission_ids && Array.isArray(permission_ids)) {
+        const permissions = await models.Permission.findAll({
+          where: { id: permission_ids },
+        });
+        await role.setPermissions(permissions);
+      }
+
+      // Fetch updated role with permissions
+      const updatedRole = await models.Role.findByPk(id, {
+        include: [
+          {
+            model: models.Permission,
+            as: 'permissions',
+            through: { attributes: [] },
+          },
+        ],
+      });
+
+      return res.json({
+        status: 200,
+        message: 'Permissions du rôle mises à jour avec succès',
+        data: updatedRole,
+      });
+    } catch (error) {
+      console.error('Update role permissions error:', error);
+      return res.json({
+        status: 500,
+        message: 'Erreur lors de la mise à jour des permissions du rôle',
       });
     }
   },

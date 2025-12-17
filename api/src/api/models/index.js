@@ -70,6 +70,17 @@ Direction.hasMany(Employee, {
     as: 'employees'
 });
 
+// ========== DIRECTION <-> SERVICE (One-to-Many) ==========
+Direction.hasMany(Service, {
+    foreignKey: 'direction_id',
+    as: 'services'
+});
+
+Service.belongsTo(Direction, {
+    foreignKey: 'direction_id',
+    as: 'direction'
+});
+
 // ========== EMPLOYEE <-> SERVICE ==========
 Employee.belongsTo(Service, {
     foreignKey: 'service_id',

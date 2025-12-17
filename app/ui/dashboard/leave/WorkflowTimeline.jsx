@@ -268,14 +268,14 @@ export default function WorkflowTimeline({ request, approvals = [] }) {
       {request?.handover_document_url && (
         <div className="mt-6 rounded-lg border border-default-200 p-4">
           <div className="flex items-center gap-2 mb-2">
-            <FiFileText className="h-4 w-4 text-primary" />
+            <FiFileText className="h-4 w-4 text-danger" />
             <h5 className="text-sm font-semibold">Feuille de Remise-Reprise</h5>
           </div>
           <a
             href={request.handover_document_url}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-xs text-primary hover:underline"
+            className="text-xs text-danger hover:underline"
           >
             Voir le document
           </a>

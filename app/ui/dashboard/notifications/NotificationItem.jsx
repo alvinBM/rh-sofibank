@@ -14,7 +14,7 @@ const NotificationItem = React.forwardRef(({ children, avatar, name, description
         default: null,
         request: (
             <div className="flex gap-2 pt-2">
-                <Button color="primary" size="sm">
+                <Button color="danger" size="sm">
                     Accept
                 </Button>
                 <Button size="sm" variant="flat">
@@ -40,14 +40,14 @@ const NotificationItem = React.forwardRef(({ children, avatar, name, description
             className={cn(
                 "flex gap-3 border-b border-divider px-6 py-4",
                 {
-                    "bg-primary-50/50": !isRead,
+                    "bg-danger-50/50": !isRead,
                 },
                 className
             )}
             {...props}
         >
             <div className="relative flex-none">
-                <Badge color="primary" content="" isInvisible={isRead} placement="bottom-right" shape="circle">
+                <Badge color="danger" content="" isInvisible={isRead} placement="bottom-right" shape="circle">
                     <Avatar src={avatar} />
                 </Badge>
             </div>

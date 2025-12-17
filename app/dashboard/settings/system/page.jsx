@@ -276,12 +276,12 @@ export default function SystemPage() {
 
   return (
     <PermissionGuard requiredPermissions={[]}>
-      <div className="p-6">
+      <div className="p-0">
         <div className="flex flex-col gap-4">
           <div className="flex justify-between items-center">
             <h1 className="text-2xl font-bold">Paramètres Système</h1>
             <Button
-              color="primary"
+              color="danger"
               startContent={<FiPlus />}
               onPress={handleOpenCreate}
             >
@@ -297,11 +297,11 @@ export default function SystemPage() {
                   key={category.value}
                   isPressable
                   onPress={() => setSelectedCategory(category.value)}
-                  className={selectedCategory === category.value ? "border-2 border-primary" : ""}
+                  className={selectedCategory === category.value ? "border-2 border-danger" : ""}
                 >
                   <CardBody className="flex flex-row items-center gap-3">
-                    <div className="p-3 rounded-lg bg-primary/10">
-                      <CategoryIcon className="text-primary text-2xl" />
+                    <div className="p-3 rounded-lg bg-danger/10">
+                      <CategoryIcon className="text-danger text-2xl" />
                     </div>
                     <div>
                       <p className="text-sm text-default-400">{category.label}</p>
@@ -326,7 +326,7 @@ export default function SystemPage() {
             />
             <Button
               variant={selectedCategory === "all" ? "solid" : "flat"}
-              color={selectedCategory === "all" ? "primary" : "default"}
+              color={selectedCategory === "all" ? "danger" : "default"}
               onPress={() => setSelectedCategory("all")}
             >
               Tous
@@ -466,7 +466,7 @@ export default function SystemPage() {
                       <div className="flex flex-col gap-2">
                         <label className="text-sm font-medium">Valeur (JSON)</label>
                         <textarea
-                          className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary font-mono text-sm"
+                          className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-danger font-mono text-sm"
                           rows="6"
                           placeholder='{"key": "value"}'
                           value={typeof formData.value === "string" ? formData.value : JSON.stringify(formData.value, null, 2)}
@@ -504,7 +504,7 @@ export default function SystemPage() {
                     Annuler
                   </Button>
                   <Button
-                    color="primary"
+                    color="danger"
                     onPress={handleSubmit}
                     isLoading={createParameterMutation.isLoading || updateParameterMutation.isLoading}
                   >

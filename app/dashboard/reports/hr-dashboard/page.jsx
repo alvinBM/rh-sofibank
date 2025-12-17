@@ -31,7 +31,7 @@ export default function HRDashboardPage() {
   const { data: absenteeism } = useGetMonthlyAbsenteeism(currentYear);
 
   const formatCurrency = (value) => {
-    return new Intl.NumberFormat("fr-FR", { style: "currency", currency: "XOF" }).format(value);
+    return new Intl.NumberFormat("fr-FR", { style: "currency", currency: "CDF" }).format(value);
   };
 
   if (metricsLoading) return <div className="flex justify-center items-center h-screen"><Spinner size="lg" /></div>;
@@ -54,8 +54,8 @@ export default function HRDashboardPage() {
           <Card>
             <CardBody>
               <div className="flex items-center gap-3">
-                <div className="p-3 bg-primary-100 rounded-lg">
-                  <FiUsers className="text-primary text-2xl" />
+                <div className="p-3 bg-danger-100 rounded-lg">
+                  <FiUsers className="text-danger text-2xl" />
                 </div>
                 <div>
                   <p className="text-sm text-default-500">Effectif Total</p>
@@ -130,8 +130,8 @@ export default function HRDashboardPage() {
           <Card>
             <CardBody>
               <div className="flex items-center gap-3">
-                <div className="p-3 bg-primary-100 rounded-lg">
-                  <FiAward className="text-primary text-2xl" />
+                <div className="p-3 bg-danger-100 rounded-lg">
+                  <FiAward className="text-danger text-2xl" />
                 </div>
                 <div>
                   <p className="text-sm text-default-500">Score Moyen Évaluations</p>

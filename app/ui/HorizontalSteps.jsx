@@ -25,7 +25,7 @@ function CheckIcon(props) {
     );
 }
 
-const HorizontalSteps = React.forwardRef(({ color = "primary", steps = [], defaultStep = 0, onStepChange, currentStep: currentStepProp, hideProgressBars = false, stepClassName, className, ...props }, ref) => {
+const HorizontalSteps = React.forwardRef(({ color = "danger", steps = [], defaultStep = 0, onStepChange, currentStep: currentStepProp, hideProgressBars = false, stepClassName, className, ...props }, ref) => {
     const [currentStep, setCurrentStep] = useControlledState(currentStepProp, defaultStep, onStepChange);
 
     const colors = React.useMemo(() => {
@@ -43,9 +43,9 @@ const HorizontalSteps = React.forwardRef(({ color = "primary", steps = [], defau
         ];
 
         switch (color) {
-            case "primary":
-                userColor = "[--step-color:var(--nextui-primary)]";
-                fgColor = "[--step-fg-color:var(--nextui-primary-foreground)]";
+            case "danger":
+                userColor = "[--step-color:var(--nextui-danger)]";
+                fgColor = "[--step-fg-color:var(--nextui-danger-foreground)]";
                 break;
             case "secondary":
                 userColor = "[--step-color:var(--nextui-secondary)]";
@@ -68,8 +68,8 @@ const HorizontalSteps = React.forwardRef(({ color = "primary", steps = [], defau
                 fgColor = "[--step-fg-color:var(--nextui-default-foreground)]";
                 break;
             default:
-                userColor = "[--step-color:var(--nextui-primary)]";
-                fgColor = "[--step-fg-color:var(--nextui-primary-foreground)]";
+                userColor = "[--step-color:var(--nextui-danger)]";
+                fgColor = "[--step-fg-color:var(--nextui-danger-foreground)]";
                 break;
         }
 

@@ -32,7 +32,7 @@ const STATUS_COLORS = {
   draft: "default",
   open: "success",
   closed: "warning",
-  filled: "primary",
+  filled: "danger",
   cancelled: "danger",
 };
 
@@ -62,7 +62,7 @@ export default function JobOpeningsPage() {
             <h1 className="text-2xl font-bold">Postes Vacants</h1>
             <p className="text-default-500">Gérez vos offres d'emploi et candidatures</p>
           </div>
-          <Button color="primary" startContent={<FiPlus />}>
+          <Button color="danger" startContent={<FiPlus />}>
             Nouveau Poste
           </Button>
         </div>
@@ -172,7 +172,7 @@ export default function JobOpeningsPage() {
                       {job.closing_date ? new Date(job.closing_date).toLocaleDateString("fr-FR") : "-"}
                     </TableCell>
                     <TableCell>
-                      <Badge content={job.candidates?.[0]?.count || 0} color="primary">
+                      <Badge content={job.candidates?.[0]?.count || 0} color="danger">
                         <FiUsers className="text-default-400" />
                       </Badge>
                     </TableCell>

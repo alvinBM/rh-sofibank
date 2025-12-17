@@ -15,9 +15,9 @@ import {
 import { toast } from "react-toastify";
 import { formatDateToFrench } from "@/src/utils/dateUtils";
 
-const SEVERITY_COLORS = { low: "primary", medium: "warning", high: "danger", critical: "danger" };
+const SEVERITY_COLORS = { low: "danger", medium: "warning", high: "danger", critical: "danger" };
 
-const STATUS_COLORS = { active: "warning", acknowledged: "primary", resolved: "success" };
+const STATUS_COLORS = { active: "warning", acknowledged: "danger", resolved: "success" };
 
 const ALERT_TYPES = [
   { value: "absenteeism_threshold", label: "Absentéisme > seuil" },
@@ -97,7 +97,7 @@ export default function AlertsPage() {
           </div>
           <div className="flex gap-2">
             <Button
-              color="primary"
+              color="danger"
               variant="flat"
               startContent={<FiRefreshCw />}
               onPress={handleCheckAlerts}
@@ -105,7 +105,7 @@ export default function AlertsPage() {
             >
               Vérifier Alertes
             </Button>
-            <Button color="primary" startContent={<FiSettings />} onPress={onSettingsOpen}>
+            <Button color="danger" startContent={<FiSettings />} onPress={onSettingsOpen}>
               Configuration
             </Button>
           </div>
@@ -162,8 +162,8 @@ export default function AlertsPage() {
           <Card>
             <CardBody>
               <div className="flex items-center gap-3">
-                <div className="p-3 bg-primary-100 rounded-lg">
-                  <FiCheck className="text-primary text-2xl" />
+                <div className="p-3 bg-danger-100 rounded-lg">
+                  <FiCheck className="text-danger text-2xl" />
                 </div>
                 <div>
                   <p className="text-sm text-default-500">Acquittées</p>
@@ -279,7 +279,7 @@ export default function AlertsPage() {
                           <Button
                             isIconOnly
                             size="sm"
-                            color="primary"
+                            color="danger"
                             variant="flat"
                             onPress={() => handleAcknowledge(alert.id)}
                           >
@@ -366,7 +366,7 @@ export default function AlertsPage() {
             </ModalBody>
             <ModalFooter>
               <Button variant="flat" onPress={onSettingsClose}>Fermer</Button>
-              <Button color="primary">Sauvegarder</Button>
+              <Button color="danger">Sauvegarder</Button>
             </ModalFooter>
           </ModalContent>
         </Modal>

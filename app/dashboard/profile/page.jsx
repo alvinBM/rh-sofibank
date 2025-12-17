@@ -108,7 +108,7 @@ const Profile = (props) => {
                             color="default"
                             className="bg-red-600"
                             content={
-                                <Button isIconOnly className="p-0 text-primary-foreground" radius="full" size="sm" variant="light">
+                                <Button isIconOnly className="p-0 text-danger-foreground" radius="full" size="sm" variant="light">
                                     <Icon icon="solar:pen-2-linear" />
                                 </Button>
                             }

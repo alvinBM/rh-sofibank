@@ -66,7 +66,7 @@ import { useGetJobOpenings } from "@/src/hooks/useRecruitment";
 import PermissionGuard from "@/app/ui/dashboard/PermissionGuard";
 
 const STATUS_COLORS = {
-  new: "primary",
+  new: "danger",
   screening: "warning",
   interview_scheduled: "secondary",
   interviewed: "secondary",
@@ -246,7 +246,7 @@ export default function CandidatesPage() {
             <h1 className="text-2xl font-bold">Candidatures</h1>
             <p className="text-default-500">Gérez vos candidats et leur processus de sélection</p>
           </div>
-          <Button color="primary" startContent={<FiPlus />}>
+          <Button color="danger" startContent={<FiPlus />}>
             Ajouter Candidat
           </Button>
         </div>
@@ -489,7 +489,7 @@ export default function CandidatesPage() {
                             <CardBody>
                               <div className="flex items-start gap-4">
                                 <div className="flex-shrink-0">
-                                  <div className="w-20 h-20 rounded-full bg-primary-100 flex items-center justify-center text-2xl font-bold text-primary">
+                                  <div className="w-20 h-20 rounded-full bg-danger-100 flex items-center justify-center text-2xl font-bold text-danger">
                                     {candidateDetail.first_name?.[0]}{candidateDetail.last_name?.[0]}
                                   </div>
                                 </div>
@@ -565,12 +565,12 @@ export default function CandidatesPage() {
                               <CardBody>
                                 <div className="flex items-center justify-between">
                                   <div className="flex items-center gap-2">
-                                    <FiFileText className="text-primary" />
+                                    <FiFileText className="text-danger" />
                                     <span className="font-semibold">CV</span>
                                   </div>
                                   <Button
                                     size="sm"
-                                    color="primary"
+                                    color="danger"
                                     variant="flat"
                                     startContent={<FiDownload />}
                                     as="a"
@@ -724,7 +724,7 @@ export default function CandidatesPage() {
                     Fermer
                   </Button>
                   <Button
-                    color="primary"
+                    color="danger"
                     startContent={<FiEdit />}
                     onPress={() => {
                       handleCloseDetail();
@@ -812,7 +812,7 @@ export default function CandidatesPage() {
                     Annuler
                   </Button>
                   <Button
-                    color="primary"
+                    color="danger"
                     type="submit"
                     isLoading={updateCandidateMutation.isPending}
                   >
@@ -899,7 +899,7 @@ export default function CandidatesPage() {
                     Annuler
                   </Button>
                   <Button
-                    color="primary"
+                    color="danger"
                     type="submit"
                     isLoading={createInterviewMutation.isPending}
                   >

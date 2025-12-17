@@ -18,6 +18,8 @@ router.post('/roles', validateToken, checkPermission(['roles_manage']), settings
 router.put('/roles/:id', validateToken, checkPermission(['roles_manage']), settingsController.updateRole);
 router.delete('/roles/:id', validateToken, checkPermission(['roles_manage']), settingsController.deleteRole);
 router.get('/permissions', validateToken, checkPermission(['roles_manage', 'settings_access']), settingsController.getAllPermissions);
+router.get('/roles/:id/permissions', validateToken, checkPermission(['roles_manage', 'settings_access']), settingsController.getRolePermissions);
+router.put('/roles/:id/permissions', validateToken, checkPermission(['roles_manage']), settingsController.updateRolePermissions);
 
 // ==================== DIRECTIONS ====================
 router.get('/directions', validateToken, settingsController.getAllDirections);

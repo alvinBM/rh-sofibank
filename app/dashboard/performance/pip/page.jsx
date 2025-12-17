@@ -72,7 +72,7 @@ export default function PIPsPage() {
             <h1 className="text-3xl font-bold">Plans d'Amélioration (PIP)</h1>
             <p className="text-default-500 mt-1">Suivi des plans d'amélioration de performance</p>
           </div>
-          <Button color="primary" startContent={<FiPlus />} onPress={onOpen}>
+          <Button color="danger" startContent={<FiPlus />} onPress={onOpen}>
             Nouveau PIP
           </Button>
         </div>
@@ -196,7 +196,7 @@ export default function PIPsPage() {
             </ModalBody>
             <ModalFooter>
               <Button variant="flat" onPress={onClose}>Annuler</Button>
-              <Button color="primary" onPress={handleCreate} isLoading={createMutation.isPending}>
+              <Button color="danger" onPress={handleCreate} isLoading={createMutation.isPending}>
                 Créer PIP
               </Button>
             </ModalFooter>
@@ -226,7 +226,7 @@ export default function PIPsPage() {
             </ModalBody>
             <ModalFooter>
               <Button variant="flat" onPress={onFollowUpClose}>Annuler</Button>
-              <Button color="primary" onPress={handleAddFollowUp} isLoading={followUpMutation.isPending}>
+              <Button color="danger" onPress={handleAddFollowUp} isLoading={followUpMutation.isPending}>
                 Ajouter Suivi
               </Button>
             </ModalFooter>

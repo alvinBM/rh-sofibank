@@ -194,7 +194,7 @@ export default function EmployeesPage() {
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold">Gestion des Employés</h1>
         <Button
-          color="primary"
+          color="danger"
           startContent={<FiPlus />}
           onPress={onAddOpen}
         >
@@ -298,7 +298,7 @@ export default function EmployeesPage() {
         isCompact
         showControls
         showShadow
-        color="primary"
+        color="danger"
         page={page}
         total={totalPages}
         onChange={setPage}
@@ -319,7 +319,7 @@ export default function EmployeesPage() {
 
   return (
     <PermissionGuard requiredPermission="employees_view">
-      <div className="p-6">
+      <div className="p-0">
         <Table
         aria-label="Table des employés"
         topContent={topContent}
