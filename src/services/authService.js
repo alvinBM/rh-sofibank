@@ -1,84 +1,62 @@
-import { supabase } from '../lib/supabase-client';
+import apiClient from './api-client';
 
 export const signIn = async (email, password) => {
   try {
-    const { data: authResult, error: authError } = await supabase
-      .rpc('authenticate_user', {
-        user_email: email,
-        user_password: password
-      });
-
-    if (authError) {
-      throw new Error(authError.message || 'Email ou mot de passe incorrect');
+    // Appel à l'API Express pour la connexion
+    const response = await apiClient.post('/auth/login', { email, password });
+    
+    if (response.status !== 200) {
+      throw new Error(response.message || 'Email ou mot de passe incorrect');
     }
 
-    if (!authResult || authResult.length === 0) {
-      throw new Error('Email ou mot de passe incorrect');
-    }
+    const { token, user, roles, permissions } = response.data;
 
-    const authenticatedUser = authResult[0];
-
-    const { data: account } = await supabase
-      .from('accounts')
-      .select('*')
-      .eq('id', authenticatedUser.account_id)
-      .maybeSingle();
-
-    const { data: employee } = await supabase
-      .from('employees')
-      .select('*')
-      .eq('email', authenticatedUser.email)
-      .maybeSingle();
-
-    const token = btoa(JSON.stringify({
-      id: authenticatedUser.id,
-      email: authenticatedUser.email,
-      role: authenticatedUser.role,
-      timestamp: Date.now()
-    }));
-
-    const user = {
-      id: authenticatedUser.id,
-      created: authenticatedUser.created_at || new Date().toISOString(),
-      modified: authenticatedUser.updated_at || new Date().toISOString(),
+    // Sauvegarder le token
+    apiClient.setToken(token);
+    
+    // Formater les données utilisateur pour correspondre au format attendu
+    const formattedUser = {
+      id: user.id,
+      created: user.created_at || new Date().toISOString(),
+      modified: user.updated_at || new Date().toISOString(),
       deleted: null,
-      status: authenticatedUser.is_active ? 1 : 0,
+      status: user.is_active ? 1 : 0,
       created_by: 0,
-      account_id: authenticatedUser.account_id,
-      firstname: authenticatedUser.firstname,
-      lastname: authenticatedUser.lastname,
-      username: authenticatedUser.email,
-      phone: authenticatedUser.phone,
-      email: authenticatedUser.email,
+      account_id: user.account_id || null,
+      firstname: user.firstname,
+      lastname: user.lastname,
+      username: user.email,
+      phone: user.phone,
+      email: user.email,
       last_activity: new Date().toISOString(),
       otp: null,
-      country: account?.country || 'FR',
-      city: account?.city || '',
-      profile: authenticatedUser.role,
+      country: user.country || 'CD',
+      city: user.city || '',
+      profile: roles && roles.length > 0 ? roles[0].code : 'EMPLOYEE',
       root_store: null,
       public_token: token,
       ip_address: null,
-      main_roles: [{
-        role_name: getRoleName(authenticatedUser.role),
-        role_code: authenticatedUser.role,
-        main_permissions: getPermissionsForRole(authenticatedUser.role),
+      main_roles: roles ? roles.map(role => ({
+        role_name: role.name,
+        role_code: role.code,
+        main_permissions: role.permissions || [],
         main_users_roles: {
-          id: authenticatedUser.id,
-          user_id: authenticatedUser.id,
-          role_id: authenticatedUser.role,
+          id: user.id,
+          user_id: user.id,
+          role_id: role.id,
         },
-      }],
-      account: account || null,
+      })) : [],
+      account: null,
       main_store: null,
-      employee: employee || null,
+      employee: user.employee || null,
     };
 
     return {
       status: 200,
       logged: true,
       token: token,
-      user,
-      session: { access_token: token, user: authenticatedUser },
+      user: formattedUser,
+      session: { access_token: token, user: formattedUser },
       message: 'Utilisateur connecté avec succès',
     };
   } catch (error) {
@@ -87,81 +65,24 @@ export const signIn = async (email, password) => {
   }
 };
 
-function getRoleName(roleCode) {
-  const roleNames = {
-    'RH': 'Administrateur RH',
-    'MANAGER': 'Manager/Responsable',
-    'EMPLOYEE': 'Employé',
-    'ADMIN': 'Administrateur',
-    'SUPER_ADMIN': 'Super Administrateur',
-    'FINANCE': 'Finance/Paie',
-    'RECRUITER': 'Recruteur',
-    'DG': 'Direction Générale',
-  };
-  return roleNames[roleCode] || 'Utilisateur';
-}
-
-function getPermissionsForRole(roleCode) {
-  const basePermissions = [
-    { code: 'view_dashboard', name: 'Voir le tableau de bord' },
-    { code: 'view_profile', name: 'Voir son profil' },
-  ];
-
-  const rolePermissions = {
-    'RH': [
-      ...basePermissions,
-      { code: 'manage_employees', name: 'Gérer les employés' },
-      { code: 'manage_leave', name: 'Gérer les congés' },
-      { code: 'manage_attendance', name: 'Gérer les présences' },
-      { code: 'manage_payroll', name: 'Gérer la paie' },
-      { code: 'manage_recruitment', name: 'Gérer le recrutement' },
-      { code: 'manage_performance', name: 'Gérer les évaluations' },
-      { code: 'view_reports', name: 'Voir les rapports' },
-    ],
-    'MANAGER': [
-      ...basePermissions,
-      { code: 'view_team', name: 'Voir son équipe' },
-      { code: 'approve_leave', name: 'Approuver les congés' },
-      { code: 'view_team_attendance', name: 'Voir les présences de l\'équipe' },
-      { code: 'conduct_evaluations', name: 'Conduire les évaluations' },
-    ],
-    'EMPLOYEE': [
-      ...basePermissions,
-      { code: 'request_leave', name: 'Demander des congés' },
-      { code: 'view_payslips', name: 'Voir ses bulletins de paie' },
-      { code: 'view_attendance', name: 'Voir ses présences' },
-    ],
-    'ADMIN': [
-      ...basePermissions,
-      { code: 'manage_system', name: 'Gérer le système' },
-      { code: 'manage_users', name: 'Gérer les utilisateurs' },
-      { code: 'manage_roles', name: 'Gérer les rôles' },
-    ],
-  };
-
-  return rolePermissions[roleCode] || basePermissions;
-}
-
 export const signUp = async (email, password, userData = {}) => {
   try {
-    const { data, error } = await supabase.auth.signUp({
+    const response = await apiClient.post('/auth/register', {
       email,
       password,
-      options: {
-        data: {
-          firstname: userData.firstname || '',
-          lastname: userData.lastname || '',
-          phone: userData.phone || '',
-        },
-      },
+      firstname: userData.firstname || '',
+      lastname: userData.lastname || '',
+      phone: userData.phone || '',
     });
 
-    if (error) throw error;
+    if (response.status !== 201) {
+      throw new Error(response.message || 'Erreur lors de la création du compte');
+    }
 
     return {
       status: 200,
       message: 'Compte créé avec succès',
-      user: data.user,
+      user: response.data.user,
     };
   } catch (error) {
     console.error('Sign up error:', error);
@@ -171,6 +92,9 @@ export const signUp = async (email, password, userData = {}) => {
 
 export const signOut = async () => {
   try {
+    // Supprimer le token localement
+    apiClient.removeToken();
+    
     return {
       status: 200,
       message: 'Déconnexion réussie',
@@ -183,107 +107,85 @@ export const signOut = async () => {
 
 export const getCurrentUser = async () => {
   try {
-    const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+    const token = apiClient.getToken();
 
     if (!token) {
       return null;
     }
 
-    let decodedToken;
-    try {
-      decodedToken = JSON.parse(atob(token));
-    } catch (e) {
-      console.error('Invalid token format:', e);
+    // Récupérer le profil utilisateur
+    const response = await apiClient.get('/auth/profile');
+    
+    if (response.status !== 200) {
+      apiClient.removeToken();
       return null;
     }
 
-    const { data: authenticatedUser, error } = await supabase
-      .from('users')
-      .select('*')
-      .eq('id', decodedToken.id)
-      .eq('is_active', true)
-      .maybeSingle();
-
-    if (error || !authenticatedUser) {
-      return null;
-    }
-
-    const { data: account } = await supabase
-      .from('accounts')
-      .select('*')
-      .eq('id', authenticatedUser.account_id)
-      .maybeSingle();
-
-    const { data: employee } = await supabase
-      .from('employees')
-      .select('*')
-      .eq('email', authenticatedUser.email)
-      .maybeSingle();
-
-    const user = {
-      id: authenticatedUser.id,
-      created: authenticatedUser.created_at || new Date().toISOString(),
-      modified: authenticatedUser.updated_at || new Date().toISOString(),
+    const { user, roles, permissions } = response.data;
+    
+    // Formater les données utilisateur
+    const formattedUser = {
+      id: user.id,
+      created: user.created_at || new Date().toISOString(),
+      modified: user.updated_at || new Date().toISOString(),
       deleted: null,
-      status: authenticatedUser.is_active ? 1 : 0,
+      status: user.is_active ? 1 : 0,
       created_by: 0,
-      account_id: authenticatedUser.account_id,
-      firstname: authenticatedUser.firstname,
-      lastname: authenticatedUser.lastname,
-      username: authenticatedUser.email,
-      phone: authenticatedUser.phone,
-      email: authenticatedUser.email,
+      account_id: user.account_id || null,
+      firstname: user.firstname,
+      lastname: user.lastname,
+      username: user.email,
+      phone: user.phone,
+      email: user.email,
       last_activity: new Date().toISOString(),
       otp: null,
-      country: account?.country || 'FR',
-      city: account?.city || '',
-      profile: authenticatedUser.role,
+      country: user.country || 'CD',
+      city: user.city || '',
+      profile: roles && roles.length > 0 ? roles[0].code : 'EMPLOYEE',
       root_store: null,
       public_token: token,
       ip_address: null,
-      main_roles: [{
-        role_name: getRoleName(authenticatedUser.role),
-        role_code: authenticatedUser.role,
-        main_permissions: getPermissionsForRole(authenticatedUser.role),
+      main_roles: roles ? roles.map(role => ({
+        role_name: role.name,
+        role_code: role.code,
+        main_permissions: role.permissions || [],
         main_users_roles: {
-          id: authenticatedUser.id,
-          user_id: authenticatedUser.id,
-          role_id: authenticatedUser.role,
+          id: user.id,
+          user_id: user.id,
+          role_id: role.id,
         },
-      }],
-      account: account || null,
+      })) : [],
+      account: null,
       main_store: null,
-      employee: employee || null,
+      employee: user.employee || null,
     };
 
     return {
       status: 200,
       logged: true,
       token: token,
-      user,
-      session: { access_token: token, user: authenticatedUser },
+      user: formattedUser,
+      session: { access_token: token, user: formattedUser },
     };
   } catch (error) {
     console.error('Get current user error:', error);
+    apiClient.removeToken();
     return null;
   }
 };
 
 export const updateProfile = async (userId, updates) => {
   try {
-    const { data, error } = await supabase
-      .from('user_profiles')
-      .update(updates)
-      .eq('user_id', userId)
-      .select()
-      .single();
+    const response = await apiClient.put('/auth/profile', updates);
 
-    if (error) throw error;
+    if (response.status !== 200) {
+      throw new Error(response.message || 'Erreur lors de la mise à jour du profil');
+    }
 
     return {
       status: 200,
       message: 'Profil mis à jour avec succès',
-      data,
+      data: response.data,
     };
   } catch (error) {
     console.error('Update profile error:', error);
@@ -291,13 +193,34 @@ export const updateProfile = async (userId, updates) => {
   }
 };
 
-export const resetPassword = async (email) => {
+export const changePassword = async (currentPassword, newPassword) => {
   try {
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/auth/reset-password`,
+    const response = await apiClient.post('/auth/change-password', {
+      current_password: currentPassword,
+      new_password: newPassword,
     });
 
-    if (error) throw error;
+    if (response.status !== 200) {
+      throw new Error(response.message || 'Erreur lors du changement de mot de passe');
+    }
+
+    return {
+      status: 200,
+      message: 'Mot de passe modifié avec succès',
+    };
+  } catch (error) {
+    console.error('Change password error:', error);
+    throw error;
+  }
+};
+
+export const resetPassword = async (email) => {
+  try {
+    const response = await apiClient.post('/auth/request-password-reset', { email });
+
+    if (response.status !== 200) {
+      throw new Error(response.message || 'Erreur lors de la réinitialisation');
+    }
 
     return {
       status: 200,

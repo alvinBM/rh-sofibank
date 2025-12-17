@@ -5,7 +5,7 @@ import { Icon } from "@iconify/react";
 import { Button, Card, CardBody, CardHeader, Chip, Spinner } from "@nextui-org/react";
 import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 import { selectUserData } from "@/src/redux/slices/userSlice";
-import { supabase } from "@/src/lib/supabase-client";
+import { fetchDashboardStats } from "@/src/services/apis/dashboardService";
 
 const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042", "#8884D8"];
 
@@ -30,103 +30,31 @@ const Dashboard = () => {
     try {
       setLoading(true);
 
-      const { count: totalEmployees } = await supabase
-        .from('employees')
-        .select('*', { count: 'exact', head: true });
-
-      const { count: activeEmployees } = await supabase
-        .from('employees')
-        .select('*', { count: 'exact', head: true })
-        .eq('employment_status', 'active');
-
-      const { count: pendingLeaveRequests } = await supabase
-        .from('leave_requests')
-        .select('*', { count: 'exact', head: true })
-        .in('status', ['pending_backup', 'pending_supervisor', 'pending_hr', 'pending_dg']);
-
-      const { count: approvedLeaveRequests } = await supabase
-        .from('leave_requests')
-        .select('*', { count: 'exact', head: true })
-        .eq('status', 'approved');
-
-      const { data: employeesByDirection } = await supabase
-        .from('employees')
-        .select('direction_id, directions(name)')
-        .eq('employment_status', 'active');
-
-      const directionCounts = {};
-      employeesByDirection?.forEach(emp => {
-        const directionName = emp.directions?.name || 'Non assigné';
-        directionCounts[directionName] = (directionCounts[directionName] || 0) + 1;
-      });
-
-      const employeesByDirectionData = Object.entries(directionCounts).map(([name, value]) => ({
-        name,
-        value
-      }));
-
-      const { data: employeesByStatus } = await supabase
-        .from('employees')
-        .select('employment_status');
-
-      const statusCounts = {
-        active: 0,
-        inactive: 0,
-        on_leave: 0,
-        suspended: 0,
-        terminated: 0,
-      };
-
-      employeesByStatus?.forEach(emp => {
-        if (statusCounts.hasOwnProperty(emp.employment_status)) {
-          statusCounts[emp.employment_status]++;
-        }
-      });
-
-      const employeesByStatusData = Object.entries(statusCounts)
-        .filter(([, value]) => value > 0)
-        .map(([name, value]) => ({
-          name: name === 'active' ? 'Actif' :
-                name === 'inactive' ? 'Inactif' :
-                name === 'on_leave' ? 'En congé' :
-                name === 'suspended' ? 'Suspendu' : 'Terminé',
-          value
-        }));
-
-      const currentYear = new Date().getFullYear();
-      const { data: leaveRequests } = await supabase
-        .from('leave_requests')
-        .select('created_at')
-        .gte('created_at', `${currentYear}-01-01`)
-        .lte('created_at', `${currentYear}-12-31`);
-
-      const monthCounts = {
-        'Jan': 0, 'Fév': 0, 'Mar': 0, 'Avr': 0, 'Mai': 0, 'Jun': 0,
-        'Jul': 0, 'Aoû': 0, 'Sep': 0, 'Oct': 0, 'Nov': 0, 'Déc': 0
-      };
-
-      leaveRequests?.forEach(req => {
-        const month = new Date(req.created_at).getMonth();
-        const monthNames = Object.keys(monthCounts);
-        monthCounts[monthNames[month]]++;
-      });
-
-      const leaveRequestsByMonthData = Object.entries(monthCounts).map(([name, demandes]) => ({
-        name,
-        demandes
-      }));
-
-      setStats({
-        totalEmployees: totalEmployees || 0,
-        activeEmployees: activeEmployees || 0,
-        pendingLeaveRequests: pendingLeaveRequests || 0,
-        approvedLeaveRequests: approvedLeaveRequests || 0,
-        employeesByDirection: employeesByDirectionData,
-        employeesByStatus: employeesByStatusData,
-        leaveRequestsByMonth: leaveRequestsByMonthData,
-      });
+      const response = await fetchDashboardStats();
+      
+      if (response.success) {
+        setStats({
+          totalEmployees: response.data.totalEmployees || 0,
+          activeEmployees: response.data.activeEmployees || 0,
+          pendingLeaveRequests: response.data.pendingLeaveRequests || 0,
+          approvedLeaveRequests: response.data.approvedLeaveRequests || 0,
+          employeesByDirection: response.data.employeesByDirection || [],
+          employeesByStatus: response.data.employeesByStatus || [],
+          leaveRequestsByMonth: response.data.leaveRequestsByMonth || [],
+        });
+      }
     } catch (error) {
       console.error('Error loading dashboard stats:', error);
+      // Set default empty stats on error
+      setStats({
+        totalEmployees: 0,
+        activeEmployees: 0,
+        pendingLeaveRequests: 0,
+        approvedLeaveRequests: 0,
+        employeesByDirection: [],
+        employeesByStatus: [],
+        leaveRequestsByMonth: [],
+      });
     } finally {
       setLoading(false);
     }

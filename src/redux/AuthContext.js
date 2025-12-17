@@ -4,7 +4,7 @@ import { setUser, clearUserSession, selectUserToken } from "./slices/userSlice";
 import { removeCookie, setCookie } from "../services/cookie";
 import { Bounce, toast, ToastContainer } from "react-toastify";
 import { signIn, signOut, getCurrentUser } from "../services/authService";
-import { supabase } from "../lib/supabase-client";
+import apiClient from "../services/api-client";
 
 const AuthContext = createContext(null);
 
@@ -23,19 +23,17 @@ export const AuthProvider = ({ children }) => {
             try {
                 const response = await getCurrentUser();
                 if (response && response.user) {
-                    setCookie("token", response.token);
+                    setCookie("auth_token", response.token);
                     dispatch(setUser({ user: response.user, token: response.token }));
                 } else {
-                    removeCookie("token");
-                    localStorage.removeItem("token");
-                    sessionStorage.removeItem("token");
+                    removeCookie("auth_token");
+                    apiClient.removeToken();
                     dispatch(clearUserSession());
                 }
             } catch (error) {
                 console.error("Auth initialization error:", error);
-                removeCookie("token");
-                localStorage.removeItem("token");
-                sessionStorage.removeItem("token");
+                removeCookie("auth_token");
+                apiClient.removeToken();
                 dispatch(clearUserSession());
             } finally {
                 setLoading(false);
@@ -53,8 +51,8 @@ export const AuthProvider = ({ children }) => {
 
             if (response.status === 200) {
                 const { user, token } = response;
-                setCookie("token", token);
-                localStorage.setItem("token", token);
+                setCookie("auth_token", token);
+                apiClient.setToken(token);
                 dispatch(setUser({ user, token }));
             }
 
@@ -72,9 +70,8 @@ export const AuthProvider = ({ children }) => {
     const logout = async () => {
         try {
             await signOut();
-            removeCookie("token");
-            localStorage.removeItem("token");
-            sessionStorage.removeItem("token");
+            removeCookie("auth_token");
+            apiClient.removeToken();
             dispatch(clearUserSession());
         } catch (error) {
             console.error("Logout error:", error);
