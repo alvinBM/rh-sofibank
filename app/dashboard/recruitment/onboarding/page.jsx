@@ -57,6 +57,8 @@ import {
 import { useGetEmployees } from "@/src/hooks/useEmployees";
 
 export default function OnboardingPage() {
+  const [page, setPage] = useState(1);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
   const [filters, setFilters] = useState({});
   const [selectedChecklist, setSelectedChecklist] = useState(null);
   const [selectedTask, setSelectedTask] = useState(null);
@@ -66,9 +68,14 @@ export default function OnboardingPage() {
   const { isOpen: isTaskOpen, onOpen: onTaskOpen, onClose: onTaskClose } = useDisclosure();
   const { isOpen: isTemplateOpen, onOpen: onTemplateOpen, onClose: onTemplateClose } = useDisclosure();
 
-  const { data: checklists, isLoading } = useGetOnboardingChecklists(filters);
-  const { data: employees } = useGetEmployees();
+  const { data: checklistsData, isLoading } = useGetOnboardingChecklists({ page, rowsPerPage, ...filters });
+  const { data: employeesData } = useGetEmployees({ page: 1, rowsPerPage: 1000, query: "", filters: {} });
   const { data: taskTemplates } = useGetTaskTemplates();
+  
+  const checklists = checklistsData?.checklists || [];
+  const totalChecklists = checklistsData?.total || 0;
+  const employees = employeesData?.employees || [];
+  const pages = Math.ceil(totalChecklists / rowsPerPage);
 
   const createChecklistMutation = useCreateOnboardingChecklist();
   const updateChecklistMutation = useUpdateOnboardingChecklist();

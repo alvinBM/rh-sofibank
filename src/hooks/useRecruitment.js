@@ -290,10 +290,13 @@ export const useSubmitInterviewEvaluation = () => {
 // EMPLOYMENT OFFERS HOOKS
 // ========================================
 
-export const useGetEmploymentOffers = (params = {}) => {
+export const useGetEmploymentOffers = ({ page = 1, rowsPerPage = 10, ...filters } = {}) => {
+  const offset = (page - 1) * rowsPerPage;
+  const limit = rowsPerPage;
+  
   return useQuery({
-    queryKey: ['employment-offers', params],
-    queryFn: () => recruitmentService.getEmploymentOffers(params),
+    queryKey: ['employment-offers', page, rowsPerPage, filters],
+    queryFn: () => recruitmentService.getEmploymentOffers({ offset, limit, ...filters }),
   });
 };
 
@@ -364,10 +367,13 @@ export const useRespondToOffer = () => {
 // ONBOARDING HOOKS
 // ========================================
 
-export const useGetOnboardingChecklists = (params = {}) => {
+export const useGetOnboardingChecklists = ({ page = 1, rowsPerPage = 10, ...filters } = {}) => {
+  const offset = (page - 1) * rowsPerPage;
+  const limit = rowsPerPage;
+  
   return useQuery({
-    queryKey: ['onboarding-checklists', params],
-    queryFn: () => recruitmentService.getOnboardingChecklists(params),
+    queryKey: ['onboarding-checklists', page, rowsPerPage, filters],
+    queryFn: () => recruitmentService.getOnboardingChecklists({ offset, limit, ...filters }),
   });
 };
 

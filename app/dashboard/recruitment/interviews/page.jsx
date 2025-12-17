@@ -56,6 +56,8 @@ import {
 import { useGetEmployees } from "@/src/hooks/useEmployees";
 
 export default function InterviewsPage() {
+  const [page, setPage] = useState(1);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
   const [filters, setFilters] = useState({});
   const [selectedInterview, setSelectedInterview] = useState(null);
   const [selectedApplication, setSelectedApplication] = useState(null);
@@ -65,11 +67,18 @@ export default function InterviewsPage() {
   const { isOpen: isEvaluateOpen, onOpen: onEvaluateOpen, onClose: onEvaluateClose } = useDisclosure();
 
   // Fetching applications with interview status
-  const { data: applications, isLoading } = useGetJobApplications({
+  const { data: applicationsData, isLoading } = useGetJobApplications({
+    page,
+    rowsPerPage,
     ...filters,
     status: "interview",
   });
-  const { data: employees } = useGetEmployees();
+  const { data: employeesData } = useGetEmployees({ page: 1, rowsPerPage: 1000, query: "", filters: {} });
+  
+  const applications = applicationsData?.applications || [];
+  const totalApplications = applicationsData?.total || 0;
+  const employees = employeesData?.employees || [];
+  const pages = Math.ceil(totalApplications / rowsPerPage);
 
   const scheduleInterviewMutation = useScheduleInterview();
   const updateInterviewMutation = useUpdateInterview();

@@ -2,24 +2,26 @@ import apiClient from '../api-client';
 
 export const fetchEmployees = async ({ offset = 0, limit = 10, query, filters = {} }) => {
   try {
-    const page = Math.floor(offset / limit) + 1;
+    let requestUrl = `/employees?offset=${offset}&limit=${limit}`;
     
-    const params = {
-      page,
-      limit,
-      ...filters,
-    };
+    if (query) requestUrl += `&search=${query}`;
+    if (filters.direction_id) requestUrl += `&direction_id=${filters.direction_id}`;
+    if (filters.service_id) requestUrl += `&service_id=${filters.service_id}`;
+    if (filters.employment_status) requestUrl += `&employment_status=${filters.employment_status}`;
+    if (filters.contract_type) requestUrl += `&contract_type=${filters.contract_type}`;
+    if (filters.status) requestUrl += `&status=${filters.status}`;
+    if (filters.user_id) requestUrl += `&user_id=${filters.user_id}`;
 
-    if (query) {
-      params.search = query;
+    const response = await apiClient.get(requestUrl);
+    
+    if (response.status === 200) {
+      return {
+        employees: response.data.employees || [],
+        total: response.data.total || 0,
+      };
+    } else {
+      throw new Error(response.message || 'Failed to fetch employees');
     }
-
-    const response = await apiClient.get('/employees', params);
-    
-    return {
-      employees: response.data.employees || [],
-      total: response.data.total || 0,
-    };
   } catch (error) {
     console.error('Fetch employees error:', error);
     throw error;
@@ -38,11 +40,16 @@ export const fetchEmployeeById = async (id) => {
 
 export const fetchEmployeeByUserId = async (userId) => {
   try {
-    // Utiliser un filtre pour chercher par user_id
-    const response = await apiClient.get('/employees', { user_id: userId });
-    return response.data.employees && response.data.employees.length > 0 
-      ? response.data.employees[0] 
-      : null;
+    const requestUrl = `/employees?offset=0&limit=1&user_id=${userId}`;
+    const response = await apiClient.get(requestUrl);
+    
+    if (response.status === 200) {
+      return response.data.employees && response.data.employees.length > 0 
+        ? response.data.employees[0] 
+        : null;
+    } else {
+      throw new Error(response.message || 'Failed to fetch employee by user id');
+    }
   } catch (error) {
     console.error('Fetch employee by user id error:', error);
     throw error;
