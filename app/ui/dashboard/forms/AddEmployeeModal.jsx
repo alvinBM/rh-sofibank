@@ -535,7 +535,7 @@ export default function AddEmployeeModal({ isOpen, onClose, onSuccess }) {
                 Annuler
               </Button>
               <Button
-                color="primary"
+                color="danger"
                 type="submit"
                 isDisabled={Object.keys(errors).length > 0}
               >

@@ -59,7 +59,7 @@ import { useGetEmployees } from "@/src/hooks/useEmployees";
 import PermissionGuard from "@/app/ui/dashboard/PermissionGuard";
 
 const STATUS_COLORS = {
-  scheduled: "primary",
+  scheduled: "danger",
   completed: "success",
   cancelled: "danger",
   rescheduled: "warning",
@@ -295,7 +295,7 @@ export default function InterviewsPage() {
             <h1 className="text-2xl font-bold">Entretiens</h1>
             <p className="text-default-500">Gérez les entretiens avec les candidats</p>
           </div>
-          <Button color="primary" startContent={<FiPlus />} onPress={() => handleOpenModal()}>
+          <Button color="danger" startContent={<FiPlus />} onPress={() => handleOpenModal()}>
             Planifier Entretien
           </Button>
         </div>
@@ -462,7 +462,7 @@ export default function InterviewsPage() {
                       <TableCell>{interview.duration} min</TableCell>
                       <TableCell>
                         {interview.meeting_link ? (
-                          <div className="flex items-center gap-1 text-primary">
+                          <div className="flex items-center gap-1 text-danger">
                             <FiVideo />
                             <span className="text-xs">Visio</span>
                           </div>
@@ -574,8 +574,8 @@ export default function InterviewsPage() {
                             <p className="text-xs flex items-center gap-1">
                               {interview.meeting_link ? (
                                 <>
-                                  <FiVideo className="text-primary" />
-                                  <span className="text-primary">Visioconférence</span>
+                                  <FiVideo className="text-danger" />
+                                  <span className="text-danger">Visioconférence</span>
                                 </>
                               ) : (
                                 <>
@@ -809,7 +809,7 @@ export default function InterviewsPage() {
                     Annuler
                   </Button>
                   <Button
-                    color="primary"
+                    color="danger"
                     type="submit"
                     isLoading={createInterviewMutation.isPending || updateInterviewMutation.isPending}
                   >
@@ -939,7 +939,7 @@ export default function InterviewsPage() {
                     Annuler
                   </Button>
                   <Button
-                    color="primary"
+                    color="danger"
                     type="submit"
                     isLoading={updateInterviewMutation.isPending}
                   >

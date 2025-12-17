@@ -14,6 +14,9 @@ import LeaveBalance from './LeaveBalance.js';
 import LeaveRequest from './LeaveRequest.js';
 import LeaveApproval from './LeaveApproval.js';
 import AttendanceRecord from './AttendanceRecord.js';
+import Holiday from './Holiday.js';
+import BiometricDevice from './BiometricDevice.js';
+import SystemParameter from './SystemParameter.js';
 
 // ========== USER <-> ROLE (Many-to-Many) ==========
 User.belongsToMany(Role, {
@@ -65,6 +68,17 @@ Employee.belongsTo(Direction, {
 Direction.hasMany(Employee, {
     foreignKey: 'direction_id',
     as: 'employees'
+});
+
+// ========== DIRECTION <-> SERVICE (One-to-Many) ==========
+Direction.hasMany(Service, {
+    foreignKey: 'direction_id',
+    as: 'services'
+});
+
+Service.belongsTo(Direction, {
+    foreignKey: 'direction_id',
+    as: 'direction'
 });
 
 // ========== EMPLOYEE <-> SERVICE ==========
@@ -197,5 +211,8 @@ export default {
     LeaveBalance,
     LeaveRequest,
     LeaveApproval,
-    AttendanceRecord
+    AttendanceRecord,
+    Holiday,
+    BiometricDevice,
+    SystemParameter
 };

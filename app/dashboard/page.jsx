@@ -177,16 +177,16 @@ const Dashboard = () => {
                         <h2 className="text-lg font-semibold">Accès rapides</h2>
                     </CardHeader>
                     <CardBody className="flex flex-col gap-3">
-                        <Button color="primary" variant="flat" startContent={<Icon icon="mdi:account-plus" />} as="a" href="/dashboard/employees">
+                        <Button color="danger" variant="flat" startContent={<Icon icon="mdi:account-plus" />} as="a" href="/dashboard/employees">
                             Gestion des Employés
                         </Button>
-                        <Button color="primary" variant="flat" startContent={<Icon icon="mdi:calendar-clock" />} as="a" href="/dashboard/leave/requests">
+                        <Button color="danger" variant="flat" startContent={<Icon icon="mdi:calendar-clock" />} as="a" href="/dashboard/leave/requests">
                             Demandes de Congés
                         </Button>
-                        <Button color="primary" variant="flat" startContent={<Icon icon="mdi:chart-box" />} as="a" href="/dashboard/reports">
+                        <Button color="danger" variant="flat" startContent={<Icon icon="mdi:chart-box" />} as="a" href="/dashboard/reports">
                             Rapports
                         </Button>
-                        <Button color="primary" variant="flat" startContent={<Icon icon="mdi:cog" />} as="a" href="/dashboard/settings">
+                        <Button color="danger" variant="flat" startContent={<Icon icon="mdi:cog" />} as="a" href="/dashboard/settings">
                             Paramètres
                         </Button>
                     </CardBody>

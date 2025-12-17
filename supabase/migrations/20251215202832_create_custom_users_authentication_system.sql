@@ -7,7 +7,7 @@
   
   ## Nouvelle table
   - `users` : Table principale pour l'authentification
-    - `id` (uuid, primary key)
+    - `id` (uuid, danger key)
     - `email` (text, unique)
     - `password` (text) - Mot de passe hashé avec bcrypt
     - `firstname` (text)

@@ -204,7 +204,7 @@ export const fetchPayrollSettings = async () => {
       irpp_rate: 0,
       periodicity: 'monthly',
       payment_day: 24,
-      currency: 'XOF'
+      currency: 'CDF'
     };
   } catch (error) {
     console.error('Fetch payroll settings error:', error);

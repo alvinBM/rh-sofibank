@@ -144,7 +144,7 @@ export default function PositionsPage() {
       case "title":
         return (
           <div className="flex items-center gap-2">
-            <FiBriefcase className="text-primary" />
+            <FiBriefcase className="text-danger" />
             <div>
               <p className="font-semibold">{position.title}</p>
               <p className="text-xs text-default-400">{position.code}</p>
@@ -153,7 +153,7 @@ export default function PositionsPage() {
         );
       case "grade":
         return position.grade ? (
-          <Chip size="sm" variant="flat" color="primary">
+          <Chip size="sm" variant="flat" color="danger">
             {position.grade.name}
           </Chip>
         ) : (
@@ -212,13 +212,13 @@ export default function PositionsPage() {
   }
 
   return (
-    <PermissionGuard requiredPermission="settings_manage">
-      <div className="p-6">
+    <PermissionGuard requiredPermissions={["positions_manage", "settings_access"]}>
+      <div className="p-0">
         <div className="flex flex-col gap-4">
           <div className="flex justify-between items-center">
             <h1 className="text-2xl font-bold">Postes & Fonctions</h1>
             <Button
-              color="primary"
+              color="danger"
               startContent={<FiPlus />}
               onPress={handleOpenCreate}
             >
@@ -338,7 +338,7 @@ export default function PositionsPage() {
                     <div className="flex flex-col gap-2">
                       <label className="text-sm font-medium">Responsabilités</label>
                       <textarea
-                        className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                        className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-danger"
                         rows="4"
                         placeholder="Liste des responsabilités principales..."
                         value={formData.responsibilities}
@@ -349,7 +349,7 @@ export default function PositionsPage() {
                     <div className="flex flex-col gap-2">
                       <label className="text-sm font-medium">Exigences & Qualifications</label>
                       <textarea
-                        className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                        className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-danger"
                         rows="4"
                         placeholder="Formation, expérience, compétences requises..."
                         value={formData.requirements}
@@ -363,7 +363,7 @@ export default function PositionsPage() {
                     Annuler
                   </Button>
                   <Button
-                    color="primary"
+                    color="danger"
                     onPress={handleSubmit}
                     isLoading={createPositionMutation.isLoading || updatePositionMutation.isLoading}
                   >

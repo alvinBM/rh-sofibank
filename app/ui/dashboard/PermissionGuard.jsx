@@ -39,7 +39,6 @@ const PermissionGuard = ({
 
     // Vérifier si l'utilisateur est RH ou DRH ou SUPER_ADMIN
     const isDRH = user?.main_roles?.some((role) => role.role_code === "RH") || user?.main_roles?.some((role) => role.role_code === "DRH") || user?.main_roles?.some((role) => role.role_code === "SUPER_ADMIN");
-
     // Si le compte est expiré, afficher un message
     if (isAccountExpired) {
         return (
@@ -99,7 +98,7 @@ const PermissionGuard = ({
                         <p className="text-default-500 text-sm mt-2 text-center">Contactez votre administrateur pour obtenir les accès nécessaires.</p>
                         <Button
                             className="mt-6"
-                            color="primary"
+                            color="danger"
                             variant="flat"
                             as={Link}
                             href="/dashboard"

@@ -129,7 +129,7 @@ const ChoosePlanForm = React.forwardRef(({ className, onChange, formData, handle
                     <Card
                         key={tier.key}
                         className={cn("relative p-3", {
-                            "overflow-visible bg-red-600 shadow-2xl shadow-primary/20": tier.mostPopular,
+                            "overflow-visible bg-red-600 shadow-2xl shadow-danger/20": tier.mostPopular,
                             "!border-medium border-default-100 bg-transparent lg:mt-12": !tier.mostPopular,
                         })}
                         shadow="none"
@@ -137,10 +137,10 @@ const ChoosePlanForm = React.forwardRef(({ className, onChange, formData, handle
                         {tier.mostPopular ? (
                             <Chip
                                 classNames={{
-                                    base: "absolute -top-3 left-1/2 -translate-x-1/2 bg-primary-foreground shadow-large border-medium border-red-700",
+                                    base: "absolute -top-3 left-1/2 -translate-x-1/2 bg-danger-foreground shadow-large border-medium border-red-700",
                                     content: "font-medium text-red-700",
                                 }}
-                                color="primary"
+                                color="danger"
                             >
                                 Le plus populaire
                             </Chip>
@@ -148,33 +148,33 @@ const ChoosePlanForm = React.forwardRef(({ className, onChange, formData, handle
                         <CardHeader className="flex flex-col items-center gap-2 pb-6 justify-center">
                             <h2
                                 className={cn("text-xl font-bold text-center", {
-                                    "text-primary-foreground": tier.mostPopular,
+                                    "text-danger-foreground": tier.mostPopular,
                                 })}
                             >
                                 {tier.title}
                             </h2>
                             <p
                                 className={cn("text-sm text-center text-default-500", {
-                                    "text-primary-foreground/70": tier.mostPopular,
+                                    "text-danger-foreground/70": tier.mostPopular,
                                 })}
                             >
                                 {tier.description}
                             </p>
                         </CardHeader>
-                        <Divider className="bg-primary-foreground/20" />
+                        <Divider className="bg-danger-foreground/20" />
                         <CardBody className="justify-between">
                             <div className="flex flex-col gap-8">
                                 <p className="flex items-end justify-center gap-1 pt-2">
                                     <span
                                         className={cn("inline bg-gradient-to-br from-foreground to-foreground-600 bg-clip-text text-4xl font-semibold leading-7 tracking-tight text-transparent", {
-                                            "text-primary-foreground": tier.mostPopular,
+                                            "text-danger-foreground": tier.mostPopular,
                                         })}
                                     >
                                         {tier.price[selectedFrequency.key]}
                                     </span>
                                     <span
                                         className={cn("text-sm font-medium text-default-400", {
-                                            "text-primary-foreground/50": tier.mostPopular,
+                                            "text-danger-foreground/50": tier.mostPopular,
                                         })}
                                     >
                                         /{selectedFrequency.priceSuffix}
@@ -193,7 +193,7 @@ const ChoosePlanForm = React.forwardRef(({ className, onChange, formData, handle
 
                                             <p
                                                 className={cn("text-default-500 text-small", {
-                                                    "text-primary-foreground/70": tier.mostPopular,
+                                                    "text-danger-foreground/70": tier.mostPopular,
                                                 })}
                                             >
                                                 {feature}
@@ -223,7 +223,7 @@ const ChoosePlanForm = React.forwardRef(({ className, onChange, formData, handle
                                 fullWidth
                                 as={Link}
                                 className={cn({
-                                    "bg-primary-foreground font-medium text-red-600 shadow-sm shadow-default-500/50": tier.mostPopular,
+                                    "bg-danger-foreground font-medium text-red-600 shadow-sm shadow-default-500/50": tier.mostPopular,
                                 })}
                                 color={tier.buttonColor}
                                 href={tier.href}

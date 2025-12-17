@@ -15,6 +15,7 @@ router.use("/employees", employeeRoutes);
 router.use("/leave", leaveRoutes);
 router.use("/attendance", attendanceRoutes);
 router.use("/settings", settingsRoutes);
+router.use("/rbac", settingsRoutes);
 router.use("/dashboard", dashboardRoutes);
 
 // Health check route

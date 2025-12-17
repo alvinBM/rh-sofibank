@@ -16,6 +16,11 @@ const User = database.define('users', {
             isEmail: true
         }
     },
+    phone : {
+        type: DataTypes.STRING(20),
+        allowNull: true,
+        unique: true
+    },
     password: {
         type: DataTypes.STRING,
         allowNull: false

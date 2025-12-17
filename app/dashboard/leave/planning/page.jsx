@@ -44,7 +44,7 @@ import {
 } from "@/src/utils/dateUtils";
 
 const LEAVE_TYPE_COLORS = {
-  default: "bg-primary-200 text-primary-800",
+  default: "bg-danger-200 text-danger-800",
   annual: "bg-blue-200 text-blue-800",
   sick: "bg-red-200 text-red-800",
   maternity: "bg-pink-200 text-pink-800",
@@ -216,7 +216,7 @@ export default function LeavePlanningPage() {
                     key={day.day}
                     className={`relative min-h-[60px] p-1 border rounded ${
                       day.isWeekend ? "bg-default-100" : "bg-white"
-                    } ${hasLeaves ? "border-primary" : "border-default-200"}`}
+                    } ${hasLeaves ? "border-danger" : "border-default-200"}`}
                   >
                     <div className="text-xs font-semibold mb-1">{day.day}</div>
                     {hasLeaves && (
@@ -314,7 +314,7 @@ export default function LeavePlanningPage() {
                   <CardBody>
                     <div className="flex justify-between items-start mb-2">
                       <p className="font-semibold">{stat.type.name}</p>
-                      <Chip size="sm" color="primary" variant="flat">
+                      <Chip size="sm" color="danger" variant="flat">
                         {stat.count}
                       </Chip>
                     </div>
@@ -344,7 +344,7 @@ export default function LeavePlanningPage() {
                     <CardBody>
                       <div className="flex justify-between items-start mb-2">
                         <p className="font-semibold">{deptStat.departmentName}</p>
-                        <Chip size="sm" color="primary" variant="flat">
+                        <Chip size="sm" color="danger" variant="flat">
                           {deptStat.requestCount} demandes
                         </Chip>
                       </div>
@@ -386,7 +386,7 @@ export default function LeavePlanningPage() {
                   <Card key={month.index} className="bg-default-50">
                     <CardBody className="text-center p-3">
                       <p className="text-sm font-semibold mb-1">{month.shortName}</p>
-                      <p className="text-2xl font-bold text-primary">
+                      <p className="text-2xl font-bold text-danger">
                         {monthLeaves.length}
                       </p>
                       <p className="text-xs text-default-500">{totalDays} jour(s)</p>
@@ -411,7 +411,7 @@ export default function LeavePlanningPage() {
 
   return (
     <PermissionGuard requiredPermission={["leave_view", "leave_manage_types"]}>
-      <div className="p-6">
+      <div className="p-0">
         {/* En-tête */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
           <div>
@@ -432,7 +432,7 @@ export default function LeavePlanningPage() {
               Détecter conflits
             </Button>
             <Button
-              color="primary"
+              color="danger"
               variant="flat"
               startContent={<FiPrinter />}
               onPress={handlePrint}
@@ -440,7 +440,7 @@ export default function LeavePlanningPage() {
               Imprimer
             </Button>
             <Button
-              color="primary"
+              color="danger"
               startContent={<FiDownload />}
               onPress={handleGeneratePDF}
             >
@@ -506,7 +506,7 @@ export default function LeavePlanningPage() {
           selectedKey={viewMode}
           onSelectionChange={(key) => setViewMode(key)}
           aria-label="Modes de vue"
-          color="primary"
+          color="danger"
           variant="bordered"
           className="mb-6"
         >

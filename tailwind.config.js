@@ -9,15 +9,23 @@ module.exports = {
     plugins: [
         nextui({
             themes: {
-                light: {},
+                light: {
+                    colors: {
+                        danger: {
+                            DEFAULT: "#ed1c24",
+                            background: "#ed1c24",
+                        },
+                        focus: "#ed1c24",
+                    },
+                },
                 dark: {
                     colors: {
-                        primary: {
-                            DEFAULT: "#BEF264",
+                        danger: {
+                            DEFAULT: "#ed1c24",
                             foreground: "#000000",
-                            background: "#dd4422",
+                            background: "#ed1c24",
                         },
-                        focus: "#BEF264",
+                        focus: "#ed1c24",
                         background: "#111111",
                     },
                 },

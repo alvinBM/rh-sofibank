@@ -98,8 +98,8 @@ export default function MyDocumentsPage() {
               <CardBody>
                 <div className="flex items-center gap-4">
                   <div className="flex-shrink-0">
-                    <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center">
-                      <FiFileText className="text-primary text-xl" />
+                    <div className="w-12 h-12 rounded-lg bg-danger/10 flex items-center justify-center">
+                      <FiFileText className="text-danger text-xl" />
                     </div>
                   </div>
 
@@ -123,7 +123,7 @@ export default function MyDocumentsPage() {
                         <Chip
                           size="sm"
                           variant="flat"
-                          color="primary"
+                          color="danger"
                         >
                           {DOCUMENT_CATEGORIES[doc.document_type?.category] || doc.document_type?.category}
                         </Chip>
@@ -151,7 +151,7 @@ export default function MyDocumentsPage() {
                     </Button>
                     <Button
                       size="sm"
-                      color="primary"
+                      color="danger"
                       startContent={<FiDownload />}
                       as="a"
                       href={doc.file_url}

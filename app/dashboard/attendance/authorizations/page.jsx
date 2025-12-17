@@ -222,7 +222,7 @@ export default function ExitAuthorizationsPage() {
               Gestion des demandes d'autorisation de sortie anticipée
             </p>
           </div>
-          <Button color="primary" startContent={<FiPlus />} onPress={handleCreate}>
+          <Button color="danger" startContent={<FiPlus />} onPress={handleCreate}>
             Nouvelle Autorisation
           </Button>
         </div>
@@ -290,7 +290,7 @@ export default function ExitAuthorizationsPage() {
                       isCompact
                       showControls
                       showShadow
-                      color="primary"
+                      color="danger"
                       page={page}
                       total={pages}
                       onChange={setPage}
@@ -473,7 +473,7 @@ export default function ExitAuthorizationsPage() {
                 Annuler
               </Button>
               <Button
-                color="primary"
+                color="danger"
                 onPress={handleSubmit}
                 isLoading={createMutation.isPending || updateMutation.isPending}
               >

@@ -59,7 +59,7 @@ import PermissionGuard from "@/app/ui/dashboard/PermissionGuard";
 
 const STATUS_COLORS = {
   draft: "default",
-  submitted: "primary",
+  submitted: "danger",
   hr_review: "warning",
   dg_approval: "warning",
   approved: "success",
@@ -331,7 +331,7 @@ export default function WorkforcePlanningPage() {
             <h1 className="text-2xl font-bold">Planification Annuelle des Besoins</h1>
             <p className="text-default-500">Gérez les besoins en personnel par Direction</p>
           </div>
-          <Button color="primary" startContent={<FiPlus />} onPress={() => handleOpenModal()}>
+          <Button color="danger" startContent={<FiPlus />} onPress={() => handleOpenModal()}>
             Nouveau Plan
           </Button>
         </div>
@@ -607,7 +607,7 @@ export default function WorkforcePlanningPage() {
                       )}
                     />
 
-                    <div className="bg-primary-50 p-4 rounded-lg">
+                    <div className="bg-danger-50 p-4 rounded-lg">
                       <p className="text-sm text-default-600">
                         Après la création du plan, vous pourrez ajouter les lignes de besoins détaillés
                         (postes, grades, services, etc.)
@@ -620,7 +620,7 @@ export default function WorkforcePlanningPage() {
                     Annuler
                   </Button>
                   <Button
-                    color="primary"
+                    color="danger"
                     type="submit"
                     isLoading={createPlanningMutation.isPending || updatePlanningMutation.isPending}
                   >
@@ -691,7 +691,7 @@ export default function WorkforcePlanningPage() {
                         {planningDetail.status === "draft" && (
                           <Button
                             size="sm"
-                            color="primary"
+                            color="danger"
                             startContent={<FiPlus />}
                             onPress={() => handleOpenItemModal()}
                           >
@@ -760,7 +760,7 @@ export default function WorkforcePlanningPage() {
                   </Button>
                   {planningDetail?.status === "draft" && (
                     <Button
-                      color="primary"
+                      color="danger"
                       startContent={<FiSend />}
                       onPress={() => {
                         handleCloseDetail();
@@ -958,7 +958,7 @@ export default function WorkforcePlanningPage() {
                     Annuler
                   </Button>
                   <Button
-                    color="primary"
+                    color="danger"
                     type="submit"
                     isLoading={createItemMutation.isPending || updateItemMutation.isPending}
                   >

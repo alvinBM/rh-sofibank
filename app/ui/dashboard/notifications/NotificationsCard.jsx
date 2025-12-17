@@ -114,7 +114,7 @@ export default function NotificationsCard(props) {
                             12
                         </Chip>
                     </div>
-                    <Button className="h-8 px-3" color="primary" radius="full" variant="light">
+                    <Button className="h-8 px-3" color="danger" radius="full" variant="light">
                         Mark all as read
                     </Button>
                 </div>
@@ -126,7 +126,7 @@ export default function NotificationsCard(props) {
                         cursor: "w-full",
                         tab: "max-w-fit px-2 h-12",
                     }}
-                    color="primary"
+                    color="danger"
                     selectedKey={activeTab}
                     variant="underlined"
                     onSelectionChange={(selected) => setActiveTab(selected)}

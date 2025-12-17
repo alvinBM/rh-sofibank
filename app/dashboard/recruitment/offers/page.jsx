@@ -55,7 +55,7 @@ import PermissionGuard from "@/app/ui/dashboard/PermissionGuard";
 
 const STATUS_COLORS = {
   draft: "default",
-  sent: "primary",
+  sent: "danger",
   accepted: "success",
   rejected: "danger",
   expired: "warning",
@@ -249,7 +249,7 @@ export default function OffersPage() {
             <h1 className="text-2xl font-bold">Offres d'Emploi</h1>
             <p className="text-default-500">Gérez les offres faites aux candidats</p>
           </div>
-          <Button color="primary" startContent={<FiPlus />} onPress={() => handleOpenModal()}>
+          <Button color="danger" startContent={<FiPlus />} onPress={() => handleOpenModal()}>
             Nouvelle Offre
           </Button>
         </div>
@@ -627,11 +627,11 @@ export default function OffersPage() {
                       )}
                     />
 
-                    <div className="bg-primary-50 p-4 rounded-lg">
+                    <div className="bg-danger-50 p-4 rounded-lg">
                       <div className="flex items-start gap-2">
-                        <FiFileText className="text-primary mt-1" />
+                        <FiFileText className="text-danger mt-1" />
                         <div>
-                          <p className="text-sm font-semibold text-primary">Génération de lettre d'offre</p>
+                          <p className="text-sm font-semibold text-danger">Génération de lettre d'offre</p>
                           <p className="text-xs text-default-600 mt-1">
                             Une fois l'offre créée, vous pourrez générer automatiquement une lettre d'offre
                             personnalisée avec toutes les informations saisies.
@@ -646,7 +646,7 @@ export default function OffersPage() {
                     Annuler
                   </Button>
                   <Button
-                    color="primary"
+                    color="danger"
                     type="submit"
                     isLoading={createOfferMutation.isPending || updateOfferMutation.isPending}
                   >

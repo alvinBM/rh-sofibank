@@ -49,7 +49,7 @@ import api from "@/src/services/axios";
 // Couleurs par statistique
 const chartColors = {
     sales: "success",
-    purchases: "primary",
+    purchases: "danger",
     profits: "warning",
 };
 
@@ -142,7 +142,7 @@ export default function GraphSynthese() {
                                             <span
                                                 className={`text-${chartColors[key]}-500 text-small font-medium`}
                                                 // className={cn("text-small font-medium text-default-500 transition-colors", {
-                                                //     "text-primary-500" : activeChart === key,
+                                                //     "text-danger-500" : activeChart === key,
                                                 // })}
                                             >
                                                 {title}

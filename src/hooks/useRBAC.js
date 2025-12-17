@@ -11,7 +11,7 @@ import {
   updateRolePermissions,
   checkUserPermission,
   checkUserRole,
-} from "../services/apis/rbacService";
+} from "../services/apis/rbacApiService";
 import queryClient from "../lib/react-query-client";
 
 export const useGetRoles = ({ page = 1, rowsPerPage = 10, query = "" }) => {

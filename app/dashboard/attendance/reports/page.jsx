@@ -131,7 +131,7 @@ export default function AttendanceReportsPage() {
               Analyses et statistiques de présence
             </p>
           </div>
-          <Button color="primary" startContent={<FiDownload />} onPress={handleExport}>
+          <Button color="danger" startContent={<FiDownload />} onPress={handleExport}>
             Exporter
           </Button>
         </div>
@@ -167,7 +167,7 @@ export default function AttendanceReportsPage() {
               </Select>
               <div className="flex items-end">
                 <Button
-                  color="primary"
+                  color="danger"
                   variant="flat"
                   className="w-full"
                   onPress={() => {
@@ -204,8 +204,8 @@ export default function AttendanceReportsPage() {
           <Card>
             <CardBody>
               <div className="flex items-center gap-3">
-                <div className="p-3 bg-primary-100 rounded-lg">
-                  <FiClock className="text-primary text-2xl" />
+                <div className="p-3 bg-danger-100 rounded-lg">
+                  <FiClock className="text-danger text-2xl" />
                 </div>
                 <div>
                   <p className="text-sm text-default-500">Moy. heures/jour</p>

@@ -143,7 +143,7 @@ export default function GradesPage() {
     if (!amount) return "-";
     return new Intl.NumberFormat("fr-FR", {
       style: "currency",
-      currency: "XOF",
+      currency: "CDF",
     }).format(amount);
   };
 
@@ -158,7 +158,7 @@ export default function GradesPage() {
         );
       case "level":
         return (
-          <Chip size="sm" variant="flat" color="primary">
+          <Chip size="sm" variant="flat" color="danger">
             Niveau {grade.level}
           </Chip>
         );
@@ -218,13 +218,13 @@ export default function GradesPage() {
   }
 
   return (
-    <PermissionGuard requiredPermission="settings_manage">
-      <div className="p-6">
+    <PermissionGuard requiredPermissions={["payroll_settings_manage", "settings_access"]}>
+      <div className="p-0">
         <div className="flex flex-col gap-4">
           <div className="flex justify-between items-center">
             <h1 className="text-2xl font-bold">Grades & Rémunérations</h1>
             <Button
-              color="primary"
+              color="danger"
               startContent={<FiPlus />}
               onPress={handleOpenCreate}
             >
@@ -235,8 +235,8 @@ export default function GradesPage() {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <Card>
               <CardBody className="flex flex-row items-center gap-3">
-                <div className="p-3 rounded-lg bg-primary/10">
-                  <FiDollarSign className="text-primary text-2xl" />
+                <div className="p-3 rounded-lg bg-danger/10">
+                  <FiDollarSign className="text-danger text-2xl" />
                 </div>
                 <div>
                   <p className="text-sm text-default-400">Total Grades</p>
@@ -369,7 +369,7 @@ export default function GradesPage() {
                       onChange={(e) => setFormData({ ...formData, base_salary: e.target.value })}
                       startContent={
                         <div className="pointer-events-none flex items-center">
-                          <span className="text-default-400 text-small">XOF</span>
+                          <span className="text-default-400 text-small">CDF</span>
                         </div>
                       }
                     />
@@ -381,7 +381,7 @@ export default function GradesPage() {
                       onChange={(e) => setFormData({ ...formData, min_salary: e.target.value })}
                       startContent={
                         <div className="pointer-events-none flex items-center">
-                          <span className="text-default-400 text-small">XOF</span>
+                          <span className="text-default-400 text-small">CDF</span>
                         </div>
                       }
                     />
@@ -393,7 +393,7 @@ export default function GradesPage() {
                       onChange={(e) => setFormData({ ...formData, max_salary: e.target.value })}
                       startContent={
                         <div className="pointer-events-none flex items-center">
-                          <span className="text-default-400 text-small">XOF</span>
+                          <span className="text-default-400 text-small">CDF</span>
                         </div>
                       }
                     />
@@ -418,7 +418,7 @@ export default function GradesPage() {
                     Annuler
                   </Button>
                   <Button
-                    color="primary"
+                    color="danger"
                     onPress={handleSubmit}
                     isLoading={createGradeMutation.isLoading || updateGradeMutation.isLoading}
                   >

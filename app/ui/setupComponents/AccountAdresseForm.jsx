@@ -28,7 +28,7 @@ const AccountAdresseForm = React.forwardRef(({ className, onChange, formData, ..
         { value: "USD", title: "USD" },
         { value: "CDF", title: "CDF" },
         { value: "EUR", title: "EUR" },
-        { value: "XOF", title: "XOF" },
+        { value: "CDF", title: "CDF" },
         { value: "XAF", title: "XAF" },
     ];
 

@@ -144,7 +144,7 @@ const InvoicesTable = () => {
                     isCompact
                     showControls
                     showShadow
-                    color="primary"
+                    color="danger"
                     page={page}
                     total={pages}
                     onChange={setPage}

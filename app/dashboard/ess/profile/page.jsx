@@ -80,7 +80,7 @@ export default function MyProfilePage() {
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">Mon Profil</h1>
         {!isEditing ? (
-          <Button color="primary" startContent={<FiEdit />} onPress={() => setIsEditing(true)}>
+          <Button color="danger" startContent={<FiEdit />} onPress={() => setIsEditing(true)}>
             Modifier
           </Button>
         ) : (
@@ -91,7 +91,7 @@ export default function MyProfilePage() {
             }}>
               Annuler
             </Button>
-            <Button color="primary" startContent={<FiSave />} onPress={handleSubmit(onSubmit)}>
+            <Button color="danger" startContent={<FiSave />} onPress={handleSubmit(onSubmit)}>
               Enregistrer
             </Button>
           </div>

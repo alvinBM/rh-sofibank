@@ -275,7 +275,7 @@ export default function LeaveBalancePage() {
           );
         case "carry_forward":
           return balance.carry_forward_days ? (
-            <Chip color="primary" variant="flat" size="sm">
+            <Chip color="danger" variant="flat" size="sm">
               +{balance.carry_forward_days} jour(s)
             </Chip>
           ) : (
@@ -320,7 +320,7 @@ export default function LeaveBalancePage() {
         <div className="flex justify-between items-center">
           <h1 className="text-2xl font-bold">Soldes de Congés</h1>
           <Button
-            color="primary"
+            color="danger"
             startContent={<FiDownload />}
             onPress={handleExport}
             variant="flat"
@@ -334,7 +334,7 @@ export default function LeaveBalancePage() {
           <Card>
             <CardBody>
               <p className="text-sm text-default-500">Total acquis</p>
-              <p className="text-2xl font-bold text-primary">{stats.totalAcquired}</p>
+              <p className="text-2xl font-bold text-danger">{stats.totalAcquired}</p>
               <p className="text-xs text-default-400">jours</p>
             </CardBody>
           </Card>
@@ -459,7 +459,7 @@ export default function LeaveBalancePage() {
           isCompact
           showControls
           showShadow
-          color="primary"
+          color="danger"
           page={page}
           total={totalPages || 1}
           onChange={setPage}
@@ -471,7 +471,7 @@ export default function LeaveBalancePage() {
 
   return (
     <PermissionGuard requiredPermission={["leave_view", "leave_manage_balance"]}>
-      <div className="p-6">
+      <div className="p-0">
         <Table
           aria-label="Table des soldes de congés"
           topContent={topContent}
@@ -593,11 +593,11 @@ export default function LeaveBalancePage() {
                       </div>
 
                       {adjustmentData.adjustment !== 0 && (
-                        <Card className="bg-primary-50">
+                        <Card className="bg-danger-50">
                           <CardBody>
                             <p className="text-sm">
                               Nouveau solde:{" "}
-                              <span className="font-bold text-primary">
+                              <span className="font-bold text-danger">
                                 {(selectedBalance.total_days || 0) +
                                   parseFloat(adjustmentData.adjustment || 0)}{" "}
                                 jours
@@ -627,7 +627,7 @@ export default function LeaveBalancePage() {
                     Annuler
                   </Button>
                   <Button
-                    color="primary"
+                    color="danger"
                     onPress={handleConfirmAdjustment}
                     isLoading={adjustMutation.isPending}
                   >
@@ -698,7 +698,7 @@ export default function LeaveBalancePage() {
                   )}
                 </ModalBody>
                 <ModalFooter>
-                  <Button color="primary" onPress={onClose}>
+                  <Button color="danger" onPress={onClose}>
                     Fermer
                   </Button>
                 </ModalFooter>
