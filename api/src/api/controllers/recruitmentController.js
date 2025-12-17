@@ -1,6 +1,7 @@
 import models from "../models/index.js";
 import { Op } from "sequelize";
 import formatDate from "date-format";
+import bcrypt from "bcrypt";
 
 const {
     RecruitmentPlan,
@@ -945,12 +946,25 @@ export const assignApplication = async (req, res) => {
             return res.status(404).json({ error: "Job application not found" });
         }
 
+        const previousAssignedTo = application.assigned_to;
         await application.update({ assigned_to });
+
+        // Create status history if assigning for first time or changing assignment
+        if (!previousAssignedTo || previousAssignedTo !== assigned_to) {
+            await ApplicationStatusHistory.create({
+                application_id: id,
+                previous_status: application.status,
+                new_status: application.status,
+                changed_by: req.user.id,
+                reason: previousAssignedTo ? "Reassigned to new reviewer" : "Assigned to reviewer",
+                notes: `Assigned to user ID: ${assigned_to}`,
+            });
+        }
 
         const updatedApplication = await JobApplication.findByPk(id, {
             include: [
                 { model: JobPosting, as: "job_posting" },
-                { model: User, as: "assigned_user" },
+                { model: User, as: "assigned_user", attributes: ["id", "email"] },
             ],
         });
 
@@ -995,8 +1009,26 @@ export const scheduleInterview = async (req, res) => {
         const interviewData = req.body;
         const scheduledBy = req.user.id;
 
+        // Combine date and time if provided separately
+        let scheduledDate = interviewData.scheduled_date;
+        if (interviewData.date && interviewData.time) {
+            scheduledDate = `${interviewData.date}T${interviewData.time}:00`;
+        }
+
+        if (!scheduledDate) {
+            return res.status(400).json({ error: "Scheduled date is required" });
+        }
+
         const interview = await JobInterview.create({
-            ...interviewData,
+            application_id: interviewData.application_id,
+            interview_type: interviewData.interview_type,
+            interview_round: interviewData.interview_round || 1,
+            scheduled_date: scheduledDate,
+            duration_minutes: interviewData.duration_minutes || 60,
+            location: interviewData.location,
+            meeting_link: interviewData.meeting_link,
+            interviewers: interviewData.interviewers,
+            notes: interviewData.notes,
             scheduled_by: scheduledBy,
             status: "scheduled",
         });
@@ -1166,14 +1198,23 @@ export const getEvaluationsForInterview = async (req, res) => {
  */
 export const getEmploymentOffers = async (req, res) => {
     try {
-        const { status, direction_id, application_id } = req.query;
+        let { offset = 0, limit = 10, status, direction_id, application_id, query } = req.query;
+        offset = parseInt(offset);
+        limit = parseInt(limit);
 
         const where = {};
         if (status) where.status = status;
         if (direction_id) where.direction_id = direction_id;
         if (application_id) where.application_id = application_id;
+        if (query) {
+            where[Op.or] = [
+                { offer_number: { [Op.like]: `%${query}%` } },
+            ];
+        }
 
-        const offers = await EmploymentOffer.findAll({
+        const result = await EmploymentOffer.findAndCountAll({
+            offset,
+            limit,
             where,
             include: [
                 {
@@ -1185,14 +1226,19 @@ export const getEmploymentOffers = async (req, res) => {
                 { model: Grade, as: "grade" },
                 { model: Service, as: "service" },
                 { model: Direction, as: "direction" },
-                { model: Employee, as: "manager" },
-                { model: User, as: "approver" },
-                { model: User, as: "creator" },
+                { model: User, as: "approver", attributes: ["id", "email"] },
+                { model: User, as: "creator", attributes: ["id", "email"] },
             ],
             order: [["created_at", "DESC"]],
+            distinct: true,
         });
 
-        res.json(offers);
+        res.json({
+            status: 200,
+            message: "Employment offers retrieved successfully",
+            total: result.count,
+            offers: result.rows,
+        });
     } catch (error) {
         console.error("Error fetching employment offers:", error);
         res.status(500).json({ error: "Failed to fetch employment offers" });
@@ -1223,8 +1269,8 @@ export const getEmploymentOfferById = async (req, res) => {
                 { model: Grade, as: "grade" },
                 { model: Service, as: "service" },
                 { model: Direction, as: "direction" },
-                { model: User, as: "approver" },
-                { model: User, as: "creator" },
+                { model: User, as: "approver", attributes: ["id", "email"] },
+                { model: User, as: "creator", attributes: ["id", "email"] },
             ],
         });
 
@@ -1426,7 +1472,19 @@ export const respondToOffer = async (req, res) => {
         const { id } = req.params;
         const { accept, comments } = req.body;
 
-        const offer = await EmploymentOffer.findByPk(id);
+        const offer = await EmploymentOffer.findByPk(id, {
+            include: [
+                {
+                    model: JobApplication,
+                    as: "application",
+                },
+                { model: JobPosition, as: "job_position" },
+                { model: Grade, as: "grade" },
+                { model: Service, as: "service" },
+                { model: Direction, as: "direction" },
+            ],
+        });
+
         if (!offer) {
             return res.status(404).json({ error: "Employment offer not found" });
         }
@@ -1439,8 +1497,8 @@ export const respondToOffer = async (req, res) => {
 
         await offer.update({
             status: newStatus,
-            candidate_response_date: new Date(),
-            candidate_comments: comments,
+            accepted_date: accept ? new Date() : null,
+            declined_reason: accept ? null : comments,
         });
 
         // Update application status
@@ -1458,13 +1516,76 @@ export const respondToOffer = async (req, res) => {
                 application_id: offer.application_id,
                 previous_status: "offer_sent",
                 new_status: appStatus,
-                changed_by: req.user.id,
-                reason: `Candidate ${accept ? "accepted" : "declined"} offer`,
+                changed_by: req.user.id || null,
+                reason: accept ? "Candidate accepted the offer" : "Candidate declined the offer",
                 notes: comments,
             });
         }
 
-        res.json({ message: `Offer ${accept ? "accepted" : "declined"} successfully`, offer });
+        // If accepted, create employee record and user account
+        let newEmployee = null;
+        let newUser = null;
+        
+        if (accept && offer.application) {
+            try {
+                // Generate employee number
+                const year = new Date().getFullYear();
+                const count = await Employee.count();
+                const employeeNumber = `EMP-${year}-${String(count + 1).padStart(4, "0")}`;
+
+                // Generate temporary password
+                const tempPassword = Math.random().toString(36).slice(-8) + Math.random().toString(36).slice(-8).toUpperCase();
+                const hashedPassword = await bcrypt.hash(tempPassword, 10);
+
+                // Create user account
+                newUser = await User.create({
+                    email: offer.application.email,
+                    password: hashedPassword,
+                    role: "employee",
+                    is_active: true,
+                });
+
+                // Create employee record
+                newEmployee = await Employee.create({
+                    user_id: newUser.id,
+                    employee_number: employeeNumber,
+                    first_name: offer.application.first_name,
+                    last_name: offer.application.last_name,
+                    email: offer.application.email,
+                    phone: offer.application.phone,
+                    date_of_birth: offer.application.date_of_birth,
+                    gender: offer.application.gender,
+                    nationality: offer.application.nationality,
+                    address_line1: offer.application.address_line1,
+                    city: offer.application.city,
+                    province: offer.application.province,
+                    job_position_id: offer.job_position_id,
+                    grade_id: offer.grade_id,
+                    service_id: offer.service_id,
+                    direction_id: offer.direction_id,
+                    contract_type: offer.contract_type,
+                    employment_status: "active",
+                    hire_date: offer.start_date,
+                    basic_salary: offer.salary,
+                    created_by: req.user.id,
+                });
+
+                console.log("✅ Employee created successfully:", employeeNumber);
+                console.log("✅ Temporary password:", tempPassword);
+
+                // TODO: Send welcome email with credentials
+            } catch (employeeError) {
+                console.error("❌ Error creating employee:", employeeError);
+                // Don't fail the whole request, but log the error
+            }
+        }
+
+        res.json({
+            message: accept ? "Offer accepted successfully" : "Offer declined",
+            offer,
+            employee: newEmployee,
+            temporaryPassword: newEmployee ? "Sent to candidate's email" : null,
+        });
     } catch (error) {
         console.error("Error responding to offer:", error);
         res.status(500).json({ error: "Failed to respond to offer" });

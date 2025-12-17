@@ -29,7 +29,7 @@ import {
   adjustLeaveBalance,
   fetchBalanceAdjustmentHistory,
   fetchAllLeaveBalances,
-} from "../services/apis/leaveService";
+} from "../services/apis/leaveApiService";
 import queryClient from "../lib/react-query-client";
 
 export const useGetLeaveTypes = () => {

@@ -288,9 +288,20 @@ export const submitInterviewEvaluation = async (evaluationData) => {
 /**
  * Get all employment offers with filters
  */
-export const getEmploymentOffers = async (params = {}) => {
-    const { data } = await apiClient.get("/recruitment/offers", { params });
-    return data;
+export const getEmploymentOffers = async ({ offset = 0, limit = 10, status, direction_id, application_id, query } = {}) => {
+    let requestUrl = `/recruitment/offers?offset=${offset}&limit=${limit}`;
+    if (status) requestUrl += `&status=${status}`;
+    if (direction_id) requestUrl += `&direction_id=${direction_id}`;
+    if (application_id) requestUrl += `&application_id=${application_id}`;
+    if (query) requestUrl += `&query=${query}`;
+
+    const { data } = await apiClient.get(requestUrl);
+    
+    if (data.status === 200) {
+        return { offers: data.offers, total: data.total };
+    }
+    
+    throw new Error(data.message || "Failed to fetch employment offers");
 };
 
 /**
