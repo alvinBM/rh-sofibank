@@ -21,7 +21,7 @@ const JobInterview = sequelize.define(
             type: DataTypes.ENUM("phone", "video", "in_person", "technical", "panel", "final"),
             defaultValue: "in_person",
         },
-        interview_stage: {
+        interview_round: {
             type: DataTypes.INTEGER,
             defaultValue: 1,
         },
@@ -46,32 +46,24 @@ const JobInterview = sequelize.define(
             allowNull: true,
         },
         status: {
-            type: DataTypes.ENUM("scheduled", "in_progress", "completed", "cancelled", "no_show", "rescheduled"),
+            type: DataTypes.ENUM("scheduled", "completed", "cancelled", "rescheduled", "no_show"),
             defaultValue: "scheduled",
+        },
+        candidate_confirmed: {
+            type: DataTypes.BOOLEAN,
+            defaultValue: false,
+        },
+        reminder_sent: {
+            type: DataTypes.BOOLEAN,
+            defaultValue: false,
         },
         notes: {
             type: DataTypes.TEXT,
             allowNull: true,
         },
-        feedback: {
-            type: DataTypes.TEXT,
-            allowNull: true,
-        },
-        overall_rating: {
-            type: DataTypes.INTEGER,
-            allowNull: true,
-        },
-        recommendation: {
-            type: DataTypes.ENUM("strong_yes", "yes", "maybe", "no", "strong_no"),
-            allowNull: true,
-        },
-        completed_date: {
-            type: DataTypes.DATE,
-            allowNull: true,
-        },
         scheduled_by: {
             type: DataTypes.UUID,
-            allowNull: true,
+            allowNull: false,
             references: {
                 model: "users",
                 key: "id",
