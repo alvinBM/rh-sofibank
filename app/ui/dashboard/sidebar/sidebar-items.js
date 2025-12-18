@@ -142,14 +142,14 @@ export const sectionItems = [
                 href: "/dashboard/payroll",
                 icon: "solar:wallet-money-linear",
                 title: "Paie",
-                requiredPermission: "payroll_view",
+                // requiredPermission: "payroll_view",
             },
             {
                 key: "performance",
                 title: "Performance 360°",
                 icon: "solar:medal-star-linear",
                 type: SidebarItemType.Nest,
-                requiredPermission: "performance_view",
+                // requiredPermission: "performance_view",
                 items: [
                     {
                         key: "evaluations",
@@ -176,7 +176,7 @@ export const sectionItems = [
                 title: "Rapports & Analyses",
                 icon: "solar:chart-2-linear",
                 type: SidebarItemType.Nest,
-                requiredPermission: "dashboard_view",
+                // requiredPermission: "dashboard_view",
                 items: [
                     {
                         key: "hr-dashboards",
@@ -209,7 +209,7 @@ export const sectionItems = [
                 title: "Administration",
                 icon: "solar:settings-linear",
                 type: SidebarItemType.Nest,
-                requiredPermission: "settings_access",
+                // requiredPermission: "settings_access",
                 items: [
                     {
                         key: "users-management",
