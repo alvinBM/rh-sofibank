@@ -237,6 +237,14 @@ export const rateApplication = async (id, ratingData) => {
     return data;
 };
 
+/**
+ * Convert candidate to employee
+ */
+export const convertCandidateToEmployee = async (id, employeeData) => {
+    const { data } = await apiClient.post(`/recruitment/applications/${id}/convert-to-employee`, employeeData);
+    return data;
+};
+
 // ========================================
 // STAGE 3B: INTERVIEWS & EVALUATIONS
 // ========================================

@@ -231,6 +231,17 @@ export const useRateApplication = () => {
   });
 };
 
+export const useConvertCandidateToEmployee = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, employeeData }) => recruitmentService.convertCandidateToEmployee(id, employeeData),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['job-applications'] });
+      queryClient.invalidateQueries({ queryKey: ['employees'] });
+    },
+  });
+};
+
 // ========================================
 // INTERVIEWS HOOKS
 // ========================================

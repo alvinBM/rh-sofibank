@@ -34,10 +34,10 @@ import {
     Tab,
     User,
 } from "@nextui-org/react";
-import { FiPlus, FiSearch, FiMoreVertical, FiEye, FiUserCheck, FiStar, FiCalendar, FiMail, FiPhone, FiFileText, FiDownload } from "react-icons/fi";
+import { FiPlus, FiSearch, FiMoreVertical, FiEye, FiUserCheck, FiStar, FiCalendar, FiMail, FiPhone, FiFileText, FiDownload, FiUserPlus } from "react-icons/fi";
 import { useForm, Controller } from "react-hook-form";
 import { toast } from "react-toastify";
-import { useGetJobApplications, useGetJobApplicationById, useUpdateJobApplication, useAssignApplication, useRateApplication, useScheduleInterview, useGetJobPostings } from "@/src/hooks/useRecruitment";
+import { useGetJobApplications, useGetJobApplicationById, useUpdateJobApplication, useAssignApplication, useRateApplication, useScheduleInterview, useGetJobPostings, useConvertCandidateToEmployee } from "@/src/hooks/useRecruitment";
 import { useGetEmployees } from "@/src/hooks/useEmployees";
 
 export default function CandidatesPage() {
@@ -53,6 +53,7 @@ export default function CandidatesPage() {
     const { isOpen: isRateOpen, onOpen: onRateOpen, onClose: onRateClose } = useDisclosure();
     const { isOpen: isInterviewOpen, onOpen: onInterviewOpen, onClose: onInterviewClose } = useDisclosure();
     const { isOpen: isStatusOpen, onOpen: onStatusOpen, onClose: onStatusClose } = useDisclosure();
+    const { isOpen: isConvertOpen, onOpen: onConvertOpen, onClose: onConvertClose } = useDisclosure();
 
     const { data: applicationsData, isLoading } = useGetJobApplications({ page, rowsPerPage, ...filters });
     const { data: dataPostings } = useGetJobPostings({ page: 1, rowsPerPage: 1000, status: "published" });
@@ -70,12 +71,15 @@ export default function CandidatesPage() {
     const assignApplicationMutation = useAssignApplication();
     const rateApplicationMutation = useRateApplication();
     const scheduleInterviewMutation = useScheduleInterview();
+    const convertToEmployeeMutation = useConvertCandidateToEmployee();
 
     const { control: assignControl, handleSubmit: handleAssignSubmit, reset: resetAssign } = useForm();
 
     const { control: rateControl, handleSubmit: handleRateSubmit, reset: resetRate } = useForm();
 
     const { control: interviewControl, handleSubmit: handleInterviewSubmit, reset: resetInterview } = useForm();
+
+    const { control: convertControl, handleSubmit: handleConvertSubmit, reset: resetConvert } = useForm();
 
     const onUpdateStatus = async (applicationId, newStatus) => {
         try {
@@ -163,12 +167,43 @@ export default function CandidatesPage() {
         }
     };
 
+    const onConvertToEmployee = async (data) => {
+        try {
+            const result = await convertToEmployeeMutation.mutateAsync({
+                id: selectedApplication.id,
+                employeeData: data,
+            });
+
+            toast.success(
+                <div>
+                    <p className="font-semibold">Candidat converti en employé!</p>
+                    <p className="text-sm">Email: {result?.user?.email}</p>
+                    <p className="text-xs mt-1 text-warning">Un email avec les détails de connexion a été envoyé à l'employé.</p>
+                </div>,
+                { autoClose: 10000 }
+            );
+
+            resetConvert();
+            onConvertClose();
+            onDetailClose();
+        } catch (error) {
+            console.log("Conversion error:", error);
+            toast.error(error.response?.data?.error || "Erreur lors de la conversion");
+        }
+    };
+
     const getStatusColor = (status) => {
         const colors = {
             new: "primary",
             screening: "secondary",
-            interview: "warning",
-            offer: "success",
+            shortlisted: "secondary",
+            interview_scheduled: "warning",
+            interviewed: "warning",
+            assessment: "warning",
+            offer_pending: "warning",
+            offer_sent: "success",
+            offer_accepted: "success",
+            offer_declined: "danger",
             hired: "success",
             rejected: "danger",
             withdrawn: "default",
@@ -180,8 +215,14 @@ export default function CandidatesPage() {
         const labels = {
             new: "Nouveau",
             screening: "Présélection",
-            interview: "Entretien",
-            offer: "Offre",
+            shortlisted: "Présélectionné",
+            interview_scheduled: "Entretien programmé",
+            interviewed: "Entretien effectué",
+            assessment: "Évaluation",
+            offer_pending: "Offre en attente",
+            offer_sent: "Offre envoyée",
+            offer_accepted: "Offre acceptée",
+            offer_declined: "Offre refusée",
             hired: "Embauché",
             rejected: "Rejeté",
             withdrawn: "Retiré",
@@ -407,6 +448,34 @@ export default function CandidatesPage() {
                                                         }}
                                                     >
                                                         Programmer un entretien
+                                                    </DropdownItem>
+                                                    {/* {(application.status === "interview" ||
+                                                        application.status === "assessment" ||
+                                                        application.status === "offer_accepted") && (
+                                                        <DropdownItem
+                                                            key="convert"
+                                                            startContent={<FiUserPlus />}
+                                                            className="text-success"
+                                                            color="success"
+                                                            onPress={() => {
+                                                                setSelectedApplication(application);
+                                                                onConvertOpen();
+                                                            }}
+                                                        >
+                                                            Convertir en Employé
+                                                        </DropdownItem>
+                                                    )} */}
+                                                    <DropdownItem
+                                                        key="convert"
+                                                        startContent={<FiUserPlus />}
+                                                        className="text-success"
+                                                        color="success"
+                                                        onPress={() => {
+                                                            setSelectedApplication(application);
+                                                            onConvertOpen();
+                                                        }}
+                                                    >
+                                                        Convertir en Employé
                                                     </DropdownItem>
                                                     <DropdownItem key="screening" onPress={() => onUpdateStatus(application.id, "screening")}>
                                                         → Présélection
@@ -864,6 +933,9 @@ export default function CandidatesPage() {
                                 <SelectItem key="withdrawn" value="withdrawn">
                                     Retiré
                                 </SelectItem>
+                                <SelectItem key="hired" value="hired">
+                                    Embauché
+                                </SelectItem>
                             </Select>
                         </div>
                     </ModalBody>
@@ -875,6 +947,96 @@ export default function CandidatesPage() {
                             Mettre à jour
                         </Button>
                     </ModalFooter>
+                </ModalContent>
+            </Modal>
+
+            {/* Convert to Employee Modal */}
+            <Modal isOpen={isConvertOpen} onClose={onConvertClose} size="3xl">
+                <ModalContent>
+                    <form onSubmit={handleConvertSubmit(onConvertToEmployee)}>
+                        <ModalHeader className="flex flex-col gap-1">
+                            <h3>Convertir le Candidat en Employé</h3>
+                            {selectedApplication && (
+                                <p className="text-sm font-normal text-gray-500">
+                                    {selectedApplication.first_name} {selectedApplication.last_name}
+                                </p>
+                            )}
+                        </ModalHeader>
+                        <ModalBody>
+                            <div className="space-y-4">
+                                <div className="p-4 bg-blue-50 rounded-lg">
+                                    <p className="text-sm text-blue-800">
+                                        <strong>Information:</strong> Cette action va créer un compte employé avec un email @sofibanque.com et générer un mot de passe temporaire. Les identifiants seront affichés après la création.
+                                    </p>
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-4">
+                                    <Controller
+                                        name="start_date"
+                                        control={convertControl}
+                                        defaultValue={new Date().toISOString().split("T")[0]}
+                                        rules={{ required: "La date de début est requise" }}
+                                        render={({ field }) => <Input {...field} type="date" label="Date de début" isRequired />}
+                                    />
+                                    <Controller
+                                        name="contract_type"
+                                        control={convertControl}
+                                        defaultValue="permanent"
+                                        render={({ field }) => (
+                                            <Select {...field} label="Type de contrat" defaultSelectedKeys={["permanent"]}>
+                                                <SelectItem key="permanent" value="permanent">
+                                                    CDI
+                                                </SelectItem>
+                                                <SelectItem key="fixed_term" value="fixed_term">
+                                                    CDD
+                                                </SelectItem>
+                                                <SelectItem key="temporary" value="temporary">
+                                                    Temporaire
+                                                </SelectItem>
+                                                <SelectItem key="internship" value="internship">
+                                                    Stage
+                                                </SelectItem>
+                                            </Select>
+                                        )}
+                                    />
+                                </div>
+
+                                <Controller
+                                    name="salary"
+                                    control={convertControl}
+                                    defaultValue={selectedApplication?.expected_salary || ""}
+                                    rules={{ required: "Le salaire est requis" }}
+                                    render={({ field }) => <Input {...field} type="number" label="Salaire de base (CDF)" isRequired />}
+                                />
+
+                                <Controller
+                                    name="work_schedule"
+                                    control={convertControl}
+                                    defaultValue="full_time"
+                                    render={({ field }) => (
+                                        <Select {...field} label="Horaire de travail" defaultSelectedKeys={["full_time"]}>
+                                            <SelectItem key="full_time" value="full_time">
+                                                Temps plein
+                                            </SelectItem>
+                                            <SelectItem key="part_time" value="part_time">
+                                                Temps partiel
+                                            </SelectItem>
+                                        </Select>
+                                    )}
+                                />
+
+                                <Controller name="probation_end_date" control={convertControl} render={({ field }) => <Input {...field} type="date" label="Fin de période d'essai (optionnel)" />} />
+                            </div>
+                        </ModalBody>
+                        <ModalFooter>
+                            <Button variant="light" onPress={onConvertClose}>
+                                Annuler
+                            </Button>
+                            <Button color="success" type="submit" isLoading={convertToEmployeeMutation.isPending} startContent={<FiUserPlus />}>
+                                Créer l'Employé
+                            </Button>
+                        </ModalFooter>
+                    </form>
                 </ModalContent>
             </Modal>
         </div>
