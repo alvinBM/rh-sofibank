@@ -19,6 +19,7 @@ import {
   generatePayslipPDF,
   fetchDistributionHistory,
   fetchPayrollStats,
+  fetchPaymentHistory,
 } from "../services/apis/payrollService";
 import queryClient from "../lib/react-query-client";
 
@@ -199,5 +200,13 @@ export const useGetPayrollStats = (year) => {
     queryKey: ["payroll-stats", year],
     queryFn: () => fetchPayrollStats(year),
     enabled: !!year,
+  });
+};
+
+export const useGetPaymentHistory = (employeeId, filters = {}) => {
+  return useQuery({
+    queryKey: ["payment-history", employeeId, filters],
+    queryFn: () => fetchPaymentHistory(employeeId, filters),
+    enabled: !!employeeId,
   });
 };

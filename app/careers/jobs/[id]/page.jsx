@@ -242,8 +242,8 @@ export default function PublicJobPostingPage() {
                                             Rémunération
                                         </p>
                                         <p className="font-semibold text-danger-700">
-                                            {posting.salary_range_min ? `${parseInt(posting.salary_range_min).toLocaleString()} CFD` : ""} {posting.salary_range_min && posting.salary_range_max ? "à" : ""}{" "}
-                                            {posting.salary_range_max ? `${parseInt(posting.salary_range_max).toLocaleString()} CFD` : ""}
+                                            {posting.salary_range_min ? `${parseInt(posting.salary_range_min).toLocaleString()} CDF` : ""} {posting.salary_range_min && posting.salary_range_max ? "à" : ""}{" "}
+                                            {posting.salary_range_max ? `${parseInt(posting.salary_range_max).toLocaleString()} CDF` : ""}
                                         </p>
                                     </div>
                                 )}
@@ -371,7 +371,7 @@ export default function PublicJobPostingPage() {
                                     <h4 className="font-semibold text-lg mb-3 text-danger-600">Informations Professionnelles</h4>
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         <Controller name="years_of_experience" control={control} render={({ field }) => <Input {...field} type="number" label="Années d'Expérience" placeholder="0" min="0" />} />
-                                        <Controller name="expected_salary" control={control} render={({ field }) => <Input {...field} type="number" label="Salaire Attendu (CFD)" placeholder="0" min="0" />} />
+                                        <Controller name="expected_salary" control={control} render={({ field }) => <Input {...field} type="number" label="Salaire Attendu (CDF)" placeholder="0" min="0" />} />
                                         <Controller name="availability_date" control={control} render={({ field }) => <Input {...field} type="date" label="Date de Disponibilité" placeholder="JJ/MM/AAAA" />} />
                                         <Controller name="linkedin_url" control={control} render={({ field }) => <Input {...field} type="url" label="Profil LinkedIn" placeholder="https://linkedin.com/in/..." />} />
                                         <Controller name="portfolio_url" control={control} render={({ field }) => <Input {...field} type="url" label="Portfolio / Site Web" placeholder="https://..." className="md:col-span-2" />} />

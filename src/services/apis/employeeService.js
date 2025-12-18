@@ -154,9 +154,13 @@ export const createEmployeeDependent = async (employeeId, payload) => {
 };
 
 // Fonctions pour les documents
-export const fetchEmployeeDocuments = async (employeeId) => {
+export const fetchEmployeeDocuments = async (employeeId, documentTypeId = null) => {
   try {
-    const response = await apiClient.get(`/employees/${employeeId}/documents`);
+    let url = `/employees/${employeeId}/documents`;
+    if (documentTypeId) {
+      url += `?document_type_id=${documentTypeId}`;
+    }
+    const response = await apiClient.get(url);
     return response.data || [];
   } catch (error) {
     console.error('Fetch employee documents error:', error);
@@ -164,15 +168,13 @@ export const fetchEmployeeDocuments = async (employeeId) => {
   }
 };
 
-export const uploadEmployeeDocument = async (employeeId, file, documentData) => {
+export const uploadEmployeeDocument = async (employeeId, formData) => {
   try {
-    const formData = new FormData();
-    formData.append('file', file);
-    Object.keys(documentData).forEach(key => {
-      formData.append(key, documentData[key]);
+    const response = await apiClient.post(`/employees/${employeeId}/documents`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
     });
-
-    const response = await apiClient.upload(`/employees/${employeeId}/documents`, formData);
     return response.data;
   } catch (error) {
     console.error('Upload employee document error:', error);
@@ -180,12 +182,44 @@ export const uploadEmployeeDocument = async (employeeId, file, documentData) => 
   }
 };
 
-export const deleteEmployeeDocument = async (documentId) => {
+export const updateEmployeeDocument = async (employeeId, documentId, data) => {
   try {
-    const response = await apiClient.delete(`/documents/${documentId}`);
+    const response = await apiClient.put(`/employees/${employeeId}/documents/${documentId}`, data);
+    return response.data;
+  } catch (error) {
+    console.error('Update employee document error:', error);
+    throw error;
+  }
+};
+
+export const deleteEmployeeDocument = async (employeeId, documentId) => {
+  try {
+    const response = await apiClient.delete(`/employees/${employeeId}/documents/${documentId}`);
     return response.data;
   } catch (error) {
     console.error('Delete employee document error:', error);
+    throw error;
+  }
+};
+
+export const downloadEmployeeDocument = async (employeeId, documentId) => {
+  try {
+    const response = await apiClient.get(`/employees/${employeeId}/documents/${documentId}/download`, {
+      responseType: 'blob',
+    });
+    
+    // Create download link
+    const url = window.URL.createObjectURL(new Blob([response]));
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `document_${documentId}.pdf`);
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    
+    return response;
+  } catch (error) {
+    console.error('Download employee document error:', error);
     throw error;
   }
 };

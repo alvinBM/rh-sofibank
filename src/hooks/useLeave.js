@@ -29,7 +29,7 @@ import {
   adjustLeaveBalance,
   fetchBalanceAdjustmentHistory,
   fetchAllLeaveBalances,
-} from "../services/apis/leaveService";
+} from "../services/apis/leaveApiService";
 import queryClient from "../lib/react-query-client";
 
 export const useGetLeaveTypes = () => {
@@ -295,5 +295,13 @@ export const useGetBalanceAdjustmentHistory = (balanceId) => {
     queryKey: ["balance-adjustment-history", balanceId],
     queryFn: () => fetchBalanceAdjustmentHistory(balanceId),
     enabled: !!balanceId,
+  });
+};
+
+export const useGetEmployeeLeaveRequests = (employeeId, status = "") => {
+  return useQuery({
+    queryKey: ["employee-leave-requests", employeeId, status],
+    queryFn: () => fetchLeaveRequests({ employeeId, status }),
+    enabled: !!employeeId,
   });
 };

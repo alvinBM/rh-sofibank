@@ -231,9 +231,31 @@ export const useRateApplication = () => {
   });
 };
 
+export const useConvertCandidateToEmployee = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, employeeData }) => recruitmentService.convertCandidateToEmployee(id, employeeData),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['job-applications'] });
+      queryClient.invalidateQueries({ queryKey: ['employees'] });
+    },
+  });
+};
+
 // ========================================
 // INTERVIEWS HOOKS
 // ========================================
+
+export const useGetAllInterviews = ({ page = 1, rowsPerPage = 10, ...filters } = {}) => {
+  const offset = (page - 1) * rowsPerPage;
+  const limit = rowsPerPage;
+  
+  return useQuery({
+    queryKey: ['all-interviews', page, rowsPerPage, filters],
+    queryFn: () => recruitmentService.getAllInterviews({ offset, limit, ...filters }),
+    keepPreviousData: true,
+  });
+};
 
 export const useGetInterviewsForApplication = (applicationId) => {
   return useQuery({
@@ -250,6 +272,8 @@ export const useScheduleInterview = () => {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['interviews', data.application_id] });
       queryClient.invalidateQueries({ queryKey: ['job-application', data.application_id] });
+      queryClient.invalidateQueries({ queryKey: ['all-interviews'] });
+      queryClient.invalidateQueries({ queryKey: ['job-applications'] });
     },
   });
 };
@@ -257,11 +281,13 @@ export const useScheduleInterview = () => {
 export const useUpdateInterview = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, updates }) => recruitmentService.updateInterview(id, updates),
+    mutationFn: ({ id, interviewData }) => recruitmentService.updateInterview(id, interviewData),
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['interviews'] });
+      queryClient.invalidateQueries({ queryKey: ['all-interviews'] });
       if (data.application_id) {
         queryClient.invalidateQueries({ queryKey: ['job-application', data.application_id] });
+        queryClient.invalidateQueries({ queryKey: ['job-applications'] });
       }
     },
   });
@@ -282,6 +308,8 @@ export const useSubmitInterviewEvaluation = () => {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['interview-evaluations', data.interview_id] });
       queryClient.invalidateQueries({ queryKey: ['interviews'] });
+      queryClient.invalidateQueries({ queryKey: ['all-interviews'] });
+      queryClient.invalidateQueries({ queryKey: ['job-applications'] });
     },
   });
 };

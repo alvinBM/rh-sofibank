@@ -111,7 +111,8 @@ const JobApplication = sequelize.define(
                 "offer_accepted",
                 "offer_declined",
                 "rejected",
-                "withdrawn"
+                "withdrawn",
+                "hired"
             ),
             defaultValue: "new",
         },

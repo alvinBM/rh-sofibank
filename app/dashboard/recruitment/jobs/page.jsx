@@ -559,14 +559,14 @@ export default function JobPostingsPage() {
                     name="salary_range_min"
                     control={createControl}
                     render={({ field }) => (
-                      <Input {...field} type="number" label="Salaire Min (CFD)" placeholder="0" />
+                      <Input {...field} type="number" label="Salaire Min (CDF)" placeholder="0" />
                     )}
                   />
                   <Controller
                     name="salary_range_max"
                     control={createControl}
                     render={({ field }) => (
-                      <Input {...field} type="number" label="Salaire Max (CFD)" placeholder="0" />
+                      <Input {...field} type="number" label="Salaire Max (CDF)" placeholder="0" />
                     )}
                   />
                 </div>
@@ -823,13 +823,13 @@ export default function JobPostingsPage() {
                       <p className="text-sm text-gray-600 font-semibold mb-1">Rémunération</p>
                       <p className="text-lg font-bold text-primary-700">
                         {selectedPosting.salary_range_min
-                          ? `${parseInt(selectedPosting.salary_range_min).toLocaleString()} CFD`
+                          ? `${parseInt(selectedPosting.salary_range_min).toLocaleString()} CDF`
                           : ""}{" "}
                         {selectedPosting.salary_range_min && selectedPosting.salary_range_max
                           ? "à"
                           : ""}{" "}
                         {selectedPosting.salary_range_max
-                          ? `${parseInt(selectedPosting.salary_range_max).toLocaleString()} CFD`
+                          ? `${parseInt(selectedPosting.salary_range_max).toLocaleString()} CDF`
                           : ""}
                       </p>
                     </div>
@@ -937,13 +937,13 @@ export default function JobPostingsPage() {
                   <div className="grid grid-cols-2 gap-4">
                     <Input
                       type="number"
-                      label="Salaire Min (CFD)"
+                      label="Salaire Min (CDF)"
                       defaultValue={selectedPosting.salary_range_min}
                       onValueChange={(value) => setEditValue("salary_range_min", value)}
                     />
                     <Input
                       type="number"
-                      label="Salaire Max (CFD)"
+                      label="Salaire Max (CDF)"
                       defaultValue={selectedPosting.salary_range_max}
                       onValueChange={(value) => setEditValue("salary_range_max", value)}
                     />

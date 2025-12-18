@@ -237,9 +237,40 @@ export const rateApplication = async (id, ratingData) => {
     return data;
 };
 
+/**
+ * Convert candidate to employee
+ */
+export const convertCandidateToEmployee = async (id, employeeData) => {
+    const { data } = await apiClient.post(`/recruitment/applications/${id}/convert-to-employee`, employeeData);
+    return data;
+};
+
 // ========================================
 // STAGE 3B: INTERVIEWS & EVALUATIONS
 // ========================================
+
+/**
+ * Get all interviews with filters and pagination
+ */
+export const getAllInterviews = async ({ offset = 0, limit = 10, status, type, date, query } = {}) => {
+    let requestUrl = `/recruitment/interviews?offset=${offset}&limit=${limit}`;
+    
+    if (status) requestUrl += `&status=${status}`;
+    if (type) requestUrl += `&type=${type}`;
+    if (date) requestUrl += `&date=${date}`;
+    if (query) requestUrl += `&query=${query}`;
+
+    const data = await apiClient.get(requestUrl);
+
+    if (data.status === 200) {
+        return {
+            interviews: data.interviews,
+            total: data.total
+        };
+    } else {
+        throw new Error(data.message || 'Failed to fetch interviews');
+    }
+};
 
 /**
  * Get interviews for an application
@@ -260,8 +291,8 @@ export const scheduleInterview = async (interviewData) => {
 /**
  * Update an interview
  */
-export const updateInterview = async (id, updates) => {
-    const { data } = await apiClient.put(`/recruitment/interviews/${id}`, updates);
+export const updateInterview = async (id, interviewData) => {
+    const { data } = await apiClient.put(`/recruitment/interviews/${id}`, interviewData);
     return data;
 };
 
@@ -276,8 +307,11 @@ export const getEvaluationsForInterview = async (interviewId) => {
 /**
  * Submit interview evaluation
  */
-export const submitInterviewEvaluation = async (evaluationData) => {
-    const { data } = await apiClient.post("/recruitment/evaluations", evaluationData);
+export const submitInterviewEvaluation = async ({ interviewId, evaluationData }) => {
+    const { data } = await apiClient.post("/recruitment/evaluations", {
+        interview_id: interviewId,
+        ...evaluationData
+    });
     return data;
 };
 
@@ -288,9 +322,20 @@ export const submitInterviewEvaluation = async (evaluationData) => {
 /**
  * Get all employment offers with filters
  */
-export const getEmploymentOffers = async (params = {}) => {
-    const { data } = await apiClient.get("/recruitment/offers", { params });
-    return data;
+export const getEmploymentOffers = async ({ offset = 0, limit = 10, status, direction_id, application_id, query } = {}) => {
+    let requestUrl = `/recruitment/offers?offset=${offset}&limit=${limit}`;
+    if (status) requestUrl += `&status=${status}`;
+    if (direction_id) requestUrl += `&direction_id=${direction_id}`;
+    if (application_id) requestUrl += `&application_id=${application_id}`;
+    if (query) requestUrl += `&query=${query}`;
+
+    const { data } = await apiClient.get(requestUrl);
+    
+    if (data.status === 200) {
+        return { offers: data.offers, total: data.total };
+    }
+    
+    throw new Error(data.message || "Failed to fetch employment offers");
 };
 
 /**

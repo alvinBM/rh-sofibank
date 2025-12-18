@@ -30,7 +30,7 @@ export const sectionItems = [
                 href: "/dashboard/employees",
                 icon: "solar:users-group-rounded-linear",
                 title: "Employés",
-                requiredPermission: "employees_view",
+                // requiredPermission: "employees_view",
             },
             {
                 key: "recruitment",

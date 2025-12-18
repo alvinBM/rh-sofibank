@@ -2,7 +2,7 @@ const currencies = [
     { id: "1", code: "USD", name_en: "US Dollar", name_fr: "Dollar américain", code_country: "US" },
     { id: "2", code: "EUR", name_en: "Euro", name_fr: "Euro", code_country: "EU" },
     { id: "3", code: "CDF", name_en: "Congolese Franc", name_fr: "Franc congolais", code_country: "CD" },
-    { id: "4", code: "CFD", name_en: "Central African CFA Franc", name_fr: "Franc CFA d'Afrique Centrale", code_country: "CM" },
+    { id: "4", code: "CDF", name_en: "Central African CFA Franc", name_fr: "Franc CFA d'Afrique Centrale", code_country: "CM" },
     { id: "5", code: "CDF", name_en: "West African CFA Franc", name_fr: "Franc CFA d'Afrique de l'Ouest", code_country: "BJ" },
     { id: "6", code: "GBP", name_en: "British Pound", name_fr: "Livre sterling", code_country: "GB" },
     { id: "7", code: "JPY", name_en: "Japanese Yen", name_fr: "Yen japonais", code_country: "JP" },
