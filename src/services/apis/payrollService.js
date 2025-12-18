@@ -314,3 +314,84 @@ export const calculateNextPaymentDate = (year, month, paymentDay = 24) => {
 
   return paymentDate.toISOString().split('T')[0];
 };
+
+// ==================== EMPLOYEE PAYROLL ====================
+
+/**
+ * Fetch payslips for an employee
+ */
+export const fetchEmployeePayslips = async (employeeId, filters = {}) => {
+  try {
+    let url = `/employees/${employeeId}/payslips?`;
+    
+    if (filters.year) url += `year=${filters.year}&`;
+    if (filters.month) url += `month=${filters.month}&`;
+    if (filters.status) url += `status=${filters.status}&`;
+    
+    const response = await apiClient.get(url);
+    return response.data || [];
+  } catch (error) {
+    console.error('Fetch employee payslips error:', error);
+    return [];
+  }
+};
+
+/**
+ * Fetch a specific payslip by ID
+ */
+export const fetchPayslipById = async (employeeId, payslipId) => {
+  try {
+    const response = await apiClient.get(`/employees/${employeeId}/payslips/${payslipId}`);
+    return response.data;
+  } catch (error) {
+    console.error('Fetch payslip by ID error:', error);
+    throw error;
+  }
+};
+
+/**
+ * Fetch payment history for an employee
+ */
+export const fetchPaymentHistory = async (employeeId, filters = {}) => {
+  try {
+    let url = `/employees/${employeeId}/payment-history?`;
+    
+    if (filters.startYear) url += `startYear=${filters.startYear}&`;
+    if (filters.endYear) url += `endYear=${filters.endYear}&`;
+    
+    const response = await apiClient.get(url);
+    return response.data || { payslips: [], summary: {} };
+  } catch (error) {
+    console.error('Fetch payment history error:', error);
+    return { payslips: [], summary: {} };
+  }
+};
+
+/**
+ * Download payslip PDF
+ */
+export const downloadPayslip = async (employeeId, payslipId) => {
+  try {
+    const response = await apiClient.get(
+      `/employees/${employeeId}/payslips/${payslipId}/download`,
+      {
+        responseType: 'blob',
+      }
+    );
+    
+    // Create download link
+    const url = window.URL.createObjectURL(new Blob([response]));
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `bulletin_paie_${payslipId}.pdf`);
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.URL.revokeObjectURL(url);
+    
+    return response;
+  } catch (error) {
+    console.error('Download payslip error:', error);
+    throw error;
+  }
+};

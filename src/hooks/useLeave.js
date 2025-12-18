@@ -297,3 +297,11 @@ export const useGetBalanceAdjustmentHistory = (balanceId) => {
     enabled: !!balanceId,
   });
 };
+
+export const useGetEmployeeLeaveRequests = (employeeId, status = "") => {
+  return useQuery({
+    queryKey: ["employee-leave-requests", employeeId, status],
+    queryFn: () => fetchLeaveRequests({ employeeId, status }),
+    enabled: !!employeeId,
+  });
+};

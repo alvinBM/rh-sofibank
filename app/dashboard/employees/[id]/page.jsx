@@ -2,11 +2,20 @@
 
 import React, { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { Card, CardBody, Tabs, Tab, Button, Chip, Avatar, Spinner, Divider } from "@nextui-org/react";
-import { FiArrowLeft, FiEdit, FiFileText, FiClock, FiAward, FiBriefcase } from "react-icons/fi";
+import { Card, CardBody, Tabs, Tab, Button, Chip, Avatar, Spinner, Divider, Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, useDisclosure, Input, Select, SelectItem, Textarea } from "@nextui-org/react";
+import { FiArrowLeft, FiEdit, FiFileText, FiClock, FiAward, FiBriefcase, FiCalendar, FiDollarSign, FiUpload, FiDownload, FiPlus } from "react-icons/fi";
 import { useGetEmployees } from "@/src/hooks/useEmployees";
 import { useGetEmployeeDocuments, useGetEmployeeContracts, useGetEmployeeHistory } from "@/src/hooks/useESS";
+import { useUploadEmployeeDocument, useDeleteEmployeeDocument } from "@/src/hooks/useEmployeeDocuments";
+import { useGetEmployeePayslips, useGetPaymentHistory, handleDownloadPayslip } from "@/src/hooks/usePayroll";
+import { useGetEmployeeAttendance, useGetAttendanceCalendar, useGetAttendanceMovements } from "@/src/hooks/useEmployeeAttendance";
+import { useGetEmployeeLeaveRequests } from "@/src/hooks/useLeave";
 import PermissionGuard from "@/app/ui/dashboard/PermissionGuard";
+import { toast } from "react-toastify";
+import DocumentsSection from "./components/DocumentsSection";
+import PayrollSection from "./components/PayrollSection";
+import AttendanceSection from "./components/AttendanceSection";
+import LeaveRequestsSection from "./components/LeaveRequestsSection";
 
 const EMPLOYMENT_STATUS_COLORS = {
     active: "success",
@@ -22,6 +31,8 @@ export default function EmployeeDetailPage() {
     const employeeId = params.id;
 
     const [selectedTab, setSelectedTab] = useState("overview");
+    const [selectedMonth] = useState(new Date().getMonth() + 1);
+    const [selectedYear] = useState(new Date().getFullYear());
 
     const { data: employeesData, isLoading } = useGetEmployees({
         page: 1,
@@ -30,9 +41,20 @@ export default function EmployeeDetailPage() {
 
     const employee = employeesData?.employees?.find((emp) => emp.id === employeeId);
 
-    const { data: documents } = useGetEmployeeDocuments(employeeId);
+    const { data: documents, refetch: refetchDocuments } = useGetEmployeeDocuments(employeeId);
     const { data: contracts } = useGetEmployeeContracts(employeeId);
     const { data: history } = useGetEmployeeHistory(employeeId);
+    const { data: paymentHistory } = useGetPaymentHistory(employeeId, {
+        startYear: selectedYear - 2,
+        endYear: selectedYear,
+    });
+    const { data: attendanceCalendar } = useGetAttendanceCalendar(employeeId, selectedMonth, selectedYear);
+    const { data: attendanceMovements } = useGetAttendanceMovements(employeeId, { limit: 50 });
+    const { data: attendanceSummary } = useGetEmployeeAttendance(employeeId, {
+        month: selectedMonth,
+        year: selectedYear,
+    });
+    const { data: leaveRequests } = useGetEmployeeLeaveRequests(employeeId);
 
     if (isLoading) {
         return (
@@ -269,38 +291,43 @@ export default function EmployeeDetailPage() {
                             </div>
                         }
                     >
-                        <Card className="mt-4">
-                            <CardBody>
-                                <div className="flex justify-between items-center mb-4">
-                                    <h3 className="text-lg font-bold">Documents de l'Employé</h3>
-                                    <Button color="danger" size="sm">
-                                        Ajouter un Document
-                                    </Button>
-                                </div>
-                                {documents && documents.length > 0 ? (
-                                    <div className="space-y-3">
-                                        {documents.map((doc) => (
-                                            <Card key={doc.id} shadow="sm">
-                                                <CardBody>
-                                                    <div className="flex justify-between items-center">
-                                                        <div>
-                                                            <p className="font-semibold">{doc.title}</p>
-                                                            <p className="text-sm text-default-500">{doc.document_type?.name}</p>
-                                                            <p className="text-xs text-default-400">Ajouté le {new Date(doc.created_at).toLocaleDateString("fr-FR")}</p>
-                                                        </div>
-                                                        <Button size="sm" variant="flat">
-                                                            Télécharger
-                                                        </Button>
-                                                    </div>
-                                                </CardBody>
-                                            </Card>
-                                        ))}
-                                    </div>
-                                ) : (
-                                    <p className="text-center text-default-400 py-8">Aucun document</p>
-                                )}
-                            </CardBody>
-                        </Card>
+                        <DocumentsSection employeeId={employeeId} documents={documents} refetch={refetchDocuments} />
+                    </Tab>
+
+                    <Tab
+                        key="payroll"
+                        title={
+                            <div className="flex items-center gap-2">
+                                <FiDollarSign />
+                                <span>Paiements</span>
+                            </div>
+                        }
+                    >
+                        <PayrollSection employeeId={employeeId} paymentHistory={paymentHistory} />
+                    </Tab>
+
+                    <Tab
+                        key="attendance"
+                        title={
+                            <div className="flex items-center gap-2">
+                                <FiClock />
+                                <span>Présence</span>
+                            </div>
+                        }
+                    >
+                        <AttendanceSection employeeId={employeeId} calendarData={attendanceCalendar} movements={attendanceMovements} summary={attendanceSummary?.statistics} />
+                    </Tab>
+
+                    <Tab
+                        key="leave"
+                        title={
+                            <div className="flex items-center gap-2">
+                                <FiCalendar />
+                                <span>Congés</span>
+                            </div>
+                        }
+                    >
+                        <LeaveRequestsSection employeeId={employeeId} leaveRequests={leaveRequests} />
                     </Tab>
 
                     <Tab

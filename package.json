@@ -9,6 +9,9 @@
         "lint": "next lint"
     },
     "dependencies": {
+        "@fullcalendar/core": "^6.1.19",
+        "@fullcalendar/daygrid": "^6.1.19",
+        "@fullcalendar/react": "^6.1.19",
         "@hookform/resolvers": "^3.9.0",
         "@iconify/react": "^5.0.2",
         "@internationalized/date": "^3.6.0",
@@ -23,6 +26,7 @@
         "@tanstack/react-query-devtools": "^5.52.1",
         "axios": "^1.7.2",
         "clsx": "^2.1.1",
+        "express-fileupload": "^1.5.2",
         "formik": "^2.4.6",
         "framer-motion": "^11.3.12",
         "inflight": "^1.0.6",
