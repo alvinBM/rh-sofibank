@@ -100,8 +100,10 @@ export default function EmployeesPage() {
   }, []);
 
   const handleViewEmployee = useCallback((employee) => {
-    setSelectedEmployee(employee);
-    onOpen();
+    // setSelectedEmployee(employee);
+    // onOpen();
+    //redirect to employee details page
+    router.push(`/dashboard/employees/${employee.id}`);
   }, [onOpen]);
 
   const renderCell = useCallback((employee, columnKey) => {
