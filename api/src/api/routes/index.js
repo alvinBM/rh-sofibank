@@ -10,6 +10,7 @@ import settingsRoutes from "./settingsRoutes.js";
 import dashboardRoutes from "./dashboardRoutes.js";
 import essRoutes from "./essRoutes.js";
 import recruitmentRoutes from "./recruitmentRoutes.js";
+import payrollRoutes from "./payrollRoutes.js";
 
 // Mount routes
 router.use("/auth", authRoutes);
@@ -21,6 +22,7 @@ router.use("/rbac", settingsRoutes);
 router.use("/dashboard", dashboardRoutes);
 router.use("/ess", essRoutes);
 router.use("/recruitment", recruitmentRoutes);
+router.use("/payroll", payrollRoutes);
 
 // Health check route
 router.get("/health", (req, res) => {
@@ -42,7 +44,8 @@ router.get("/", (req, res) => {
             settings: "/api/settings",
             dashboard: "/api/dashboard",
             ess: "/api/ess",
-            recruitment: "/api/recruitment"
+            recruitment: "/api/recruitment",
+            payroll: "/api/payroll"
         },
     });
 });

@@ -47,6 +47,7 @@ import {
   useUpdatePayrollSettings,
   useGetTaxRates,
 } from "@/src/hooks/usePayroll";
+import { useGetEmployees } from "@/src/hooks/useEmployees";
 import { toast } from "react-toastify";
 import { formatDateToFrench } from "@/src/utils/dateUtils";
 
@@ -121,6 +122,12 @@ export default function PayrollPage() {
     filters: {},
   });
 
+  const { data: employeesData } = useGetEmployees({
+    page: 1,
+    rowsPerPage: 1000,
+    query: "",
+  });
+
   const { data: settings } = useGetPayrollSettings();
   const { data: taxRates } = useGetTaxRates();
 
@@ -136,6 +143,7 @@ export default function PayrollPage() {
 
   const runs = runsData?.runs || [];
   const variables = variablesData?.variables || [];
+  const employees = employeesData?.employees || [];
   const total = runsData?.total || 0;
   const pages = Math.ceil(total / rowsPerPage);
 
@@ -608,7 +616,32 @@ export default function PayrollPage() {
             <ModalHeader>Ajouter Élément Variable</ModalHeader>
             <ModalBody>
               <div className="space-y-4">
-                <Select label="Type" placeholder="Sélectionner" isRequired>
+                <Select 
+                  label="Employé" 
+                  placeholder="Sélectionner un employé" 
+                  isRequired
+                  selectedKeys={variableFormData.employee_id ? [variableFormData.employee_id] : []}
+                  onSelectionChange={(keys) => {
+                    const selectedKey = Array.from(keys)[0];
+                    setVariableFormData({ ...variableFormData, employee_id: selectedKey });
+                  }}
+                >
+                  {employees.map((emp) => (
+                    <SelectItem key={emp.id} value={emp.id}>
+                      {emp.first_name} {emp.last_name} ({emp.employee_number})
+                    </SelectItem>
+                  ))}
+                </Select>
+                <Select 
+                  label="Type" 
+                  placeholder="Sélectionner un type" 
+                  isRequired
+                  selectedKeys={variableFormData.variable_type ? [variableFormData.variable_type] : []}
+                  onSelectionChange={(keys) => {
+                    const selectedKey = Array.from(keys)[0];
+                    setVariableFormData({ ...variableFormData, variable_type: selectedKey });
+                  }}
+                >
                   {VARIABLE_TYPES.map((type) => (
                     <SelectItem key={type.value} value={type.value}>
                       {type.label}
@@ -617,12 +650,25 @@ export default function PayrollPage() {
                 </Select>
                 <Input
                   type="number"
-                  label="Montant"
+                  label="Montant (CDF)"
                   startContent={<FiDollarSign />}
                   isRequired
+                  value={variableFormData.amount}
+                  onChange={(e) => setVariableFormData({ ...variableFormData, amount: e.target.value })}
                 />
-                <Input type="month" label="Période" isRequired />
-                <Textarea label="Description" minRows={2} />
+                <Input 
+                  type="month" 
+                  label="Période" 
+                  isRequired 
+                  value={variableFormData.period}
+                  onChange={(e) => setVariableFormData({ ...variableFormData, period: e.target.value })}
+                />
+                <Textarea 
+                  label="Description" 
+                  minRows={2} 
+                  value={variableFormData.description}
+                  onChange={(e) => setVariableFormData({ ...variableFormData, description: e.target.value })}
+                />
               </div>
             </ModalBody>
             <ModalFooter>

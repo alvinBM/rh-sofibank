@@ -43,6 +43,14 @@ import RecruitmentEmail from './RecruitmentEmail.js';
 import EmailTemplate from './EmailTemplate.js';
 import SentEmail from './SentEmail.js';
 
+// Payroll Module Models
+import PayrollPeriod from './PayrollPeriod.js';
+import Payslip from './Payslip.js';
+import PayslipItem from './PayslipItem.js';
+import PayrollItemType from './PayrollItemType.js';
+import PayrollVariable from './PayrollVariable.js';
+import PayrollSettings from './PayrollSettings.js';
+
 // ========== USER <-> ROLE (Many-to-Many) ==========
 User.belongsToMany(Role, {
     through: UserRole,
@@ -574,6 +582,65 @@ SentEmail.belongsTo(User, {
     as: 'sender'
 });
 
+// ========== PAYROLL PERIOD ==========
+PayrollPeriod.belongsTo(User, {
+    foreignKey: 'processed_by',
+    as: 'processor'
+});
+
+PayrollPeriod.belongsTo(User, {
+    foreignKey: 'approved_by',
+    as: 'approver'
+});
+
+PayrollPeriod.hasMany(Payslip, {
+    foreignKey: 'payroll_period_id',
+    as: 'payslips'
+});
+
+// ========== PAYSLIP ==========
+Payslip.belongsTo(Employee, {
+    foreignKey: 'employee_id',
+    as: 'employee'
+});
+
+Payslip.belongsTo(PayrollPeriod, {
+    foreignKey: 'payroll_period_id',
+    as: 'payroll_period'
+});
+
+Payslip.hasMany(PayslipItem, {
+    foreignKey: 'payslip_id',
+    as: 'items'
+});
+
+// ========== PAYSLIP ITEM ==========
+PayslipItem.belongsTo(Payslip, {
+    foreignKey: 'payslip_id',
+    as: 'payslip'
+});
+
+PayslipItem.belongsTo(PayrollItemType, {
+    foreignKey: 'item_type_id',
+    as: 'item_type'
+});
+
+// ========== PAYROLL VARIABLE ==========
+PayrollVariable.belongsTo(Employee, {
+    foreignKey: 'employee_id',
+    as: 'employee'
+});
+
+PayrollVariable.belongsTo(User, {
+    foreignKey: 'approved_by',
+    as: 'approver'
+});
+
+PayrollVariable.belongsTo(User, {
+    foreignKey: 'created_by',
+    as: 'creator'
+});
+
 export default {
     database,
     sequelize: database,
@@ -618,5 +685,12 @@ export default {
     OnboardingTaskTemplate,
     RecruitmentEmail,
     EmailTemplate,
-    SentEmail
+    SentEmail,
+    // Payroll Module
+    PayrollPeriod,
+    Payslip,
+    PayslipItem,
+    PayrollItemType,
+    PayrollVariable,
+    PayrollSettings
 };
