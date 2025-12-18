@@ -2,6 +2,7 @@ import models from "../models/index.js";
 import { Op } from "sequelize";
 import formatDate from "date-format";
 import bcrypt from "bcrypt";
+import database from "../../config/database.js";
 
 const {
     RecruitmentPlan,
@@ -999,6 +1000,9 @@ export const rateApplication = async (req, res) => {
  * Convert candidate to employee
  */
 export const convertCandidateToEmployee = async (req, res) => {
+    // Start a transaction to ensure data consistency
+    const transaction = await database.transaction();
+
     try {
         const { id } = req.params; // application_id
         const offerData = req.body;
@@ -1017,22 +1021,27 @@ export const convertCandidateToEmployee = async (req, res) => {
                     ],
                 },
             ],
+            transaction,
         });
 
         if (!application) {
+            await transaction.rollback();
             return res.status(404).json({ error: "Application not found" });
         }
 
         if (application.status === "hired") {
+            await transaction.rollback();
             return res.status(400).json({ error: "Candidate already hired" });
         }
 
         // Check if employee already exists
         const existingEmployee = await Employee.findOne({
             where: { email: application.email },
+            transaction,
         });
 
         if (existingEmployee) {
+            await transaction.rollback();
             return res.status(400).json({ error: "Employee with this email already exists" });
         }
 
@@ -1045,6 +1054,7 @@ export const convertCandidateToEmployee = async (req, res) => {
                 },
             },
             order: [["employee_number", "DESC"]],
+            transaction,
         });
 
         let nextNumber = 1;
@@ -1062,64 +1072,83 @@ export const convertCandidateToEmployee = async (req, res) => {
         const hashedPassword = await bcrypt.hash(tempPassword, 10);
 
         // Create user account
-        const newUser = await User.create({
-            email: email,
-            password: hashedPassword,
-            role: "employee",
-            is_active: true,
-        });
+        const newUser = await User.create(
+            {
+                email: email,
+                password: hashedPassword,
+                role: "employee",
+                is_active: true,
+            },
+            { transaction }
+        );
 
         console.log(`✅ Created user account for ${application.first_name} ${application.last_name}`);
         console.log(`📧 Email: ${email}`);
         console.log(`🔑 Temporary Password: ${tempPassword}`);
 
         // Create employee record
-        const newEmployee = await Employee.create({
-            employee_number: employee_number,
-            user_id: newUser.id,
-            first_name: application.first_name,
-            last_name: application.last_name,
-            email: email,
-            phone: application.phone,
-            date_of_birth: application.date_of_birth || null,
-            gender: application.gender || null,
-            nationality: application.nationality || null,
-            address_line1: application.address || null,
-            city: application.city || null,
-            province: application.province || null,
-            postal_code: application.postal_code || null,
-            country: application.country || "RDC",
-            job_position_id: offerData.job_position_id || application.job_posting?.job_position_id,
-            grade_id: offerData.grade_id || application.job_posting?.grade_id,
-            service_id: offerData.service_id || application.job_posting?.service_id,
-            direction_id: offerData.direction_id || application.job_posting?.direction_id,
-            contract_type: offerData.contract_type || "permanent",
-            hire_date: offerData.start_date || new Date(),
-            basic_salary: offerData.salary || application.expected_salary || 0,
-            employment_status: "active",
-            work_schedule: offerData.work_schedule || "full_time",
-            probation_end_date: offerData.probation_end_date || null,
-            created_at: new Date(),
-            updated_at: new Date(),
-        });
+        const newEmployee = await Employee.create(
+            {
+                employee_number: employee_number,
+                user_id: newUser.id,
+                first_name: application.first_name,
+                last_name: application.last_name,
+                email: email,
+                phone: application.phone,
+                date_of_birth: application.date_of_birth || null,
+                gender: application.gender || null,
+                nationality: application.nationality || null,
+                address_line1: application.address || null,
+                city: application.city || null,
+                province: application.province || null,
+                postal_code: application.postal_code || null,
+                country: application.country || "RDC",
+                job_position_id: offerData.job_position_id || application.job_posting?.job_position_id,
+                grade_id: offerData.grade_id || application.job_posting?.grade_id,
+                service_id: offerData.service_id || application.job_posting?.service_id,
+                direction_id: offerData.direction_id || application.job_posting?.direction_id,
+                contract_type: offerData.contract_type || "permanent",
+                hire_date: offerData.start_date || new Date(),
+                basic_salary: offerData.salary || application.expected_salary || 0,
+                employment_status: "active",
+                work_schedule: offerData.work_schedule || "full_time",
+                probation_end_date: offerData.probation_end_date || null,
+                created_at: new Date(),
+                updated_at: new Date(),
+            },
+            { transaction }
+        );
+
+        // Store previous status before update
+        const previousStatus = application.status;
 
         // Update application status
-        await application.update({
-            status: "hired",
-        });
+        await application.update(
+            {
+                status: "hired",
+            },
+            { transaction }
+        );
 
         // Create status history
         if (req.user?.id) {
-            await ApplicationStatusHistory.create({
-                application_id: application.id,
-                previous_status: application.status,
-                new_status: "hired",
-                changed_by: req.user.id,
-                reason: "Candidate converted to employee",
-            });
+            await ApplicationStatusHistory.create(
+                {
+                    application_id: application.id,
+                    previous_status: previousStatus,
+                    new_status: "hired",
+                    changed_by: req.user.id,
+                    reason: "Candidate converted to employee",
+                },
+                { transaction }
+            );
         }
 
+        // Commit the transaction - all operations succeeded
+        await transaction.commit();
+
         res.status(201).json({
+            status: 201,
             message: "Candidate successfully converted to employee",
             employee: newEmployee,
             user: {
@@ -1129,8 +1158,13 @@ export const convertCandidateToEmployee = async (req, res) => {
             employee_number: employee_number,
         });
     } catch (error) {
+        // Rollback the transaction on any error
+        await transaction.rollback();
         console.error("Error converting candidate to employee:", error);
-        res.status(500).json({ error: "Failed to convert candidate to employee" });
+        res.status(500).json({ 
+            error: "Failed to convert candidate to employee",
+            details: error.message 
+        });
     }
 };
 
