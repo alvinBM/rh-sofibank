@@ -229,7 +229,7 @@ export const sectionItems = [
                         key: "organization",
                         icon: "hugeicons:structure-check",
                         href: "/dashboard/settings/organization",
-                        title: "Structure organisationnelle",
+                        title: "Organisation",
                         // requiredPermission: "org_manage",
                     },
                     {

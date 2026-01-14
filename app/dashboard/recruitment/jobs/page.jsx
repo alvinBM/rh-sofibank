@@ -96,8 +96,63 @@ export default function JobPostingsPage() {
     handleSubmit: handleCreateSubmit,
     reset: resetCreate,
     watch: watchCreate,
+    setValue: setCreateValue,
     formState: { errors: createErrors },
   } = useForm();
+
+  // Surveiller la sélection de position du plan
+  const selectedPlanPositionId = watchCreate("recruitment_plan_position_id");
+
+  // Auto-remplir les champs quand une position du plan est sélectionnée
+  React.useEffect(() => {
+    if (selectedPlanPositionId && plans?.length > 0) {
+      console.log('Selected Plan Position ID:', selectedPlanPositionId);
+      
+      // Trouver la position sélectionnée
+      let selectedPosition = null;
+      let parentPlan = null;
+      
+      for (const plan of plans) {
+        const position = plan.positions?.find(pos => String(pos.id) === String(selectedPlanPositionId));
+        if (position) {
+          selectedPosition = position;
+          parentPlan = plan;
+          break;
+        }
+      }
+
+      console.log('Found Position:', selectedPosition);
+      console.log('Parent Plan:', parentPlan);
+
+      if (selectedPosition) {
+        // Remplir automatiquement les champs
+        if (selectedPosition.job_position_id) {
+          setCreateValue("job_position_id", String(selectedPosition.job_position_id));
+          setCreateValue("title", selectedPosition.job_position?.title || "");
+        }
+        if (selectedPosition.grade_id) {
+          setCreateValue("grade_id", String(selectedPosition.grade_id));
+        }
+        if (selectedPosition.service_id) {
+          setCreateValue("service_id", String(selectedPosition.service_id));
+        }
+        // La direction vient du plan parent
+        if (parentPlan?.direction_id) {
+          setCreateValue("direction_id", String(parentPlan.direction_id));
+        }
+        // Remplir le nombre de postes disponibles
+        if (selectedPosition.quantity_needed) {
+          setCreateValue("positions_available", String(selectedPosition.quantity_needed));
+        }
+        // Remplir le budget si disponible
+        if (selectedPosition.budget_allocated) {
+          setCreateValue("salary_range_max", String(selectedPosition.budget_allocated));
+        }
+        
+        console.log('Auto-fill completed');
+      }
+    }
+  }, [selectedPlanPositionId, plans, setCreateValue]);
 
   const {
     control: editControl,
@@ -393,10 +448,18 @@ export default function JobPostingsPage() {
                     name="recruitment_plan_position_id"
                     control={createControl}
                     render={({ field }) => (
-                      <Select {...field} label="Position du Plan (Optionnel)" placeholder="Sélectionnez">
+                      <Select 
+                        selectedKeys={field.value ? [String(field.value)] : []}
+                        onSelectionChange={(keys) => {
+                          const value = Array.from(keys)[0];
+                          field.onChange(value);
+                        }}
+                        label="Position du Plan (Optionnel)" 
+                        placeholder="Sélectionnez"
+                      >
                         {plans?.flatMap((plan) =>
                           (plan.positions || []).map((pos) => (
-                            <SelectItem key={pos.id} value={pos.id}>
+                            <SelectItem key={String(pos.id)} value={String(pos.id)}>
                               {plan.year} - {pos.job_position?.title} ({pos.quantity_needed})
                             </SelectItem>
                           ))
@@ -440,14 +503,15 @@ export default function JobPostingsPage() {
                     rules={{ required: "Le poste est requis" }}
                     render={({ field }) => (
                       <Select
-                        {...field}
+                        selectedKeys={field.value ? [String(field.value)] : []}
+                        onSelectionChange={(keys) => field.onChange(Array.from(keys)[0])}
                         label="Poste"
                         placeholder="Sélectionnez"
                         isInvalid={!!createErrors.job_position_id}
                         errorMessage={createErrors.job_position_id?.message}
                       >
                         {jobPositions?.map((pos) => (
-                          <SelectItem key={pos.id} value={pos.id}>
+                          <SelectItem key={String(pos.id)} value={String(pos.id)}>
                             {pos.title}
                           </SelectItem>
                         ))}
@@ -460,14 +524,15 @@ export default function JobPostingsPage() {
                     rules={{ required: "La direction est requise" }}
                     render={({ field }) => (
                       <Select
-                        {...field}
+                        selectedKeys={field.value ? [String(field.value)] : []}
+                        onSelectionChange={(keys) => field.onChange(Array.from(keys)[0])}
                         label="Direction"
                         placeholder="Sélectionnez"
                         isInvalid={!!createErrors.direction_id}
                         errorMessage={createErrors.direction_id?.message}
                       >
                         {directions?.map((dir) => (
-                          <SelectItem key={dir.id} value={dir.id}>
+                          <SelectItem key={String(dir.id)} value={String(dir.id)}>
                             {dir.name}
                           </SelectItem>
                         ))}
@@ -478,9 +543,14 @@ export default function JobPostingsPage() {
                     name="service_id"
                     control={createControl}
                     render={({ field }) => (
-                      <Select {...field} label="Service (Optionnel)" placeholder="Sélectionnez">
+                      <Select 
+                        selectedKeys={field.value ? [String(field.value)] : []}
+                        onSelectionChange={(keys) => field.onChange(Array.from(keys)[0])}
+                        label="Service (Optionnel)" 
+                        placeholder="Sélectionnez"
+                      >
                         {services?.map((service) => (
-                          <SelectItem key={service.id} value={service.id}>
+                          <SelectItem key={String(service.id)} value={String(service.id)}>
                             {service.name}
                           </SelectItem>
                         ))}
@@ -491,9 +561,14 @@ export default function JobPostingsPage() {
                     name="grade_id"
                     control={createControl}
                     render={({ field }) => (
-                      <Select {...field} label="Grade (Optionnel)" placeholder="Sélectionnez">
+                      <Select 
+                        selectedKeys={field.value ? [String(field.value)] : []}
+                        onSelectionChange={(keys) => field.onChange(Array.from(keys)[0])}
+                        label="Grade (Optionnel)" 
+                        placeholder="Sélectionnez"
+                      >
                         {grades?.map((grade) => (
-                          <SelectItem key={grade.id} value={grade.id}>
+                          <SelectItem key={String(grade.id)} value={String(grade.id)}>
                             {grade.name}
                           </SelectItem>
                         ))}
@@ -510,6 +585,8 @@ export default function JobPostingsPage() {
                     render={({ field }) => (
                       <Select
                         {...field}
+                        selectedKeys={field.value ? [field.value] : []}
+                        onSelectionChange={(keys) => field.onChange(Array.from(keys)[0])}
                         label="Type de Contrat"
                         placeholder="Sélectionnez"
                         isInvalid={!!createErrors.contract_type}
@@ -530,6 +607,8 @@ export default function JobPostingsPage() {
                     render={({ field }) => (
                       <Select
                         {...field}
+                        selectedKeys={field.value ? [field.value] : []}
+                        onSelectionChange={(keys) => field.onChange(Array.from(keys)[0])}
                         label="Type d'Emploi"
                         placeholder="Sélectionnez"
                         isInvalid={!!createErrors.employment_type}

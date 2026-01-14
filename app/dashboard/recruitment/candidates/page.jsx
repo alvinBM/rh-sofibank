@@ -34,7 +34,7 @@ import {
     Tab,
     User,
 } from "@nextui-org/react";
-import { FiPlus, FiSearch, FiMoreVertical, FiEye, FiUserCheck, FiStar, FiCalendar, FiMail, FiPhone, FiFileText, FiDownload, FiUserPlus } from "react-icons/fi";
+import { FiPlus, FiSearch, FiMoreVertical, FiEye, FiUserCheck, FiStar, FiCalendar, FiMail, FiPhone, FiFileText, FiDownload, FiUserPlus, FiUser, FiBriefcase, FiCheckCircle, FiGlobe, FiLink, FiLinkedin, FiExternalLink, FiMessageSquare } from "react-icons/fi";
 import { useForm, Controller } from "react-hook-form";
 import { toast } from "react-toastify";
 import { useGetJobApplications, useGetJobApplicationById, useUpdateJobApplication, useAssignApplication, useRateApplication, useScheduleInterview, useGetJobPostings, useConvertCandidateToEmployee } from "@/src/hooks/useRecruitment";
@@ -529,155 +529,437 @@ export default function CandidatesPage() {
 
             {/* Application Detail Modal */}
             {selectedApplication && (
-                <Modal isOpen={isDetailOpen} onClose={onDetailClose} size="4xl" scrollBehavior="inside">
+                <Modal isOpen={isDetailOpen} onClose={onDetailClose} size="5xl" scrollBehavior="inside">
                     <ModalContent>
-                        <ModalHeader>Profil du Candidat</ModalHeader>
+                        <ModalHeader>
+                            <div className="flex items-center justify-between w-full pr-8">
+                                <div className="flex items-center gap-3">
+                                    <Avatar src={selectedApplication.profile_picture} name={selectedApplication.first_name?.[0]} size="lg" className="w-16 h-16" />
+                                    <div>
+                                        <h3 className="text-xl font-bold">
+                                            {selectedApplication.first_name} {selectedApplication.last_name}
+                                        </h3>
+                                        <p className="text-sm text-gray-500 font-normal">{selectedApplication.email}</p>
+                                    </div>
+                                </div>
+                                <Chip color={getStatusColor(selectedApplication.status)} variant="flat" size="lg">
+                                    {getStatusLabel(selectedApplication.status)}
+                                </Chip>
+                            </div>
+                        </ModalHeader>
                         <ModalBody>
                             <Tabs selectedKey={activeTab} onSelectionChange={setActiveTab} aria-label="Application details">
-                                <Tab key="info" title="Informations">
+                                <Tab key="info" title="Informations Personnelles">
                                     <div className="space-y-6 py-4">
-                                        {/* Personal Info */}
-                                        <div className="flex items-start gap-4">
-                                            <Avatar src={selectedApplication.profile_picture} name={selectedApplication.first_name?.[0]} size="lg" className="w-20 h-20" />
-                                            <div className="flex-1">
-                                                <h3 className="text-xl font-bold">
-                                                    {selectedApplication.first_name} {selectedApplication.last_name}
-                                                </h3>
-                                                <p className="text-gray-500">{selectedApplication.email}</p>
-                                                <p className="text-gray-500">{selectedApplication.phone}</p>
-                                            </div>
-                                            <Chip color={getStatusColor(selectedApplication.status)} variant="flat">
-                                                {getStatusLabel(selectedApplication.status)}
-                                            </Chip>
-                                        </div>
-
-                                        {/* Application Details */}
-                                        <div className="grid grid-cols-2 gap-4">
-                                            <div>
-                                                <p className="text-sm text-gray-500">Poste</p>
-                                                <p className="font-semibold">{selectedApplication.job_posting?.job_title}</p>
-                                            </div>
-                                            <div>
-                                                <p className="text-sm text-gray-500">Source</p>
-                                                <p className="font-semibold">{selectedApplication.source}</p>
-                                            </div>
-                                            <div>
-                                                <p className="text-sm text-gray-500">Date de dépôt</p>
-                                                <p className="font-semibold">{new Date(selectedApplication.applied_date).toLocaleDateString("fr-FR")}</p>
-                                            </div>
-                                            {selectedApplication.rating && (
-                                                <div>
-                                                    <p className="text-sm text-gray-500">Évaluation</p>
-                                                    <div className="flex items-center gap-2">
-                                                        <Progress value={(selectedApplication.rating / 5) * 100} color="warning" className="max-w-md" />
-                                                        <span className="font-semibold">{selectedApplication.rating}/5</span>
+                                        {/* Coordonnées */}
+                                        <Card className="shadow-none border">
+                                            <CardBody>
+                                                <h4 className="font-semibold text-lg mb-4 flex items-center gap-2">
+                                                    <FiUser className="text-primary" /> Coordonnées
+                                                </h4>
+                                                <div className="grid grid-cols-2 gap-4">
+                                                    <div>
+                                                        <p className="text-sm text-gray-500">Nom complet</p>
+                                                        <p className="font-semibold">{selectedApplication.first_name} {selectedApplication.last_name}</p>
                                                     </div>
+                                                    <div>
+                                                        <p className="text-sm text-gray-500">Email</p>
+                                                        <p className="font-semibold">{selectedApplication.email}</p>
+                                                    </div>
+                                                    <div>
+                                                        <p className="text-sm text-gray-500">Téléphone</p>
+                                                        <p className="font-semibold">{selectedApplication.phone || "N/A"}</p>
+                                                    </div>
+                                                    {selectedApplication.date_of_birth && (
+                                                        <div>
+                                                            <p className="text-sm text-gray-500">Date de naissance</p>
+                                                            <p className="font-semibold">{new Date(selectedApplication.date_of_birth).toLocaleDateString("fr-FR")}</p>
+                                                        </div>
+                                                    )}
+                                                    {selectedApplication.nationality && (
+                                                        <div>
+                                                            <p className="text-sm text-gray-500">Nationalité</p>
+                                                            <p className="font-semibold">{selectedApplication.nationality}</p>
+                                                        </div>
+                                                    )}
+                                                    {selectedApplication.address && (
+                                                        <div>
+                                                            <p className="text-sm text-gray-500">Adresse</p>
+                                                            <p className="font-semibold">{selectedApplication.address}</p>
+                                                        </div>
+                                                    )}
+                                                    {selectedApplication.city && (
+                                                        <div>
+                                                            <p className="text-sm text-gray-500">Ville</p>
+                                                            <p className="font-semibold">{selectedApplication.city}</p>
+                                                        </div>
+                                                    )}
+                                                    {selectedApplication.country && (
+                                                        <div>
+                                                            <p className="text-sm text-gray-500">Pays</p>
+                                                            <p className="font-semibold">{selectedApplication.country}</p>
+                                                        </div>
+                                                    )}
                                                 </div>
-                                            )}
-                                        </div>
+                                            </CardBody>
+                                        </Card>
 
-                                        {/* Cover Letter */}
-                                        {selectedApplication.cover_letter && (
-                                            <div>
-                                                <h4 className="font-semibold mb-2">Lettre de motivation</h4>
-                                                <p className="text-sm whitespace-pre-wrap bg-gray-50 p-4 rounded-lg">{selectedApplication.cover_letter}</p>
-                                            </div>
+                                        {/* Éducation */}
+                                        {selectedApplication.education && (
+                                            <Card className="shadow-none border">
+                                                <CardBody>
+                                                    <h4 className="font-semibold text-lg mb-4 flex items-center gap-2">
+                                                        <FiFileText className="text-secondary" /> Éducation
+                                                    </h4>
+                                                    <div className="whitespace-pre-wrap text-sm">{selectedApplication.education}</div>
+                                                </CardBody>
+                                            </Card>
                                         )}
 
-                                        {/* Documents */}
-                                        <div>
-                                            <h4 className="font-semibold mb-2 flex items-center gap-2">
-                                                <FiFileText /> Documents
-                                            </h4>
-                                            <div className="space-y-2">
-                                                {selectedApplication.cv_file_path && (
-                                                    <div className="flex items-center justify-between bg-gray-50 p-3 rounded-lg">
-                                                        <div className="flex items-center gap-2">
-                                                            <FiFileText className="text-danger" />
-                                                            <div>
-                                                                <p className="font-medium text-sm">CV</p>
-                                                                <p className="text-xs text-gray-500">{selectedApplication.cv_file_path.split("/").pop()}</p>
-                                                            </div>
-                                                        </div>
-                                                        <Button size="sm" variant="flat" color="danger" startContent={<FiDownload />} onPress={() => window.open(`/${selectedApplication.cv_file_path}`, "_blank")}>
-                                                            Télécharger
-                                                        </Button>
-                                                    </div>
-                                                )}
-                                                {selectedApplication.cover_letter_file_path && (
-                                                    <div className="flex items-center justify-between bg-gray-50 p-3 rounded-lg">
-                                                        <div className="flex items-center gap-2">
-                                                            <FiFileText className="text-primary" />
-                                                            <div>
-                                                                <p className="font-medium text-sm">Lettre de motivation</p>
-                                                                <p className="text-xs text-gray-500">{selectedApplication.cover_letter_file_path.split("/").pop()}</p>
-                                                            </div>
-                                                        </div>
-                                                        <Button size="sm" variant="flat" color="primary" startContent={<FiDownload />} onPress={() => window.open(`/${selectedApplication.cover_letter_file_path}`, "_blank")}>
-                                                            Télécharger
-                                                        </Button>
-                                                    </div>
-                                                )}
-                                                {selectedApplication.additional_documents &&
-                                                    JSON.parse(selectedApplication.additional_documents).length > 0 &&
-                                                    JSON.parse(selectedApplication.additional_documents).map((doc, index) => (
-                                                        <div key={index} className="flex items-center justify-between bg-gray-50 p-3 rounded-lg">
-                                                            <div className="flex items-center gap-2">
-                                                                <FiFileText className="text-secondary" />
-                                                                <div>
-                                                                    <p className="font-medium text-sm">Document supplémentaire {index + 1}</p>
-                                                                    <p className="text-xs text-gray-500">{doc.split("/").pop()}</p>
-                                                                </div>
-                                                            </div>
-                                                            <Button size="sm" variant="flat" color="secondary" startContent={<FiDownload />} onPress={() => window.open(`/${doc}`, "_blank")}>
-                                                                Télécharger
-                                                            </Button>
-                                                        </div>
-                                                    ))}
-                                                {selectedApplication.linkedin_url && (
-                                                    <div className="flex items-center justify-between bg-gray-50 p-3 rounded-lg">
-                                                        <div className="flex items-center gap-2">
-                                                            <FiFileText className="text-blue-600" />
-                                                            <div>
-                                                                <p className="font-medium text-sm">LinkedIn</p>
-                                                                <p className="text-xs text-gray-500">{selectedApplication.linkedin_url}</p>
-                                                            </div>
-                                                        </div>
-                                                        <Button size="sm" variant="flat" color="primary" onPress={() => window.open(selectedApplication.linkedin_url, "_blank")}>
-                                                            Ouvrir
-                                                        </Button>
-                                                    </div>
-                                                )}
-                                                {selectedApplication.portfolio_url && (
-                                                    <div className="flex items-center justify-between bg-gray-50 p-3 rounded-lg">
-                                                        <div className="flex items-center gap-2">
-                                                            <FiFileText className="text-purple-600" />
-                                                            <div>
-                                                                <p className="font-medium text-sm">Portfolio</p>
-                                                                <p className="text-xs text-gray-500">{selectedApplication.portfolio_url}</p>
-                                                            </div>
-                                                        </div>
-                                                        <Button size="sm" variant="flat" color="secondary" onPress={() => window.open(selectedApplication.portfolio_url, "_blank")}>
-                                                            Ouvrir
-                                                        </Button>
-                                                    </div>
-                                                )}
-                                            </div>
-                                        </div>
+                                        {/* Expérience Professionnelle */}
+                                        {selectedApplication.experience && (
+                                            <Card className="shadow-none border">
+                                                <CardBody>
+                                                    <h4 className="font-semibold text-lg mb-4 flex items-center gap-2">
+                                                        <FiBriefcase className="text-success" /> Expérience Professionnelle
+                                                    </h4>
+                                                    <div className="whitespace-pre-wrap text-sm">{selectedApplication.experience}</div>
+                                                </CardBody>
+                                            </Card>
+                                        )}
 
-                                        {/* Notes */}
-                                        {selectedApplication.notes && (
-                                            <div>
-                                                <h4 className="font-semibold mb-2">Notes</h4>
-                                                <p className="text-sm whitespace-pre-wrap bg-yellow-50 p-4 rounded-lg">{selectedApplication.notes}</p>
-                                            </div>
+                                        {/* Compétences */}
+                                        {selectedApplication.skills && (
+                                            <Card className="shadow-none border">
+                                                <CardBody>
+                                                    <h4 className="font-semibold text-lg mb-4 flex items-center gap-2">
+                                                        <FiCheckCircle className="text-warning" /> Compétences
+                                                    </h4>
+                                                    <div className="flex flex-wrap gap-2">
+                                                        {selectedApplication.skills.split(',').map((skill, idx) => (
+                                                            <Chip key={idx} size="sm" variant="flat" color="primary">
+                                                                {skill.trim()}
+                                                            </Chip>
+                                                        ))}
+                                                    </div>
+                                                </CardBody>
+                                            </Card>
+                                        )}
+
+                                        {/* Langues */}
+                                        {selectedApplication.languages && (
+                                            <Card className="shadow-none border">
+                                                <CardBody>
+                                                    <h4 className="font-semibold text-lg mb-4 flex items-center gap-2">
+                                                        <FiGlobe className="text-info" /> Langues
+                                                    </h4>
+                                                    <div className="flex flex-wrap gap-2">
+                                                        {selectedApplication.languages.split(',').map((lang, idx) => (
+                                                            <Chip key={idx} size="sm" variant="flat" color="secondary">
+                                                                {lang.trim()}
+                                                            </Chip>
+                                                        ))}
+                                                    </div>
+                                                </CardBody>
+                                            </Card>
+                                        )}
+
+                                        {/* Liens Professionnels */}
+                                        {(selectedApplication.linkedin_url || selectedApplication.portfolio_url) && (
+                                            <Card className="shadow-none border">
+                                                <CardBody>
+                                                    <h4 className="font-semibold text-lg mb-4 flex items-center gap-2">
+                                                        <FiLink className="text-primary" /> Liens Professionnels
+                                                    </h4>
+                                                    <div className="space-y-2">
+                                                        {selectedApplication.linkedin_url && (
+                                                            <div className="flex items-center justify-between bg-blue-50 p-3 rounded-lg">
+                                                                <div className="flex items-center gap-2">
+                                                                    <FiLinkedin className="text-blue-600" />
+                                                                    <div>
+                                                                        <p className="font-medium text-sm">LinkedIn</p>
+                                                                        <p className="text-xs text-gray-500">{selectedApplication.linkedin_url}</p>
+                                                                    </div>
+                                                                </div>
+                                                                <Button size="sm" variant="flat" color="primary" onPress={() => window.open(selectedApplication.linkedin_url, "_blank")}>
+                                                                    Ouvrir
+                                                                </Button>
+                                                            </div>
+                                                        )}
+                                                        {selectedApplication.portfolio_url && (
+                                                            <div className="flex items-center justify-between bg-purple-50 p-3 rounded-lg">
+                                                                <div className="flex items-center gap-2">
+                                                                    <FiExternalLink className="text-purple-600" />
+                                                                    <div>
+                                                                        <p className="font-medium text-sm">Portfolio</p>
+                                                                        <p className="text-xs text-gray-500">{selectedApplication.portfolio_url}</p>
+                                                                    </div>
+                                                                </div>
+                                                                <Button size="sm" variant="flat" color="secondary" onPress={() => window.open(selectedApplication.portfolio_url, "_blank")}>
+                                                                    Ouvrir
+                                                                </Button>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </CardBody>
+                                            </Card>
+                                        )}
+
+                                        {/* Informations Additionnelles */}
+                                        {(selectedApplication.expected_salary || selectedApplication.available_from || selectedApplication.notice_period) && (
+                                            <Card className="shadow-none border">
+                                                <CardBody>
+                                                    <h4 className="font-semibold text-lg mb-4">Informations Additionnelles</h4>
+                                                    <div className="grid grid-cols-2 gap-4">
+                                                        {selectedApplication.expected_salary && (
+                                                            <div>
+                                                                <p className="text-sm text-gray-500">Salaire attendu</p>
+                                                                <p className="font-semibold">{parseInt(selectedApplication.expected_salary).toLocaleString()} CDF</p>
+                                                            </div>
+                                                        )}
+                                                        {selectedApplication.available_from && (
+                                                            <div>
+                                                                <p className="text-sm text-gray-500">Disponible à partir du</p>
+                                                                <p className="font-semibold">{new Date(selectedApplication.available_from).toLocaleDateString("fr-FR")}</p>
+                                                            </div>
+                                                        )}
+                                                        {selectedApplication.notice_period && (
+                                                            <div>
+                                                                <p className="text-sm text-gray-500">Préavis</p>
+                                                                <p className="font-semibold">{selectedApplication.notice_period}</p>
+                                                            </div>
+                                                        )}
+                                                        {selectedApplication.willing_to_relocate !== undefined && (
+                                                            <div>
+                                                                <p className="text-sm text-gray-500">Prêt à déménager</p>
+                                                                <Chip size="sm" color={selectedApplication.willing_to_relocate ? "success" : "default"}>
+                                                                    {selectedApplication.willing_to_relocate ? "Oui" : "Non"}
+                                                                </Chip>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </CardBody>
+                                            </Card>
                                         )}
                                     </div>
                                 </Tab>
 
-                                <Tab key="timeline" title="Historique">
-                                    <div className="py-4">
-                                        <p className="text-center text-gray-500">Historique des activités à venir</p>
+                                <Tab key="application" title="Détails de la Candidature">
+                                    <div className="space-y-6 py-4">
+                                        {/* Offre d'emploi */}
+                                        {selectedApplication.job_posting && (
+                                            <Card className="shadow-none border bg-primary-50">
+                                                <CardBody>
+                                                    <h4 className="font-semibold text-lg mb-4 flex items-center gap-2">
+                                                        <FiBriefcase className="text-primary" /> Offre d'Emploi
+                                                    </h4>
+                                                    <div className="space-y-4">
+                                                        <div>
+                                                            <h5 className="text-xl font-bold text-primary">{selectedApplication.job_posting.title}</h5>
+                                                            <p className="text-sm text-gray-600">Réf: {selectedApplication.job_posting.reference_code}</p>
+                                                        </div>
+                                                        
+                                                        <div className="grid grid-cols-3 gap-4">
+                                                            {selectedApplication.job_posting.direction && (
+                                                                <div>
+                                                                    <p className="text-sm text-gray-500">Direction</p>
+                                                                    <p className="font-semibold">{selectedApplication.job_posting.direction.name}</p>
+                                                                </div>
+                                                            )}
+                                                            {selectedApplication.job_posting.service && (
+                                                                <div>
+                                                                    <p className="text-sm text-gray-500">Service</p>
+                                                                    <p className="font-semibold">{selectedApplication.job_posting.service.name}</p>
+                                                                </div>
+                                                            )}
+                                                            {selectedApplication.job_posting.job_position && (
+                                                                <div>
+                                                                    <p className="text-sm text-gray-500">Poste</p>
+                                                                    <p className="font-semibold">{selectedApplication.job_posting.job_position.title}</p>
+                                                                </div>
+                                                            )}
+                                                            <div>
+                                                                <p className="text-sm text-gray-500">Type de contrat</p>
+                                                                <p className="font-semibold">{selectedApplication.job_posting.contract_type?.toUpperCase()}</p>
+                                                            </div>
+                                                            <div>
+                                                                <p className="text-sm text-gray-500">Type d'emploi</p>
+                                                                <p className="font-semibold">{selectedApplication.job_posting.employment_type?.replace('_', ' ').toUpperCase()}</p>
+                                                            </div>
+                                                            {selectedApplication.job_posting.location && (
+                                                                <div>
+                                                                    <p className="text-sm text-gray-500">Localisation</p>
+                                                                    <p className="font-semibold">{selectedApplication.job_posting.location}</p>
+                                                                </div>
+                                                            )}
+                                                        </div>
+
+                                                        {(selectedApplication.job_posting.salary_range_min || selectedApplication.job_posting.salary_range_max) && (
+                                                            <div className="p-3 bg-white rounded-lg">
+                                                                <p className="text-sm text-gray-500 mb-1">Rémunération proposée</p>
+                                                                <p className="font-bold text-primary text-lg">
+                                                                    {selectedApplication.job_posting.salary_range_min ? `${parseInt(selectedApplication.job_posting.salary_range_min).toLocaleString()} CDF` : ''} 
+                                                                    {selectedApplication.job_posting.salary_range_min && selectedApplication.job_posting.salary_range_max ? ' à ' : ''}
+                                                                    {selectedApplication.job_posting.salary_range_max ? `${parseInt(selectedApplication.job_posting.salary_range_max).toLocaleString()} CDF` : ''}
+                                                                </p>
+                                                            </div>
+                                                        )}
+
+                                                        {selectedApplication.job_posting.description && (
+                                                            <div>
+                                                                <p className="font-semibold mb-2">Description</p>
+                                                                <p className="text-sm whitespace-pre-wrap">{selectedApplication.job_posting.description}</p>
+                                                            </div>
+                                                        )}
+
+                                                        {selectedApplication.job_posting.requirements && (
+                                                            <div>
+                                                                <p className="font-semibold mb-2">Exigences</p>
+                                                                <p className="text-sm whitespace-pre-wrap">{selectedApplication.job_posting.requirements}</p>
+                                                            </div>
+                                                        )}
+
+                                                        <div className="grid grid-cols-2 gap-3">
+                                                            <div>
+                                                                <p className="text-sm text-gray-500">Date limite</p>
+                                                                <p className="font-semibold">
+                                                                    {selectedApplication.job_posting.application_deadline
+                                                                        ? new Date(selectedApplication.job_posting.application_deadline).toLocaleDateString("fr-FR")
+                                                                        : "N/A"}
+                                                                </p>
+                                                            </div>
+                                                            <div>
+                                                                <p className="text-sm text-gray-500">Postes disponibles</p>
+                                                                <p className="font-semibold">{selectedApplication.job_posting.positions_available || 1}</p>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </CardBody>
+                                            </Card>
+                                        )}
+
+                                        {/* Détails de la candidature */}
+                                        <Card className="shadow-none border">
+                                            <CardBody>
+                                                <h4 className="font-semibold text-lg mb-4 flex items-center gap-2">
+                                                    <FiFileText className="text-secondary" /> Détails de la Candidature
+                                                </h4>
+                                                <div className="grid grid-cols-2 gap-4">
+                                                    <div>
+                                                        <p className="text-sm text-gray-500">Date de dépôt</p>
+                                                        <p className="font-semibold">{new Date(selectedApplication.applied_date).toLocaleDateString("fr-FR", {
+                                                            day: 'numeric',
+                                                            month: 'long',
+                                                            year: 'numeric',
+                                                            hour: '2-digit',
+                                                            minute: '2-digit'
+                                                        })}</p>
+                                                    </div>
+                                                    <div>
+                                                        <p className="text-sm text-gray-500">Source</p>
+                                                        <Chip size="sm" variant="flat">{selectedApplication.application_source || selectedApplication.source}</Chip>
+                                                    </div>
+                                                    <div>
+                                                        <p className="text-sm text-gray-500">Statut actuel</p>
+                                                        <Chip color={getStatusColor(selectedApplication.status)} variant="flat">
+                                                            {getStatusLabel(selectedApplication.status)}
+                                                        </Chip>
+                                                    </div>
+                                                    {selectedApplication.recruiter && (
+                                                        <div>
+                                                            <p className="text-sm text-gray-500">Recruteur assigné</p>
+                                                            <p className="font-semibold">{selectedApplication.recruiter.username}</p>
+                                                        </div>
+                                                    )}
+                                                    {selectedApplication.rating && (
+                                                        <div>
+                                                            <p className="text-sm text-gray-500">Évaluation</p>
+                                                            <div className="flex items-center gap-2">
+                                                                <Progress value={(selectedApplication.rating / 5) * 100} color="warning" className="max-w-md" />
+                                                                <span className="font-semibold">{selectedApplication.rating}/5</span>
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </CardBody>
+                                        </Card>
+
+                                        {/* Lettre de motivation */}
+                                        {selectedApplication.cover_letter && (
+                                            <Card className="shadow-none border">
+                                                <CardBody>
+                                                    <h4 className="font-semibold text-lg mb-3">Lettre de motivation</h4>
+                                                    <p className="text-sm whitespace-pre-wrap bg-gray-50 p-4 rounded-lg">{selectedApplication.cover_letter}</p>
+                                                </CardBody>
+                                            </Card>
+                                        )}
+
+                                        {/* Documents */}
+                                        <Card className="shadow-none border">
+                                            <CardBody>
+                                                <h4 className="font-semibold text-lg mb-3 flex items-center gap-2">
+                                                    <FiFileText /> Documents joints
+                                                </h4>
+                                                <div className="space-y-2">
+                                                    {selectedApplication.cv_file_path && (
+                                                        <div className="flex items-center justify-between bg-danger-50 p-3 rounded-lg">
+                                                            <div className="flex items-center gap-2">
+                                                                <FiFileText className="text-danger text-xl" />
+                                                                <div>
+                                                                    <p className="font-medium text-sm">Curriculum Vitae (CV)</p>
+                                                                    <p className="text-xs text-gray-500">{selectedApplication.cv_file_path.split("/").pop()}</p>
+                                                                </div>
+                                                            </div>
+                                                            <Button size="sm" variant="flat" color="danger" startContent={<FiDownload />} onPress={() => window.open(`/${selectedApplication.cv_file_path}`, "_blank")}>
+                                                                Télécharger
+                                                            </Button>
+                                                        </div>
+                                                    )}
+                                                    {selectedApplication.cover_letter_file_path && (
+                                                        <div className="flex items-center justify-between bg-primary-50 p-3 rounded-lg">
+                                                            <div className="flex items-center gap-2">
+                                                                <FiFileText className="text-primary text-xl" />
+                                                                <div>
+                                                                    <p className="font-medium text-sm">Lettre de motivation (fichier)</p>
+                                                                    <p className="text-xs text-gray-500">{selectedApplication.cover_letter_file_path.split("/").pop()}</p>
+                                                                </div>
+                                                            </div>
+                                                            <Button size="sm" variant="flat" color="primary" startContent={<FiDownload />} onPress={() => window.open(`/${selectedApplication.cover_letter_file_path}`, "_blank")}>
+                                                                Télécharger
+                                                            </Button>
+                                                        </div>
+                                                    )}
+                                                    {selectedApplication.additional_documents &&
+                                                        JSON.parse(selectedApplication.additional_documents).length > 0 &&
+                                                        JSON.parse(selectedApplication.additional_documents).map((doc, index) => (
+                                                            <div key={index} className="flex items-center justify-between bg-secondary-50 p-3 rounded-lg">
+                                                                <div className="flex items-center gap-2">
+                                                                    <FiFileText className="text-secondary text-xl" />
+                                                                    <div>
+                                                                        <p className="font-medium text-sm">Document supplémentaire {index + 1}</p>
+                                                                        <p className="text-xs text-gray-500">{doc.split("/").pop()}</p>
+                                                                    </div>
+                                                                </div>
+                                                                <Button size="sm" variant="flat" color="secondary" startContent={<FiDownload />} onPress={() => window.open(`/${doc}`, "_blank")}>
+                                                                    Télécharger
+                                                                </Button>
+                                                            </div>
+                                                        ))}
+                                                </div>
+                                            </CardBody>
+                                        </Card>
+
+                                        {/* Notes du recruteur */}
+                                        {selectedApplication.notes && (
+                                            <Card className="shadow-none border bg-warning-50">
+                                                <CardBody>
+                                                    <h4 className="font-semibold text-lg mb-3 flex items-center gap-2">
+                                                        <FiMessageSquare className="text-warning" /> Notes du Recruteur
+                                                    </h4>
+                                                    <p className="text-sm whitespace-pre-wrap">{selectedApplication.notes}</p>
+                                                </CardBody>
+                                            </Card>
+                                        )}
                                     </div>
                                 </Tab>
 
