@@ -98,19 +98,19 @@ export default function ExitAuthorizationsPage() {
   const [approvalComments, setApprovalComments] = useState("");
 
   // Queries
-  const { data: authData, isLoading } = useGetExitAuthorizations({
-    page,
-    rowsPerPage,
-    query: searchQuery,
-    filters,
-  });
+  // const { data: authData, isLoading } = useGetExitAuthorizations({
+  //   page,
+  //   rowsPerPage,
+  //   query: searchQuery,
+  //   filters,
+  // });
 
-  const { data: employeesData } = useGetEmployees({
-    page: 1,
-    rowsPerPage: 1000,
-    query: "",
-    filters: { status: "active" },
-  });
+  // const { data: employeesData } = useGetEmployees({
+  //   page: 1,
+  //   rowsPerPage: 1000,
+  //   query: "",
+  //   filters: { status: "active" },
+  // });
 
   // Mutations
   const createMutation = useCreateExitAuthorization();
@@ -118,10 +118,206 @@ export default function ExitAuthorizationsPage() {
   const approveMutation = useApproveExitAuthorization();
   const rejectMutation = useRejectExitAuthorization();
 
-  const authorizations = authData?.authorizations || [];
-  const total = authData?.total || 0;
+  // TEST DATA - Autorisations de sortie
+  const isLoading = false;
+  const mockAuthorizations = [
+    {
+      id: 1,
+      employee_id: 1,
+      employee: {
+        first_name: "Jean",
+        last_name: "Dupont",
+        department: { name: "Ressources Humaines" },
+      },
+      type: "appointment",
+      date: "2026-01-14",
+      start_time: "14:00",
+      end_time: "16:00",
+      duration_minutes: 120,
+      reason: "Rendez-vous médical urgent",
+      status: "pending",
+      created_at: "2026-01-14T08:30:00",
+    },
+    {
+      id: 2,
+      employee_id: 2,
+      employee: {
+        first_name: "Marie",
+        last_name: "Kabila",
+        department: { name: "Finance" },
+      },
+      type: "early_leave",
+      date: "2026-01-14",
+      start_time: "15:30",
+      end_time: "17:00",
+      duration_minutes: 90,
+      reason: "Urgence familiale - Rendez-vous scolaire",
+      status: "approved",
+      created_at: "2026-01-13T16:20:00",
+      approved_at: "2026-01-13T16:45:00",
+    },
+    {
+      id: 3,
+      employee_id: 3,
+      employee: {
+        first_name: "Pierre",
+        last_name: "Tshisekedi",
+        department: { name: "IT" },
+      },
+      type: "short_absence",
+      date: "2026-01-14",
+      start_time: "10:00",
+      end_time: "11:30",
+      duration_minutes: 90,
+      reason: "Rendez-vous bancaire",
+      status: "approved",
+      created_at: "2026-01-13T14:00:00",
+      approved_at: "2026-01-13T14:15:00",
+    },
+    {
+      id: 4,
+      employee_id: 4,
+      employee: {
+        first_name: "Sophie",
+        last_name: "Mukendi",
+        department: { name: "Marketing" },
+      },
+      type: "personal",
+      date: "2026-01-15",
+      start_time: "13:00",
+      end_time: "14:30",
+      duration_minutes: 90,
+      reason: "Démarches administratives",
+      status: "pending",
+      created_at: "2026-01-14T09:00:00",
+    },
+    {
+      id: 5,
+      employee_id: 5,
+      employee: {
+        first_name: "Jacques",
+        last_name: "Lumbu",
+        department: { name: "Opérations" },
+      },
+      type: "early_leave",
+      date: "2026-01-13",
+      start_time: "16:00",
+      end_time: "17:00",
+      duration_minutes: 60,
+      reason: "Récupération enfant à l'école",
+      status: "used",
+      created_at: "2026-01-12T15:30:00",
+      approved_at: "2026-01-12T16:00:00",
+      used_at: "2026-01-13T16:05:00",
+    },
+    {
+      id: 6,
+      employee_id: 6,
+      employee: {
+        first_name: "Christine",
+        last_name: "Mbuyi",
+        department: { name: "Ressources Humaines" },
+      },
+      type: "appointment",
+      date: "2026-01-15",
+      start_time: "09:00",
+      end_time: "11:00",
+      duration_minutes: 120,
+      reason: "Consultation médicale de contrôle",
+      status: "approved",
+      created_at: "2026-01-14T07:45:00",
+      approved_at: "2026-01-14T08:00:00",
+    },
+    {
+      id: 7,
+      employee_id: 7,
+      employee: {
+        first_name: "David",
+        last_name: "Kalala",
+        department: { name: "Comptabilité" },
+      },
+      type: "personal",
+      date: "2026-01-14",
+      start_time: "11:00",
+      end_time: "12:00",
+      duration_minutes: 60,
+      reason: "Rendez-vous notaire",
+      status: "rejected",
+      created_at: "2026-01-14T08:00:00",
+      rejected_at: "2026-01-14T08:30:00",
+      rejection_reason: "Période de forte activité, merci de reporter",
+    },
+    {
+      id: 8,
+      employee_id: 8,
+      employee: {
+        first_name: "Antoinette",
+        last_name: "Ngoy",
+        department: { name: "Ventes" },
+      },
+      type: "short_absence",
+      date: "2026-01-16",
+      start_time: "14:00",
+      end_time: "15:30",
+      duration_minutes: 90,
+      reason: "Récupération documents administratifs",
+      status: "pending",
+      created_at: "2026-01-14T10:15:00",
+    },
+    {
+      id: 9,
+      employee_id: 9,
+      employee: {
+        first_name: "François",
+        last_name: "Kasongo",
+        department: { name: "Logistique" },
+      },
+      type: "early_leave",
+      date: "2026-01-14",
+      start_time: "15:00",
+      end_time: "17:00",
+      duration_minutes: 120,
+      reason: "Problème familial urgent",
+      status: "approved",
+      created_at: "2026-01-14T11:00:00",
+      approved_at: "2026-01-14T11:15:00",
+    },
+    {
+      id: 10,
+      employee_id: 10,
+      employee: {
+        first_name: "Jeanne",
+        last_name: "Mutombo",
+        department: { name: "Service Client" },
+      },
+      type: "appointment",
+      date: "2026-01-17",
+      start_time: "10:30",
+      end_time: "12:00",
+      duration_minutes: 90,
+      reason: "Rendez-vous médical spécialisé",
+      status: "pending",
+      created_at: "2026-01-14T12:00:00",
+    },
+  ];
+
+  const mockEmployees = [
+    { id: 1, first_name: "Jean", last_name: "Dupont" },
+    { id: 2, first_name: "Marie", last_name: "Kabila" },
+    { id: 3, first_name: "Pierre", last_name: "Tshisekedi" },
+    { id: 4, first_name: "Sophie", last_name: "Mukendi" },
+    { id: 5, first_name: "Jacques", last_name: "Lumbu" },
+    { id: 6, first_name: "Christine", last_name: "Mbuyi" },
+    { id: 7, first_name: "David", last_name: "Kalala" },
+    { id: 8, first_name: "Antoinette", last_name: "Ngoy" },
+    { id: 9, first_name: "François", last_name: "Kasongo" },
+    { id: 10, first_name: "Jeanne", last_name: "Mutombo" },
+  ];
+
+  const authorizations = mockAuthorizations;
+  const total = mockAuthorizations.length;
   const pages = Math.ceil(total / rowsPerPage);
-  const employees = employeesData?.employees || [];
+  const employees = mockEmployees;
 
   // Handlers
   const handleCreate = () => {

@@ -880,7 +880,7 @@ async function generatePayslipPDF(payslip, run) {
 
       doc.fontSize(10).font('Helvetica-Bold');
       doc.text('Description', col1, tableTop);
-      doc.text('Montant (CDF)', col2, tableTop);
+      doc.text('Montant (USD)', col2, tableTop);
       doc.moveTo(col1, tableTop + 15).lineTo(550, tableTop + 15).stroke();
 
       doc.font('Helvetica');

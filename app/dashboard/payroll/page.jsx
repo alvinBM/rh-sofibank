@@ -105,31 +105,31 @@ export default function PayrollPage() {
   });
 
   // Queries
-  const { data: runsData, isLoading: runsLoading } = useGetPayrollRuns({
-    page,
-    rowsPerPage,
-    query: "",
-    filters,
-  });
+  // const { data: runsData, isLoading: runsLoading } = useGetPayrollRuns({
+  //   page,
+  //   rowsPerPage,
+  //   query: "",
+  //   filters,
+  // });
 
-  const { data: runDetails } = useGetPayrollRunById(selectedRun?.id);
-  const { data: payrollDetails } = useGetPayrollDetails(selectedRun?.id);
+  // const { data: runDetails } = useGetPayrollRunById(selectedRun?.id);
+  // const { data: payrollDetails } = useGetPayrollDetails(selectedRun?.id);
 
-  const { data: variablesData, isLoading: variablesLoading } = useGetPayrollVariables({
-    page,
-    rowsPerPage,
-    query: "",
-    filters: {},
-  });
+  // const { data: variablesData, isLoading: variablesLoading } = useGetPayrollVariables({
+  //   page,
+  //   rowsPerPage,
+  //   query: "",
+  //   filters: {},
+  // });
 
-  const { data: employeesData } = useGetEmployees({
-    page: 1,
-    rowsPerPage: 1000,
-    query: "",
-  });
+  // const { data: employeesData } = useGetEmployees({
+  //   page: 1,
+  //   rowsPerPage: 1000,
+  //   query: "",
+  // });
 
-  const { data: settings } = useGetPayrollSettings();
-  const { data: taxRates } = useGetTaxRates();
+  // const { data: settings } = useGetPayrollSettings();
+  // const { data: taxRates } = useGetTaxRates();
 
   // Mutations
   const createRunMutation = useCreatePayrollRun();
@@ -141,16 +141,188 @@ export default function PayrollPage() {
   const deleteVariableMutation = useDeletePayrollVariable();
   const updateSettingsMutation = useUpdatePayrollSettings();
 
-  const runs = runsData?.runs || [];
-  const variables = variablesData?.variables || [];
-  const employees = employeesData?.employees || [];
-  const total = runsData?.total || 0;
+  // TEST DATA - Employés
+  const mockEmployees = [
+    { id: 1, first_name: "Jean", last_name: "Dupont", employee_number: "EMP001" },
+    { id: 2, first_name: "Marie", last_name: "Kabila", employee_number: "EMP002" },
+    { id: 3, first_name: "Pierre", last_name: "Tshisekedi", employee_number: "EMP003" },
+    { id: 4, first_name: "Sophie", last_name: "Mukendi", employee_number: "EMP004" },
+    { id: 5, first_name: "Jacques", last_name: "Lumbu", employee_number: "EMP005" },
+    { id: 6, first_name: "Christine", last_name: "Mbuyi", employee_number: "EMP006" },
+    { id: 7, first_name: "David", last_name: "Kalala", employee_number: "EMP007" },
+    { id: 8, first_name: "Antoinette", last_name: "Ngoy", employee_number: "EMP008" },
+  ];
+
+  // TEST DATA - Paramètres de paie
+  const mockSettings = {
+    irpp_rate: 3,
+    periodicity: "monthly",
+    payment_day: 24,
+    currency: "CDF",
+  };
+
+  // TEST DATA - Taux d'imposition
+  const mockTaxRates = [
+    { id: 1, min_salary: 0, max_salary: 100000, rate: 0 },
+    { id: 2, min_salary: 100001, max_salary: 500000, rate: 3 },
+    { id: 3, min_salary: 500001, max_salary: 1000000, rate: 10 },
+    { id: 4, min_salary: 1000001, max_salary: 5000000, rate: 15 },
+    { id: 5, min_salary: 5000001, max_salary: 999999999, rate: 30 },
+  ];
+
+  // TEST DATA - Exécutions de paie (avec états locaux)
+  const [mockRuns, setMockRuns] = useState([
+    {
+      id: 1,
+      period: "2026-01",
+      payment_date: "2026-01-24",
+      employee_count: 145,
+      total_gross: 285000000,
+      total_net: 245000000,
+      status: "paid",
+      year: 2026,
+      month: 1,
+    },
+    {
+      id: 2,
+      period: "2025-12",
+      payment_date: "2025-12-24",
+      employee_count: 142,
+      total_gross: 278000000,
+      total_net: 238000000,
+      status: "paid",
+      year: 2025,
+      month: 12,
+    },
+    {
+      id: 3,
+      period: "2025-11",
+      payment_date: "2025-11-24",
+      employee_count: 140,
+      total_gross: 275000000,
+      total_net: 235000000,
+      status: "approved",
+      year: 2025,
+      month: 11,
+    },
+    {
+      id: 4,
+      period: "2025-10",
+      payment_date: "2025-10-24",
+      employee_count: 138,
+      total_gross: 270000000,
+      total_net: 232000000,
+      status: "processing",
+      year: 2025,
+      month: 10,
+    },
+    {
+      id: 5,
+      period: "2026-02",
+      payment_date: "2026-02-24",
+      employee_count: 0,
+      total_gross: 0,
+      total_net: 0,
+      status: "draft",
+      year: 2026,
+      month: 2,
+    },
+  ]);
+
+  // TEST DATA - Détails de paie pour le modal de traitement
+  const mockPayrollDetails = [
+    { id: 1, employee: { first_name: "Jean", last_name: "Dupont" }, base_salary: 2500000, bonuses: 500000, deductions: 300000, net_salary: 2700000 },
+    { id: 2, employee: { first_name: "Marie", last_name: "Kabila" }, base_salary: 1800000, bonuses: 200000, deductions: 180000, net_salary: 1820000 },
+    { id: 3, employee: { first_name: "Pierre", last_name: "Tshisekedi" }, base_salary: 3200000, bonuses: 800000, deductions: 480000, net_salary: 3520000 },
+    { id: 4, employee: { first_name: "Sophie", last_name: "Mukendi" }, base_salary: 1500000, bonuses: 150000, deductions: 150000, net_salary: 1500000 },
+    { id: 5, employee: { first_name: "Jacques", last_name: "Lumbu" }, base_salary: 2000000, bonuses: 300000, deductions: 230000, net_salary: 2070000 },
+  ];
+
+  // TEST DATA - Éléments variables (avec états locaux)
+  const [mockVariables, setMockVariables] = useState([
+    {
+      id: 1,
+      employee_id: 1,
+      employee: { first_name: "Jean", last_name: "Dupont" },
+      type: "bonus",
+      amount: 500000,
+      period: "2026-01",
+      description: "Prime de performance trimestrielle",
+    },
+    {
+      id: 2,
+      employee_id: 2,
+      employee: { first_name: "Marie", last_name: "Kabila" },
+      type: "overtime",
+      amount: 200000,
+      period: "2026-01",
+      description: "Heures supplémentaires (15h)",
+    },
+    {
+      id: 3,
+      employee_id: 3,
+      employee: { first_name: "Pierre", last_name: "Tshisekedi" },
+      type: "commission",
+      amount: 800000,
+      period: "2026-01",
+      description: "Commission sur ventes Q4",
+    },
+    {
+      id: 4,
+      employee_id: 4,
+      employee: { first_name: "Sophie", last_name: "Mukendi" },
+      type: "allowance",
+      amount: 150000,
+      period: "2026-01",
+      description: "Indemnité de transport",
+    },
+    {
+      id: 5,
+      employee_id: 5,
+      employee: { first_name: "Jacques", last_name: "Lumbu" },
+      type: "deduction",
+      amount: 50000,
+      period: "2026-01",
+      description: "Avance sur salaire",
+    },
+    {
+      id: 6,
+      employee_id: 6,
+      employee: { first_name: "Christine", last_name: "Mbuyi" },
+      type: "bonus",
+      amount: 300000,
+      period: "2026-01",
+      description: "Prime d'ancienneté",
+    },
+  ]);
+
+  const runsLoading = false;
+  const variablesLoading = false;
+  const runs = mockRuns;
+  const variables = mockVariables;
+  const employees = mockEmployees;
+  const total = mockRuns.length;
   const pages = Math.ceil(total / rowsPerPage);
+  const settings = mockSettings;
+  const taxRates = mockTaxRates;
+  const payrollDetails = selectedRun?.id ? mockPayrollDetails : [];
 
   // Handlers pour Exécutions de paie
   const handleCreateRun = async () => {
     try {
-      await createRunMutation.mutateAsync(runFormData);
+      // Simulation de création
+      const newRun = {
+        id: mockRuns.length + 1,
+        period: runFormData.period,
+        payment_date: runFormData.payment_date,
+        employee_count: 0,
+        total_gross: 0,
+        total_net: 0,
+        status: "draft",
+        year: parseInt(runFormData.period.split("-")[0]),
+        month: parseInt(runFormData.period.split("-")[1]),
+      };
+      setMockRuns([newRun, ...mockRuns]);
       toast.success("Exécution de paie créée");
       onClose();
     } catch (error) {
@@ -160,8 +332,20 @@ export default function PayrollPage() {
 
   const handleProcessRun = async (runId) => {
     try {
-      await processRunMutation.mutateAsync(runId);
+      // Simulation de traitement
+      setMockRuns(mockRuns.map(run => 
+        run.id === runId ? {
+          ...run,
+          status: "processing",
+          employee_count: 145,
+          total_gross: 285000000,
+          total_net: 245000000,
+        } : run
+      ));
       toast.success("Traitement en cours...");
+      setTimeout(() => {
+        toast.success("Traitement terminé avec succès");
+      }, 2000);
       onProcessClose();
     } catch (error) {
       toast.error("Erreur lors du traitement");
@@ -170,10 +354,10 @@ export default function PayrollPage() {
 
   const handleApproveRun = async (runId) => {
     try {
-      await approveRunMutation.mutateAsync({
-        runId,
-        approvedBy: "current-user-id", // Remplacer par ID utilisateur connecté
-      });
+      // Simulation d'approbation
+      setMockRuns(mockRuns.map(run => 
+        run.id === runId ? { ...run, status: "approved" } : run
+      ));
       toast.success("Exécution approuvée");
     } catch (error) {
       toast.error("Erreur lors de l'approbation");
@@ -182,11 +366,15 @@ export default function PayrollPage() {
 
   const handleDistribute = async (runId) => {
     try {
-      await distributeSlipsMutation.mutateAsync({
-        runId,
-        distributionMethod: "email",
-      });
+      // Simulation de distribution
+      setMockRuns(mockRuns.map(run => 
+        run.id === runId ? { ...run, status: "paid" } : run
+      ));
       toast.success("Distribution des bulletins en cours...");
+      setTimeout(() => {
+        const employeeCount = mockRuns.find(r => r.id === runId)?.employee_count || 0;
+        toast.success(`${employeeCount} bulletins envoyés avec succès par email`);
+      }, 2000);
     } catch (error) {
       toast.error("Erreur lors de la distribution");
     }
@@ -195,8 +383,27 @@ export default function PayrollPage() {
   // Handlers pour Éléments variables
   const handleCreateVariable = async () => {
     try {
-      await createVariableMutation.mutateAsync(variableFormData);
+      // Simulation d'ajout
+      const selectedEmployee = mockEmployees.find(e => e.id === parseInt(variableFormData.employee_id));
+      const newVariable = {
+        id: mockVariables.length + 1,
+        employee_id: parseInt(variableFormData.employee_id),
+        employee: selectedEmployee,
+        type: variableFormData.variable_type,
+        amount: parseFloat(variableFormData.amount),
+        period: variableFormData.period,
+        description: variableFormData.description,
+      };
+      setMockVariables([newVariable, ...mockVariables]);
       toast.success("Élément variable ajouté");
+      const newPeriod = `${currentYear}-${String(currentMonth).padStart(2, "0")}`;
+      setVariableFormData({
+        employee_id: "",
+        type: "",
+        amount: 0,
+        period: newPeriod,
+        description: "",
+      });
       onVariableClose();
     } catch (error) {
       toast.error("Erreur lors de l'ajout");
@@ -206,7 +413,8 @@ export default function PayrollPage() {
   const handleDeleteVariable = async (id) => {
     if (confirm("Confirmer la suppression?")) {
       try {
-        await deleteVariableMutation.mutateAsync(id);
+        // Simulation de suppression
+        setMockVariables(mockVariables.filter(v => v.id !== id));
         toast.success("Élément supprimé");
       } catch (error) {
         toast.error("Erreur lors de la suppression");
@@ -564,7 +772,7 @@ export default function PayrollPage() {
             </ModalBody>
             <ModalFooter>
               <Button variant="flat" onPress={onClose}>Annuler</Button>
-              <Button color="danger" onPress={handleCreateRun} isLoading={createRunMutation.isPending}>
+              <Button color="danger" onPress={handleCreateRun}>
                 Créer
               </Button>
             </ModalFooter>
@@ -602,7 +810,6 @@ export default function PayrollPage() {
               <Button
                 color="danger"
                 onPress={() => handleProcessRun(selectedRun?.id)}
-                isLoading={processRunMutation.isPending}
               >
                 Lancer le Traitement
               </Button>
@@ -650,7 +857,7 @@ export default function PayrollPage() {
                 </Select>
                 <Input
                   type="number"
-                  label="Montant (CDF)"
+                  label="Montant (USD)"
                   startContent={<FiDollarSign />}
                   isRequired
                   value={variableFormData.amount}
@@ -673,7 +880,7 @@ export default function PayrollPage() {
             </ModalBody>
             <ModalFooter>
               <Button variant="flat" onPress={onVariableClose}>Annuler</Button>
-              <Button color="danger" onPress={handleCreateVariable} isLoading={createVariableMutation.isPending}>
+              <Button color="danger" onPress={handleCreateVariable}>
                 Ajouter
               </Button>
             </ModalFooter>

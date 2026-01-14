@@ -77,17 +77,17 @@ export default function AttendanceRecordsPage() {
   const [selectedEmployee, setSelectedEmployee] = useState(null);
 
   // Queries
-  const { data: recordsData, isLoading } = useGetAttendanceRecords({
-    page,
-    rowsPerPage,
-    query: searchQuery,
-    filters,
-  });
+  // const { data: recordsData, isLoading } = useGetAttendanceRecords({
+  //   page,
+  //   rowsPerPage,
+  //   query: searchQuery,
+  //   filters,
+  // });
 
-  const { data: dailySummary, isLoading: summaryLoading } = useGetDailySummary(
-    filters.date_from || getTodayISO(),
-    filters.department_id
-  );
+  // const { data: dailySummary, isLoading: summaryLoading } = useGetDailySummary(
+  //   filters.date_from || getTodayISO(),
+  //   filters.department_id
+  // );
 
   const { data: employeeDailyData } = useGetEmployeeDailyAttendance(
     selectedEmployee?.employee_id,
@@ -97,16 +97,157 @@ export default function AttendanceRecordsPage() {
   // Mutations
   const syncMutation = useSynchronizeAttendance();
 
-  const records = recordsData?.records || [];
-  const total = recordsData?.total || 0;
-  const pages = Math.ceil(total / rowsPerPage);
-
-  const summary = dailySummary || {
-    total_present: 0,
-    total_late: 0,
-    total_absent: 0,
-    total_half_day: 0,
+  // TEST DATA - Résumé journalier
+  const isLoading = false;
+  const summary = {
+    total_present: 142,
+    total_late: 23,
+    total_absent: 8,
+    total_half_day: 3,
   };
+
+  // TEST DATA - Enregistrements de présence
+  const mockRecords = [
+    {
+      id: 1,
+      date: "2026-01-14",
+      employee: { first_name: "Jean", last_name: "Dupont", employee_number: "EMP001" },
+      check_in_time: "07:58:23",
+      check_out_time: "17:05:12",
+      status: "present",
+      terminal_name: "Terminal Principal",
+    },
+    {
+      id: 2,
+      date: "2026-01-14",
+      employee: { first_name: "Marie", last_name: "Kabila", employee_number: "EMP002" },
+      check_in_time: "08:15:34",
+      check_out_time: "17:02:45",
+      status: "late",
+      terminal_name: "Terminal Principal",
+    },
+    {
+      id: 3,
+      date: "2026-01-14",
+      employee: { first_name: "Pierre", last_name: "Tshisekedi", employee_number: "EMP003" },
+      check_in_time: "07:45:12",
+      check_out_time: "17:10:23",
+      status: "present",
+      terminal_name: "Terminal RH",
+    },
+    {
+      id: 4,
+      date: "2026-01-14",
+      employee: { first_name: "Sophie", last_name: "Mukendi", employee_number: "EMP004" },
+      check_in_time: "08:22:45",
+      check_out_time: "16:58:12",
+      status: "late",
+      terminal_name: "Terminal Principal",
+    },
+    {
+      id: 5,
+      date: "2026-01-14",
+      employee: { first_name: "Jacques", last_name: "Lumbu", employee_number: "EMP005" },
+      check_in_time: null,
+      check_out_time: null,
+      status: "absent",
+      terminal_name: null,
+    },
+    {
+      id: 6,
+      date: "2026-01-14",
+      employee: { first_name: "Christine", last_name: "Mbuyi", employee_number: "EMP006" },
+      check_in_time: "07:52:34",
+      check_out_time: "17:03:21",
+      status: "present",
+      terminal_name: "Terminal Principal",
+    },
+    {
+      id: 7,
+      date: "2026-01-14",
+      employee: { first_name: "David", last_name: "Kalala", employee_number: "EMP007" },
+      check_in_time: "08:35:12",
+      check_out_time: "17:00:45",
+      status: "late",
+      terminal_name: "Terminal RH",
+    },
+    {
+      id: 8,
+      date: "2026-01-14",
+      employee: { first_name: "Antoinette", last_name: "Ngoy", employee_number: "EMP008" },
+      check_in_time: "08:01:23",
+      check_out_time: "12:30:12",
+      status: "half_day",
+      terminal_name: "Terminal Principal",
+    },
+    {
+      id: 9,
+      date: "2026-01-14",
+      employee: { first_name: "François", last_name: "Kasongo", employee_number: "EMP009" },
+      check_in_time: "07:55:45",
+      check_out_time: "17:08:34",
+      status: "present",
+      terminal_name: "Terminal Principal",
+    },
+    {
+      id: 10,
+      date: "2026-01-14",
+      employee: { first_name: "Jeanne", last_name: "Mutombo", employee_number: "EMP010" },
+      check_in_time: "08:18:56",
+      check_out_time: "17:05:23",
+      status: "late",
+      terminal_name: "Terminal RH",
+    },
+    {
+      id: 11,
+      date: "2026-01-14",
+      employee: { first_name: "Emmanuel", last_name: "Kibwe", employee_number: "EMP011" },
+      check_in_time: "07:48:12",
+      check_out_time: "17:12:45",
+      status: "present",
+      terminal_name: "Terminal Principal",
+    },
+    {
+      id: 12,
+      date: "2026-01-14",
+      employee: { first_name: "Claudine", last_name: "Ilunga", employee_number: "EMP012" },
+      check_in_time: null,
+      check_out_time: null,
+      status: "absent",
+      terminal_name: null,
+    },
+    {
+      id: 13,
+      date: "2026-01-14",
+      employee: { first_name: "Michel", last_name: "Kambale", employee_number: "EMP013" },
+      check_in_time: "08:25:34",
+      check_out_time: "17:01:12",
+      status: "late",
+      terminal_name: "Terminal Principal",
+    },
+    {
+      id: 14,
+      date: "2026-01-14",
+      employee: { first_name: "Brigitte", last_name: "Mwamba", employee_number: "EMP014" },
+      check_in_time: "07:56:23",
+      check_out_time: "17:04:56",
+      status: "present",
+      terminal_name: "Terminal RH",
+    },
+    {
+      id: 15,
+      date: "2026-01-14",
+      employee: { first_name: "Joseph", last_name: "Nkulu", employee_number: "EMP015" },
+      check_in_time: "08:12:45",
+      check_out_time: "17:06:34",
+      status: "late",
+      terminal_name: "Terminal Principal",
+    },
+  ];
+
+  const records = mockRecords;
+  const total = mockRecords.length;
+  const pages = Math.ceil(total / rowsPerPage);
 
   // Handlers
   const handleSync = async () => {

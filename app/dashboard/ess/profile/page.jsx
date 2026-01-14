@@ -1,9 +1,11 @@
 "use client";
 
 import React, { useState } from "react";
-import { Card, CardBody, Tabs, Tab, Button, Input, Chip, Avatar, Spinner, Divider, Table, TableHeader, TableColumn, TableBody, TableRow, TableCell, Select, SelectItem } from "@nextui-org/react";
-import { FiUser, FiEdit, FiSave, FiFileText, FiTrendingUp, FiUsers } from "react-icons/fi";
+import { Card, CardBody, Tabs, Tab, Button, Input, Chip, Avatar, Spinner, Divider, Table, TableHeader, TableColumn, TableBody, TableRow, TableCell, Select, SelectItem, Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, useDisclosure, Textarea, Progress } from "@nextui-org/react";
+import { FiUser, FiEdit, FiSave, FiFileText, FiTrendingUp, FiUsers, FiCalendar, FiClock, FiPlus, FiCheckCircle, FiXCircle, FiAlertCircle, FiSend } from "react-icons/fi";
 import { useGetMyProfile, useUpdateMyProfile, useGetMyContracts, useGetEmployeeHistory, useGetEmployeeDependents } from "@/src/hooks/useESS";
+import { useGetLeaveBalances, useGetLeaveTypes, useGetLeaveRequests, useCreateLeaveRequest, useSubmitLeaveRequest } from "@/src/hooks/useLeave";
+import { useGetAttendanceRecords } from "@/src/hooks/useAttendance";
 import { useForm, Controller } from "react-hook-form";
 import { toast } from "react-toastify";
 
@@ -39,6 +41,27 @@ export default function MyProfilePage() {
     const { data: dependents = [] } = useGetEmployeeDependents(profile?.id);
     const updateProfile = useUpdateMyProfile();
 
+    // Leave Management States
+    const currentYear = new Date().getFullYear();
+    const { data: leaveBalances = [] } = useGetLeaveBalances(profile?.id, currentYear);
+    const { data: leaveTypes = [] } = useGetLeaveTypes();
+    const { data: leaveRequestsData } = useGetLeaveRequests({ page: 1, rowsPerPage: 100, query: "", filters: { employee_id: profile?.id } });
+    const leaveRequests = leaveRequestsData?.requests || [];
+    const createLeaveRequestMutation = useCreateLeaveRequest();
+    const submitLeaveRequestMutation = useSubmitLeaveRequest();
+
+    // Attendance History States  
+    const { data: attendanceData } = useGetAttendanceRecords({ 
+        page: 1, 
+        rowsPerPage: 100, 
+        query: "", 
+        filters: { employee_id: profile?.id } 
+    });
+    const attendanceRecords = attendanceData?.records || [];
+
+    // Leave Request Modal
+    const { isOpen: isLeaveModalOpen, onOpen: onLeaveModalOpen, onClose: onLeaveModalClose } = useDisclosure();
+
     const {
         control,
         handleSubmit,
@@ -64,6 +87,15 @@ export default function MyProfilePage() {
             : {},
     });
 
+    // Leave Request Form
+    const {
+        control: leaveControl,
+        handleSubmit: handleLeaveSubmit,
+        reset: resetLeave,
+        watch: watchLeave,
+        formState: { errors: leaveErrors },
+    } = useForm();
+
     const onSubmit = async (data) => {
         try {
             // Clean empty strings for ENUM fields
@@ -85,6 +117,48 @@ export default function MyProfilePage() {
             toast.error("Erreur lors de la mise à jour du profil");
             console.error(error);
         }
+    };
+
+    const onSubmitLeaveRequest = async (data) => {
+        try {
+            // Create leave request
+            const response = await createLeaveRequestMutation.mutateAsync({
+                ...data,
+                employee_id: profile.id,
+            });
+            
+            // Submit immediately
+            await submitLeaveRequestMutation.mutateAsync(response.id);
+            
+            toast.success("Demande de congé soumise avec succès");
+            resetLeave();
+            onLeaveModalClose();
+        } catch (error) {
+            toast.error(error.response?.data?.error || "Erreur lors de la soumission");
+            console.error(error);
+        }
+    };
+
+    const getLeaveStatusColor = (status) => {
+        const colors = {
+            draft: "default",
+            submitted: "warning",
+            approved: "success",
+            rejected: "danger",
+            cancelled: "default",
+        };
+        return colors[status] || "default";
+    };
+
+    const getLeaveStatusLabel = (status) => {
+        const labels = {
+            draft: "Brouillon",
+            submitted: "En attente",
+            approved: "Approuvé",
+            rejected: "Rejeté",
+            cancelled: "Annulé",
+        };
+        return labels[status] || status;
     };
 
     if (isLoading) {
@@ -351,6 +425,164 @@ export default function MyProfilePage() {
                                 </div>
                             </Tab>
 
+                            <Tab key="leave-balance" title={<span className="flex items-center gap-2"><FiCalendar /> Solde de Congés</span>}>
+                                <div className="py-4">
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                                        {leaveBalances.map((balance) => (
+                                            <Card key={balance.id} className="border">
+                                                <CardBody>
+                                                    <div className="flex justify-between items-start mb-3">
+                                                        <h4 className="font-semibold text-lg">{balance.leave_type?.name}</h4>
+                                                        <Chip size="sm" color="primary" variant="flat">
+                                                            {balance.year}
+                                                        </Chip>
+                                                    </div>
+                                                    <div className="space-y-2">
+                                                        <div>
+                                                            <div className="flex justify-between text-sm mb-1">
+                                                                <span className="text-default-500">Utilisé</span>
+                                                                <span className="font-semibold">{balance.used_days} jours</span>
+                                                            </div>
+                                                            <Progress
+                                                                value={(balance.used_days / balance.allocated_days) * 100}
+                                                                color="danger"
+                                                                size="sm"
+                                                            />
+                                                        </div>
+                                                        <Divider />
+                                                        <div className="flex justify-between">
+                                                            <span className="text-sm text-default-500">Alloué</span>
+                                                            <span className="font-semibold text-primary">{balance.allocated_days} jours</span>
+                                                        </div>
+                                                        <div className="flex justify-between">
+                                                            <span className="text-sm text-default-500">Restant</span>
+                                                            <span className="font-semibold text-success">{balance.remaining_days} jours</span>
+                                                        </div>
+                                                        {balance.carried_forward_days > 0 && (
+                                                            <div className="flex justify-between">
+                                                                <span className="text-sm text-default-500">Reporté</span>
+                                                                <span className="font-semibold text-secondary">{balance.carried_forward_days} jours</span>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </CardBody>
+                                            </Card>
+                                        ))}
+                                    </div>
+                                    {leaveBalances.length === 0 && (
+                                        <p className="text-center text-default-500">Aucun solde de congé disponible</p>
+                                    )}
+                                </div>
+                            </Tab>
+
+                            <Tab key="leave-requests" title={<span className="flex items-center gap-2"><FiFileText /> Mes Demandes</span>}>
+                                <div className="py-4">
+                                    <div className="flex justify-between items-center mb-4">
+                                        <h3 className="text-lg font-semibold">Historique des Demandes de Congé</h3>
+                                        <Button color="primary" startContent={<FiPlus />} onPress={onLeaveModalOpen}>
+                                            Nouvelle Demande
+                                        </Button>
+                                    </div>
+                                    {leaveRequests.length === 0 ? (
+                                        <p className="text-center text-default-500 py-8">Aucune demande de congé</p>
+                                    ) : (
+                                        <Table aria-label="Leave requests table">
+                                            <TableHeader>
+                                                <TableColumn>TYPE</TableColumn>
+                                                <TableColumn>PÉRIODE</TableColumn>
+                                                <TableColumn>DURÉE</TableColumn>
+                                                <TableColumn>STATUT</TableColumn>
+                                                <TableColumn>DATE DEMANDE</TableColumn>
+                                            </TableHeader>
+                                            <TableBody>
+                                                {leaveRequests.map((request) => (
+                                                    <TableRow key={request.id}>
+                                                        <TableCell>{request.leave_type?.name}</TableCell>
+                                                        <TableCell>
+                                                            {new Date(request.start_date).toLocaleDateString("fr-FR")} - {new Date(request.end_date).toLocaleDateString("fr-FR")}
+                                                        </TableCell>
+                                                        <TableCell>
+                                                            <span className="font-semibold">{request.days_requested} jours</span>
+                                                        </TableCell>
+                                                        <TableCell>
+                                                            <Chip size="sm" color={getLeaveStatusColor(request.status)} variant="flat">
+                                                                {getLeaveStatusLabel(request.status)}
+                                                            </Chip>
+                                                        </TableCell>
+                                                        <TableCell>
+                                                            {request.created_at ? new Date(request.created_at).toLocaleDateString("fr-FR") : "-"}
+                                                        </TableCell>
+                                                    </TableRow>
+                                                ))}
+                                            </TableBody>
+                                        </Table>
+                                    )}
+                                </div>
+                            </Tab>
+
+                            <Tab key="attendance" title={<span className="flex items-center gap-2"><FiClock /> Présences</span>}>
+                                <div className="py-4">
+                                    <h3 className="text-lg font-semibold mb-4">Historique de Présences</h3>
+                                    {attendanceRecords.length === 0 ? (
+                                        <p className="text-center text-default-500 py-8">Aucun enregistrement de présence</p>
+                                    ) : (
+                                        <Table aria-label="Attendance records table">
+                                            <TableHeader>
+                                                <TableColumn>DATE</TableColumn>
+                                                <TableColumn>ARRIVÉE</TableColumn>
+                                                <TableColumn>DÉPART</TableColumn>
+                                                <TableColumn>DURÉE</TableColumn>
+                                                <TableColumn>STATUT</TableColumn>
+                                            </TableHeader>
+                                            <TableBody>
+                                                {attendanceRecords.map((record) => {
+                                                    const checkIn = record.check_in_time ? new Date(`1970-01-01T${record.check_in_time}`) : null;
+                                                    const checkOut = record.check_out_time ? new Date(`1970-01-01T${record.check_out_time}`) : null;
+                                                    let duration = "-";
+                                                    if (checkIn && checkOut) {
+                                                        const diffMs = checkOut - checkIn;
+                                                        const hours = Math.floor(diffMs / (1000 * 60 * 60));
+                                                        const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+                                                        duration = `${hours}h ${minutes}min`;
+                                                    }
+                                                    
+                                                    return (
+                                                        <TableRow key={record.id}>
+                                                            <TableCell>
+                                                                {new Date(record.attendance_date).toLocaleDateString("fr-FR")}
+                                                            </TableCell>
+                                                            <TableCell>
+                                                                {record.check_in_time || "-"}
+                                                            </TableCell>
+                                                            <TableCell>
+                                                                {record.check_out_time || "-"}
+                                                            </TableCell>
+                                                            <TableCell>{duration}</TableCell>
+                                                            <TableCell>
+                                                                <Chip 
+                                                                    size="sm" 
+                                                                    color={
+                                                                        record.status === "present" ? "success" : 
+                                                                        record.status === "late" ? "warning" : 
+                                                                        record.status === "absent" ? "danger" : "default"
+                                                                    } 
+                                                                    variant="flat"
+                                                                >
+                                                                    {record.status === "present" ? "Présent" : 
+                                                                     record.status === "late" ? "Retard" : 
+                                                                     record.status === "absent" ? "Absent" : 
+                                                                     record.status}
+                                                                </Chip>
+                                                            </TableCell>
+                                                        </TableRow>
+                                                    );
+                                                })}
+                                            </TableBody>
+                                        </Table>
+                                    )}
+                                </div>
+                            </Tab>
+
                             <Tab key="dependents" title={<span className="flex items-center gap-2"><FiUsers /> Dépendants</span>}>
                                 <div className="py-4">
                                     {dependents.length === 0 ? (
@@ -387,6 +619,144 @@ export default function MyProfilePage() {
                     </CardBody>
                 </Card>
             </form>
+
+            {/* Leave Request Modal */}
+            <Modal isOpen={isLeaveModalOpen} onClose={onLeaveModalClose} size="3xl" scrollBehavior="inside">
+                <ModalContent>
+                    <form onSubmit={handleLeaveSubmit(onSubmitLeaveRequest)}>
+                        <ModalHeader>
+                            <div className="flex items-center gap-2">
+                                <FiCalendar className="text-primary" />
+                                <span>Nouvelle Demande de Congé</span>
+                            </div>
+                        </ModalHeader>
+                        <ModalBody>
+                            <div className="space-y-4">
+                                {/* Leave Type */}
+                                <Controller
+                                    name="leave_type_id"
+                                    control={leaveControl}
+                                    rules={{ required: "Le type de congé est requis" }}
+                                    render={({ field }) => (
+                                        <Select
+                                            label="Type de Congé"
+                                            placeholder="Sélectionnez le type"
+                                            isInvalid={!!leaveErrors.leave_type_id}
+                                            errorMessage={leaveErrors.leave_type_id?.message}
+                                            selectedKeys={field.value ? [String(field.value)] : []}
+                                            onSelectionChange={(keys) => field.onChange(Array.from(keys)[0])}
+                                            description="Vérifiez votre solde disponible avant de soumettre"
+                                        >
+                                            {leaveTypes.map((type) => (
+                                                <SelectItem key={String(type.id)} value={String(type.id)}>
+                                                    {type.name} {type.requires_approval && "(Nécessite approbation)"}
+                                                </SelectItem>
+                                            ))}
+                                        </Select>
+                                    )}
+                                />
+
+                                {/* Dates */}
+                                <div className="grid grid-cols-2 gap-4">
+                                    <Controller
+                                        name="start_date"
+                                        control={leaveControl}
+                                        rules={{ required: "La date de début est requise" }}
+                                        render={({ field }) => (
+                                            <Input
+                                                {...field}
+                                                type="date"
+                                                label="Date de Début"
+                                                isInvalid={!!leaveErrors.start_date}
+                                                errorMessage={leaveErrors.start_date?.message}
+                                            />
+                                        )}
+                                    />
+                                    <Controller
+                                        name="end_date"
+                                        control={leaveControl}
+                                        rules={{ required: "La date de fin est requise" }}
+                                        render={({ field }) => (
+                                            <Input
+                                                {...field}
+                                                type="date"
+                                                label="Date de Fin"
+                                                isInvalid={!!leaveErrors.end_date}
+                                                errorMessage={leaveErrors.end_date?.message}
+                                            />
+                                        )}
+                                    />
+                                </div>
+
+                                {/* Reason */}
+                                <Controller
+                                    name="reason"
+                                    control={leaveControl}
+                                    rules={{ required: "Le motif est requis" }}
+                                    render={({ field }) => (
+                                        <Textarea
+                                            {...field}
+                                            label="Motif de la Demande"
+                                            placeholder="Expliquez la raison de votre demande de congé..."
+                                            isInvalid={!!leaveErrors.reason}
+                                            errorMessage={leaveErrors.reason?.message}
+                                            rows={4}
+                                        />
+                                    )}
+                                />
+
+                                {/* Leave Balances Info */}
+                                <div className="bg-primary-50 p-4 rounded-lg">
+                                    <h4 className="font-semibold mb-2 flex items-center gap-2">
+                                        <FiCheckCircle className="text-primary" />
+                                        Vos Soldes de Congé
+                                    </h4>
+                                    <div className="grid grid-cols-2 gap-3 text-sm">
+                                        {leaveBalances.map((balance) => (
+                                            <div key={balance.id} className="flex justify-between">
+                                                <span className="text-default-600">{balance.leave_type?.name}:</span>
+                                                <span className="font-semibold text-success">
+                                                    {balance.remaining_days} jours restants
+                                                </span>
+                                            </div>
+                                        ))}
+                                        {leaveBalances.length === 0 && (
+                                            <p className="text-default-500 col-span-2">Aucun solde disponible</p>
+                                        )}
+                                    </div>
+                                </div>
+
+                                {/* Important Notice */}
+                                <div className="bg-warning-50 p-4 rounded-lg">
+                                    <h4 className="font-semibold mb-2 flex items-center gap-2 text-warning-700">
+                                        <FiAlertCircle />
+                                        Important
+                                    </h4>
+                                    <ul className="text-sm text-default-600 space-y-1 list-disc list-inside">
+                                        <li>Votre demande sera automatiquement soumise à votre responsable</li>
+                                        <li>Assurez-vous d'avoir suffisamment de solde de congé</li>
+                                        <li>Le délai de traitement est généralement de 3 à 5 jours ouvrables</li>
+                                        <li>Vous recevrez une notification lorsque votre demande sera traitée</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </ModalBody>
+                        <ModalFooter>
+                            <Button variant="light" onPress={onLeaveModalClose}>
+                                Annuler
+                            </Button>
+                            <Button 
+                                color="primary" 
+                                type="submit" 
+                                isLoading={createLeaveRequestMutation.isPending || submitLeaveRequestMutation.isPending}
+                                startContent={<FiSend />}
+                            >
+                                Soumettre la Demande
+                            </Button>
+                        </ModalFooter>
+                    </form>
+                </ModalContent>
+            </Modal>
         </div>
     );
 }
