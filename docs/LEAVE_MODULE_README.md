@@ -1,4 +1,4 @@
-# Module CONGÉS - SIRH SofiBanque
+# Module CONGÉS - SIRH
 
 ## Vue d'ensemble
 

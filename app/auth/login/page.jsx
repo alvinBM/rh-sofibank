@@ -57,7 +57,7 @@ export default function Login() {
             </div>
             <div className="flex flex-col items-center pb-6 px-4">
                 <Link href="/">
-                    <Image alt="Logo" height={80} width={250} radius="sm" src={"../logo_sofibank.png"} />
+                    <Image alt="Logo" height={150} width={150} radius="sm" src={"../logo.png"} />
                 </Link>
                 {/* <p className="text-xl font-medium">Welcome Back</p> */}
                 <p className="text-lg text-center text-default-500 mt-5">Connectez-vous sur votre compte pour continuer</p>

@@ -1,5 +1,5 @@
 /*
-  # Création des utilisateurs de démonstration pour SIRH SOFIBANQUE
+  # Création des utilisateurs de démonstration pour SIRH
 
   1. Utilisateurs créés
     - DRH (drh@sofibanque.com) - Directeur RH avec accès complet

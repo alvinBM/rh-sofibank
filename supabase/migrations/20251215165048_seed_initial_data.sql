@@ -1,5 +1,5 @@
 /*
-  # Données d'initialisation SIRH SOFIBANQUE
+  # Données d'initialisation SIRH
   
   1. Rôles système
   2. Permissions par module

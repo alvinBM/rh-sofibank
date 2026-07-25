@@ -5,12 +5,12 @@ import { Providers } from "./providers";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata = {
-    title: "SIRH SOFIBANQUE",
-    description: "Application de gestion des SIRH SOFIBANQUE et des chefs coutumiers en République Démocratique du Congo.",
+    title: "SIRH",
+    description: "Application de gestion des SIRH et des chefs coutumiers en République Démocratique du Congo.",
     image: "/logo.jpg",
     url: "https://sofibanque.com",
     type: "website",
-    siteName: "SIRH SOFIBANQUE",
+    siteName: "SIRH",
     locale: "fr_FR",
 };
 

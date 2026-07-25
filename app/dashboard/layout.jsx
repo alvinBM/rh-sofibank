@@ -48,6 +48,7 @@ import { selectCurrentPage, selectIsAuthenticated, selectUserPermissions, select
 import { useRouter } from "next/navigation";
 import { useGetBranches } from "@/src/hooks/useBranches";
 import { formatDateFullText, hasPermission } from "@/src/helpers/helpers";
+import { getAccessLevel, ACCESS_LEVELS, filterSidebarByAccessLevel } from "@/src/helpers/accessControl";
 import PermissionCheck from "../ui/dashboard/PermissionCheck";
 import { useTheme } from "next-themes";
 import AccountExpiredBanner from "../ui/dashboard/AccountExpiredBanner";
@@ -64,7 +65,9 @@ const Layout = ({ children }) => {
     const router = useRouter();
     const currentPage = useSelector(selectCurrentPage) ?? router.pathname;
     const [selectedBranchData, setSelectedBranchData] = useState(null);
-    const isAdmin = user?.main_roles?.some((role) => role.role_name === "Admin");
+    // Accès temporaire piloté par l'email en attendant la fiabilisation du système de rôles/permissions.
+    const accessLevel = getAccessLevel(user);
+    const isAdmin = accessLevel === ACCESS_LEVELS.ADMIN;
     // TODO: Activer quand l'endpoint /api/main/branches sera créé
     // const { data: dataBranches, isError: isErrorBranch, error: errorBranch, isLoading: isLoadingGetBranches } = useGetBranches({ page: 1, rowsPerPage: 1000 });
     // const branches = dataBranches && dataBranches?.branches.length > 0 ? dataBranches?.branches : [user?.main_store];
@@ -150,17 +153,18 @@ const Layout = ({ children }) => {
             .filter(Boolean);
     };
 
-    // Utilisation des deux filtres
-    const filteredByPermissions = filterSidebarByPermissions(sectionItems, permissions, isAdmin);
+    // Utilisation des filtres : niveau d'accès (email) -> permissions -> fonctionnalités du plan
+    const filteredByAccessLevel = filterSidebarByAccessLevel(sectionItems, accessLevel);
+    const filteredByPermissions = filterSidebarByPermissions(filteredByAccessLevel, permissions, isAdmin);
     const filteredSectionItems = filterSidebarByFeatures(filteredByPermissions, isAccountExpired);
 
     const sidebarContent = (
         <>
             {userIsAuthenticated && (
                 <div className="relative flex h-screen min-w-72 flex-1 flex-col p-0 max-w-72 bg-background dark:bg-zinc-950">
-                    <div className="flex flex-col gap-y-2 border-b-gray-50 dark:border-b-gray-900 border-b-1 py-7 px-3">
-                        <div className="w-full justify-center flex items-center mb-5">
-                            <Image alt="LOGO" height={90} width={240} radius="sm" src={"/logo_sofibank.png"} />
+                    <div className="flex flex-col gap-y-2 border-b-gray-50 dark:border-b-gray-900 border-b-1 px-3">
+                        <div className="w-full justify-center flex items-center">
+                            <Image alt="LOGO" height={150} width={150} radius="sm" src={"/logo.png"} />
                         </div>
                     </div>
 
@@ -237,11 +241,13 @@ const Layout = ({ children }) => {
                                     </NavbarItem>
 
                                     {/* Settings */}
-                                    <NavbarItem className="flex">
-                                        <Button onPress={() => router.push("/dashboard/settings")} isIconOnly radius="full" variant="light">
-                                            <Icon className="text-default-500" icon="solar:settings-linear" width={24} />
-                                        </Button>
-                                    </NavbarItem>
+                                    {isAdmin && (
+                                        <NavbarItem className="flex">
+                                            <Button onPress={() => router.push("/dashboard/settings")} isIconOnly radius="full" variant="light">
+                                                <Icon className="text-default-500" icon="solar:settings-linear" width={24} />
+                                            </Button>
+                                        </NavbarItem>
+                                    )}
 
                                     {/* Notifications */}
                                     <NavbarItem className="flex">

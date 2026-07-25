@@ -2,7 +2,7 @@
 -- MODULE CONGÉS - MIGRATIONS BASE DE DONNÉES SUPABASE
 -- =============================================================================
 -- Ce fichier contient toutes les migrations nécessaires pour le module Congés
--- du SIRH SofiBanque
+-- du SIRH
 
 -- =============================================================================
 -- 1. AJOUT DE COLONNES À LA TABLE leave_requests
