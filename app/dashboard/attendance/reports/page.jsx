@@ -59,20 +59,242 @@ export default function AttendanceReportsPage() {
   const deptSummaryMutation = useGenerateDepartmentSummary();
 
   // Queries pour les statistiques et graphiques
-  const { data: stats, isLoading: statsLoading } = useGetAttendanceStats(
-    filters.start_date,
-    filters.end_date,
-    filters.department_id
-  );
+  // const { data: stats, isLoading: statsLoading } = useGetAttendanceStats(
+  //   filters.start_date,
+  //   filters.end_date,
+  //   filters.department_id
+  // );
 
-  const { data: monthlyTrend, isLoading: trendLoading } = useGetMonthlyAttendanceTrend(
-    currentYear,
-    filters.department_id
-  );
+  // const { data: monthlyTrend, isLoading: trendLoading } = useGetMonthlyAttendanceTrend(
+  //   currentYear,
+  //   filters.department_id
+  // );
 
-  const [latenessReport, setLatenessReport] = useState([]);
-  const [missingPunchReport, setMissingPunchReport] = useState([]);
-  const [deptSummary, setDeptSummary] = useState([]);
+  // TEST DATA - Statistiques
+  const statsLoading = false;
+  const trendLoading = false;
+  const stats = {
+    overall_attendance_rate: 92.5,
+    average_daily_hours: 8.3,
+    average_late_arrivals_per_day: 4.2,
+    total_overtime_hours: 156,
+  };
+
+  // TEST DATA - Évolution mensuelle
+  const monthlyTrend = [
+    { month: "Jan", attendance_rate: 91.2, lateness_count: 45 },
+    { month: "Fév", attendance_rate: 89.8, lateness_count: 52 },
+    { month: "Mar", attendance_rate: 93.5, lateness_count: 38 },
+    { month: "Avr", attendance_rate: 92.1, lateness_count: 41 },
+    { month: "Mai", attendance_rate: 94.3, lateness_count: 35 },
+    { month: "Jun", attendance_rate: 91.7, lateness_count: 48 },
+    { month: "Jul", attendance_rate: 90.5, lateness_count: 55 },
+    { month: "Aoû", attendance_rate: 92.8, lateness_count: 42 },
+    { month: "Sep", attendance_rate: 93.9, lateness_count: 37 },
+    { month: "Oct", attendance_rate: 91.4, lateness_count: 46 },
+    { month: "Nov", attendance_rate: 92.6, lateness_count: 43 },
+    { month: "Déc", attendance_rate: 90.2, lateness_count: 51 },
+  ];
+
+  // TEST DATA - Rapport des retards
+  const mockLatenessReport = [
+    {
+      employee_id: 1,
+      employee_name: "Jean Dupont",
+      department_name: "Ressources Humaines",
+      lateness_count: 8,
+      total_minutes: 156,
+      average_minutes: 19.5,
+    },
+    {
+      employee_id: 2,
+      employee_name: "Marie Kabila",
+      department_name: "Finance",
+      lateness_count: 12,
+      total_minutes: 245,
+      average_minutes: 20.4,
+    },
+    {
+      employee_id: 3,
+      employee_name: "Pierre Tshisekedi",
+      department_name: "IT",
+      lateness_count: 5,
+      total_minutes: 78,
+      average_minutes: 15.6,
+    },
+    {
+      employee_id: 4,
+      employee_name: "Sophie Mukendi",
+      department_name: "Marketing",
+      lateness_count: 15,
+      total_minutes: 312,
+      average_minutes: 20.8,
+    },
+    {
+      employee_id: 5,
+      employee_name: "Jacques Lumbu",
+      department_name: "Opérations",
+      lateness_count: 7,
+      total_minutes: 134,
+      average_minutes: 19.1,
+    },
+    {
+      employee_id: 6,
+      employee_name: "Christine Mbuyi",
+      department_name: "Ventes",
+      lateness_count: 10,
+      total_minutes: 198,
+      average_minutes: 19.8,
+    },
+    {
+      employee_id: 7,
+      employee_name: "David Kalala",
+      department_name: "Comptabilité",
+      lateness_count: 6,
+      total_minutes: 102,
+      average_minutes: 17.0,
+    },
+    {
+      employee_id: 8,
+      employee_name: "Antoinette Ngoy",
+      department_name: "Logistique",
+      lateness_count: 9,
+      total_minutes: 176,
+      average_minutes: 19.6,
+    },
+  ];
+
+  // TEST DATA - Absences de pointage
+  const mockMissingPunchReport = [
+    {
+      employee_id: 1,
+      employee_name: "François Kasongo",
+      department_name: "IT",
+      date: "2026-01-10",
+      missing_type: "out",
+      has_leave_request: false,
+    },
+    {
+      employee_id: 2,
+      employee_name: "Jeanne Mutombo",
+      department_name: "Finance",
+      date: "2026-01-12",
+      missing_type: "both",
+      has_leave_request: true,
+    },
+    {
+      employee_id: 3,
+      employee_name: "Emmanuel Kibwe",
+      department_name: "Marketing",
+      date: "2026-01-09",
+      missing_type: "in",
+      has_leave_request: false,
+    },
+    {
+      employee_id: 4,
+      employee_name: "Claudine Ilunga",
+      department_name: "Ventes",
+      date: "2026-01-11",
+      missing_type: "out",
+      has_leave_request: false,
+    },
+    {
+      employee_id: 5,
+      employee_name: "Michel Kambale",
+      department_name: "Opérations",
+      date: "2026-01-13",
+      missing_type: "both",
+      has_leave_request: true,
+    },
+    {
+      employee_id: 6,
+      employee_name: "Brigitte Mwamba",
+      department_name: "RH",
+      date: "2026-01-08",
+      missing_type: "in",
+      has_leave_request: false,
+    },
+  ];
+
+  // TEST DATA - Synthèse par département
+  const mockDeptSummary = [
+    {
+      department_id: 1,
+      department_name: "Ressources Humaines",
+      employee_count: 18,
+      attendance_rate: 94.5,
+      average_hours_per_day: 8.4,
+      total_lates: 12,
+      total_absences: 3,
+    },
+    {
+      department_id: 2,
+      department_name: "Finance",
+      employee_count: 25,
+      attendance_rate: 92.8,
+      average_hours_per_day: 8.6,
+      total_lates: 18,
+      total_absences: 5,
+    },
+    {
+      department_id: 3,
+      department_name: "IT",
+      employee_count: 22,
+      attendance_rate: 96.2,
+      average_hours_per_day: 8.2,
+      total_lates: 8,
+      total_absences: 2,
+    },
+    {
+      department_id: 4,
+      department_name: "Marketing",
+      employee_count: 15,
+      attendance_rate: 89.3,
+      average_hours_per_day: 8.1,
+      total_lates: 22,
+      total_absences: 7,
+    },
+    {
+      department_id: 5,
+      department_name: "Ventes",
+      employee_count: 30,
+      attendance_rate: 91.7,
+      average_hours_per_day: 8.3,
+      total_lates: 25,
+      total_absences: 6,
+    },
+    {
+      department_id: 6,
+      department_name: "Opérations",
+      employee_count: 28,
+      attendance_rate: 93.1,
+      average_hours_per_day: 8.5,
+      total_lates: 16,
+      total_absences: 4,
+    },
+    {
+      department_id: 7,
+      department_name: "Comptabilité",
+      employee_count: 12,
+      attendance_rate: 95.8,
+      average_hours_per_day: 8.7,
+      total_lates: 6,
+      total_absences: 1,
+    },
+    {
+      department_id: 8,
+      department_name: "Logistique",
+      employee_count: 20,
+      attendance_rate: 90.4,
+      average_hours_per_day: 8.2,
+      total_lates: 19,
+      total_absences: 5,
+    },
+  ];
+
+  const [latenessReport, setLatenessReport] = useState(mockLatenessReport);
+  const [missingPunchReport, setMissingPunchReport] = useState(mockMissingPunchReport);
+  const [deptSummary, setDeptSummary] = useState(mockDeptSummary);
 
   // Handlers
   const handleGenerateLateness = async () => {

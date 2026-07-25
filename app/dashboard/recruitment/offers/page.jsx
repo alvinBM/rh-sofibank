@@ -109,14 +109,15 @@ export default function EmploymentOffersPage() {
 
   const onApproveOffer = async (data) => {
     try {
+      const approve = data.approve === "true";
       await approveOfferMutation.mutateAsync({
         id: selectedOffer,
         approvalData: {
-          approve: data.approve,
+          approve: approve,
           rejection_reason: data.rejection_reason,
         },
       });
-      toast.success(data.approve ? "Offre approuvée" : "Offre rejetée");
+      toast.success(approve ? "Offre approuvée" : "Offre rejetée");
       resetApprove();
       onApproveClose();
     } catch (error) {
@@ -353,14 +354,15 @@ export default function EmploymentOffersPage() {
                   rules={{ required: "Le candidat est requis" }}
                   render={({ field }) => (
                     <Select
-                      {...field}
                       label="Candidat"
                       placeholder="Sélectionnez un candidat"
                       isInvalid={!!createErrors.application_id}
                       errorMessage={createErrors.application_id?.message}
+                      selectedKeys={field.value ? [String(field.value)] : []}
+                      onSelectionChange={(keys) => field.onChange(Array.from(keys)[0])}
                     >
                       {applications?.map((app) => (
-                        <SelectItem key={app.id} value={app.id}>
+                        <SelectItem key={String(app.id)} value={String(app.id)}>
                           {app.first_name} {app.last_name} - {app.job_posting?.job_title}
                         </SelectItem>
                       ))}
@@ -392,11 +394,12 @@ export default function EmploymentOffersPage() {
                     rules={{ required: "Le type d'emploi est requis" }}
                     render={({ field }) => (
                       <Select
-                        {...field}
                         label="Type d'Emploi"
                         placeholder="Sélectionnez"
                         isInvalid={!!createErrors.employment_type}
                         errorMessage={createErrors.employment_type?.message}
+                        selectedKeys={field.value ? [field.value] : []}
+                        onSelectionChange={(keys) => field.onChange(Array.from(keys)[0])}
                       >
                         <SelectItem key="full-time" value="full-time">
                           Temps Plein
@@ -555,19 +558,24 @@ export default function EmploymentOffersPage() {
                 <Controller
                   name="approve"
                   control={approveControl}
-                  defaultValue={true}
+                  defaultValue="true"
                   render={({ field }) => (
-                    <Select {...field} label="Décision" placeholder="Sélectionnez">
-                      <SelectItem key={true} value={true}>
+                    <Select
+                      label="Décision"
+                      placeholder="Sélectionnez"
+                      selectedKeys={field.value ? [String(field.value)] : ["true"]}
+                      onSelectionChange={(keys) => field.onChange(Array.from(keys)[0])}
+                    >
+                      <SelectItem key="true" value="true">
                         Approuver
                       </SelectItem>
-                      <SelectItem key={false} value={false}>
+                      <SelectItem key="false" value="false">
                         Rejeter
                       </SelectItem>
                     </Select>
                   )}
                 />
-                {watchApprove("approve") === false && (
+                {watchApprove("approve") === "false" && (
                   <Controller
                     name="rejection_reason"
                     control={approveControl}
@@ -588,7 +596,7 @@ export default function EmploymentOffersPage() {
                 Annuler
               </Button>
               <Button
-                color={watchApprove("approve") === false ? "danger" : "success"}
+                color={watchApprove("approve") === "false" ? "danger" : "success"}
                 type="submit"
                 isLoading={approveOfferMutation.isPending}
               >

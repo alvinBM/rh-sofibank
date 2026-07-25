@@ -138,11 +138,22 @@ export default function InterviewsPage() {
   const onEvaluateInterview = async (data) => {
     try {
       console.log("Evaluation data to send:", data);
+      
+      // Soumettre l'évaluation
       await evaluateInterviewMutation.mutateAsync({
         interviewId: selectedInterview.id,
         evaluationData: data,
       });
-      toast.success("Évaluation enregistrée");
+      
+      // Marquer automatiquement l'entretien comme complété si ce n'est pas déjà le cas
+      if (selectedInterview.status !== "completed") {
+        await updateInterviewMutation.mutateAsync({
+          id: selectedInterview.id,
+          status: "completed",
+        });
+      }
+      
+      toast.success("Évaluation enregistrée et entretien marqué comme complété");
       resetEvaluate();
       onEvaluateClose();
     } catch (error) {
@@ -440,11 +451,14 @@ export default function InterviewsPage() {
                                   <DropdownItem
                                     key="complete"
                                     startContent={<FiCheckCircle />}
-                                    onPress={() =>
-                                      onUpdateInterviewStatus(interview.id, "completed")
-                                    }
+                                    className="text-success"
+                                    color="success"
+                                    onPress={() => {
+                                      setSelectedInterview(interview);
+                                      onEvaluateOpen();
+                                    }}
                                   >
-                                    Marquer comme complété
+                                    Entretien effectué - Évaluer
                                   </DropdownItem>
                                 )}
                                 {interview.status === "completed" && 
@@ -534,6 +548,12 @@ export default function InterviewsPage() {
             <ModalHeader>Programmer un Entretien</ModalHeader>
             <ModalBody>
               <div className="space-y-4">
+                <div className="p-3 bg-primary-50 rounded-lg">
+                  <p className="text-sm text-primary-800">
+                    <strong>Information:</strong> Planifiez un entretien avec le candidat en remplissant les informations ci-dessous.
+                  </p>
+                </div>
+                
                 <div className="grid grid-cols-2 gap-4">
                   <Controller
                     name="interview_date"
@@ -544,6 +564,7 @@ export default function InterviewsPage() {
                         {...field}
                         type="datetime-local"
                         label="Date et Heure"
+                        isRequired
                         isInvalid={!!scheduleErrors.interview_date}
                         errorMessage={scheduleErrors.interview_date?.message}
                       />
@@ -552,9 +573,19 @@ export default function InterviewsPage() {
                   <Controller
                     name="duration_minutes"
                     control={scheduleControl}
-                    defaultValue={60}
+                    defaultValue="60"
+                    rules={{ required: "La durée est requise" }}
                     render={({ field }) => (
-                      <Input {...field} type="number" label="Durée (minutes)" />
+                      <Input 
+                        {...field} 
+                        type="number" 
+                        label="Durée (minutes)" 
+                        isRequired
+                        min="15"
+                        step="15"
+                        isInvalid={!!scheduleErrors.duration_minutes}
+                        errorMessage={scheduleErrors.duration_minutes?.message}
+                      />
                     )}
                   />
                 </div>
@@ -565,23 +596,25 @@ export default function InterviewsPage() {
                   rules={{ required: "Le type est requis" }}
                   render={({ field }) => (
                     <Select
-                      {...field}
+                      selectedKeys={field.value ? [field.value] : []}
+                      onSelectionChange={(keys) => field.onChange(Array.from(keys)[0])}
                       label="Type d'entretien"
                       placeholder="Sélectionnez"
+                      isRequired
                       isInvalid={!!scheduleErrors.interview_type}
                       errorMessage={scheduleErrors.interview_type?.message}
                     >
                       <SelectItem key="phone" value="phone">
-                        Téléphonique
+                        📞 Téléphonique
                       </SelectItem>
                       <SelectItem key="video" value="video">
-                        Visioconférence
+                        🎥 Visioconférence
                       </SelectItem>
                       <SelectItem key="in_person" value="in_person">
-                        En personne
+                        🏢 En personne
                       </SelectItem>
                       <SelectItem key="technical" value="technical">
-                        Test technique
+                        💻 Test technique
                       </SelectItem>
                     </Select>
                   )}
@@ -591,7 +624,26 @@ export default function InterviewsPage() {
                   name="location"
                   control={scheduleControl}
                   render={({ field }) => (
-                    <Input {...field} label="Lieu / Lien" placeholder="Adresse ou URL" />
+                    <Input 
+                      {...field} 
+                      label="Lieu" 
+                      placeholder="Ex: Bureau RH, Salle de réunion 3..." 
+                      description="Pour les entretiens en personne"
+                    />
+                  )}
+                />
+
+                <Controller
+                  name="meeting_link"
+                  control={scheduleControl}
+                  render={({ field }) => (
+                    <Input 
+                      {...field} 
+                      label="Lien de réunion" 
+                      placeholder="https://zoom.us/j/..." 
+                      description="Pour les visioconférences (Zoom, Teams, Google Meet...)"
+                      type="url"
+                    />
                   )}
                 />
 
@@ -758,188 +810,218 @@ export default function InterviewsPage() {
       )}
 
       {/* Evaluate Interview Modal */}
-      <Modal isOpen={isEvaluateOpen} onClose={onEvaluateClose} size="3xl" scrollBehavior="inside">
-        <ModalContent>
-          <form onSubmit={handleEvaluateSubmit(onEvaluateInterview)}>
-            <ModalHeader>Évaluer l'Entretien</ModalHeader>
-            <ModalBody>
-              <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
+      {selectedInterview && (
+        <Modal isOpen={isEvaluateOpen} onClose={onEvaluateClose} size="3xl" scrollBehavior="normal">
+          <ModalContent>
+            <form onSubmit={handleEvaluateSubmit(onEvaluateInterview)}>
+              <ModalHeader>
+                <div>
+                  <h3 className="text-xl font-bold">Évaluation de l'Entretien</h3>
+                  {selectedInterview.application && (
+                    <>
+                      <p className="text-sm font-normal text-gray-500 mt-1">
+                        Candidat: {selectedInterview.application.first_name} {selectedInterview.application.last_name}
+                      </p>
+                      <p className="text-xs font-normal text-gray-400">
+                        {new Date(selectedInterview.scheduled_date).toLocaleDateString("fr-FR", {
+                          day: 'numeric',
+                          month: 'long',
+                          year: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })}
+                      </p>
+                    </>
+                  )}
+                </div>
+              </ModalHeader>
+              <ModalBody>
+                <div className="p-4 bg-blue-50 rounded-lg mb-4">
+                  <p className="text-sm text-blue-800">
+                    <strong>Note:</strong> Évaluez le candidat sur une échelle de 1 à 5 pour chaque critère. Cette évaluation marquera automatiquement l'entretien comme complété.
+                  </p>
+                </div>
+                
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <Controller
+                      name="technical_skills"
+                      control={evaluateControl}
+                      rules={{ required: "Note requise" }}
+                      render={({ field }) => (
+                        <Input
+                          {...field}
+                          type="number"
+                          min="1"
+                          max="5"
+                          label="Compétences Techniques"
+                          placeholder="1-5"
+                          isInvalid={!!evaluateErrors.technical_skills}
+                          errorMessage={evaluateErrors.technical_skills?.message}
+                        />
+                      )}
+                    />
+                    <Controller
+                      name="communication_skills"
+                      control={evaluateControl}
+                      rules={{ required: "Note requise" }}
+                      render={({ field }) => (
+                        <Input
+                          {...field}
+                          type="number"
+                          min="1"
+                          max="5"
+                          label="Communication"
+                          placeholder="1-5"
+                          isInvalid={!!evaluateErrors.communication_skills}
+                          errorMessage={evaluateErrors.communication_skills?.message}
+                        />
+                      )}
+                    />
+                    <Controller
+                      name="problem_solving"
+                      control={evaluateControl}
+                      rules={{ required: "Note requise" }}
+                      render={({ field }) => (
+                        <Input
+                          {...field}
+                          type="number"
+                          min="1"
+                          max="5"
+                          label="Résolution de Problèmes"
+                          placeholder="1-5"
+                          isInvalid={!!evaluateErrors.problem_solving}
+                          errorMessage={evaluateErrors.problem_solving?.message}
+                        />
+                      )}
+                    />
+                    <Controller
+                      name="cultural_fit"
+                      control={evaluateControl}
+                      rules={{ required: "Note requise" }}
+                      render={({ field }) => (
+                        <Input
+                          {...field}
+                          type="number"
+                          min="1"
+                          max="5"
+                          label="Adéquation Culturelle"
+                          placeholder="1-5"
+                          isInvalid={!!evaluateErrors.cultural_fit}
+                          errorMessage={evaluateErrors.cultural_fit?.message}
+                        />
+                      )}
+                    />
+                  </div>
+
                   <Controller
-                    name="technical_skills"
+                    name="overall_rating"
                     control={evaluateControl}
-                    rules={{ required: "Note requise" }}
+                    rules={{ required: "La note globale est requise" }}
                     render={({ field }) => (
                       <Input
                         {...field}
                         type="number"
                         min="1"
                         max="5"
-                        label="Compétences Techniques"
+                        step="0.1"
+                        label="Note Globale"
                         placeholder="1-5"
-                        isInvalid={!!evaluateErrors.technical_skills}
-                        errorMessage={evaluateErrors.technical_skills?.message}
+                        isInvalid={!!evaluateErrors.overall_rating}
+                        errorMessage={evaluateErrors.overall_rating?.message}
                       />
                     )}
                   />
+
                   <Controller
-                    name="communication_skills"
+                    name="recommendation"
                     control={evaluateControl}
-                    rules={{ required: "Note requise" }}
+                    rules={{ required: "La recommandation est requise" }}
                     render={({ field }) => (
-                      <Input
+                      <Select
+                        selectedKeys={field.value ? [field.value] : []}
+                        onSelectionChange={(keys) => field.onChange(Array.from(keys)[0])}
+                        label="Recommandation"
+                        placeholder="Sélectionnez"
+                        isInvalid={!!evaluateErrors.recommendation}
+                        errorMessage={evaluateErrors.recommendation?.message}
+                      >
+                        <SelectItem key="highly_recommended" value="highly_recommended">
+                          Fortement Recommandé
+                        </SelectItem>
+                        <SelectItem key="recommended" value="recommended">
+                          Recommandé
+                        </SelectItem>
+                        <SelectItem key="maybe" value="maybe">
+                          Peut-être
+                        </SelectItem>
+                        <SelectItem key="not_recommended" value="not_recommended">
+                          Non Recommandé
+                        </SelectItem>
+                        <SelectItem key="reject" value="reject">
+                          Rejeter
+                        </SelectItem>
+                      </Select>
+                    )}
+                  />
+
+                  <Controller
+                    name="strengths"
+                    control={evaluateControl}
+                    render={({ field }) => (
+                      <Textarea
                         {...field}
-                        type="number"
-                        min="1"
-                        max="5"
-                        label="Communication"
-                        placeholder="1-5"
-                        isInvalid={!!evaluateErrors.communication_skills}
-                        errorMessage={evaluateErrors.communication_skills?.message}
+                        label="Points Forts"
+                        placeholder="Listez les points forts du candidat..."
+                        rows={3}
                       />
                     )}
                   />
+
                   <Controller
-                    name="problem_solving"
+                    name="weaknesses"
                     control={evaluateControl}
-                    rules={{ required: "Note requise" }}
                     render={({ field }) => (
-                      <Input
+                      <Textarea
                         {...field}
-                        type="number"
-                        min="1"
-                        max="5"
-                        label="Résolution de Problèmes"
-                        placeholder="1-5"
-                        isInvalid={!!evaluateErrors.problem_solving}
-                        errorMessage={evaluateErrors.problem_solving?.message}
+                        label="Points Faibles"
+                        placeholder="Listez les points à améliorer..."
+                        rows={3}
                       />
                     )}
                   />
+
                   <Controller
-                    name="cultural_fit"
+                    name="comments"
                     control={evaluateControl}
-                    rules={{ required: "Note requise" }}
                     render={({ field }) => (
-                      <Input
+                      <Textarea
                         {...field}
-                        type="number"
-                        min="1"
-                        max="5"
-                        label="Adéquation Culturelle"
-                        placeholder="1-5"
-                        isInvalid={!!evaluateErrors.cultural_fit}
-                        errorMessage={evaluateErrors.cultural_fit?.message}
+                        label="Commentaires Généraux"
+                        placeholder="Vos observations générales..."
+                        rows={4}
                       />
                     )}
                   />
                 </div>
-
-                <Controller
-                  name="overall_rating"
-                  control={evaluateControl}
-                  rules={{ required: "La note globale est requise" }}
-                  render={({ field }) => (
-                    <Input
-                      {...field}
-                      type="number"
-                      min="1"
-                      max="5"
-                      step="0.1"
-                      label="Note Globale"
-                      placeholder="1-5"
-                      isInvalid={!!evaluateErrors.overall_rating}
-                      errorMessage={evaluateErrors.overall_rating?.message}
-                    />
-                  )}
-                />
-
-                <Controller
-                  name="recommendation"
-                  control={evaluateControl}
-                  rules={{ required: "La recommandation est requise" }}
-                  render={({ field }) => (
-                    <Select
-                      {...field}
-                      label="Recommandation"
-                      placeholder="Sélectionnez"
-                      isInvalid={!!evaluateErrors.recommendation}
-                      errorMessage={evaluateErrors.recommendation?.message}
-                    >
-                      <SelectItem key="highly_recommended" value="highly_recommended">
-                        Fortement Recommandé
-                      </SelectItem>
-                      <SelectItem key="recommended" value="recommended">
-                        Recommandé
-                      </SelectItem>
-                      <SelectItem key="maybe" value="maybe">
-                        Peut-être
-                      </SelectItem>
-                      <SelectItem key="not_recommended" value="not_recommended">
-                        Non Recommandé
-                      </SelectItem>
-                      <SelectItem key="reject" value="reject">
-                        Rejeter
-                      </SelectItem>
-                    </Select>
-                  )}
-                />
-
-                <Controller
-                  name="strengths"
-                  control={evaluateControl}
-                  render={({ field }) => (
-                    <Textarea
-                      {...field}
-                      label="Points Forts"
-                      placeholder="Listez les points forts du candidat..."
-                      rows={3}
-                    />
-                  )}
-                />
-
-                <Controller
-                  name="weaknesses"
-                  control={evaluateControl}
-                  render={({ field }) => (
-                    <Textarea
-                      {...field}
-                      label="Points Faibles"
-                      placeholder="Listez les points à améliorer..."
-                      rows={3}
-                    />
-                  )}
-                />
-
-                <Controller
-                  name="comments"
-                  control={evaluateControl}
-                  render={({ field }) => (
-                    <Textarea
-                      {...field}
-                      label="Commentaires Généraux"
-                      placeholder="Vos observations générales..."
-                      rows={4}
-                    />
-                  )}
-                />
-              </div>
-            </ModalBody>
+              </ModalBody>
             <ModalFooter>
               <Button variant="light" onPress={onEvaluateClose}>
                 Annuler
               </Button>
               <Button
-                color="primary"
+                color="danger"
                 type="submit"
                 isLoading={evaluateInterviewMutation.isPending}
+                startContent={<FiCheckCircle />}
               >
-                Soumettre l'Évaluation
+                Soumettre l'Évaluation et Compléter
               </Button>
             </ModalFooter>
           </form>
         </ModalContent>
       </Modal>
+      )}
     </div>
   );
 }

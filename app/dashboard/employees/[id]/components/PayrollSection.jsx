@@ -1,20 +1,38 @@
 import React, { useState } from "react";
-import { Card, CardBody, Button, Chip, Table, TableHeader, TableColumn, TableBody, TableRow, TableCell } from "@nextui-org/react";
+import { Card, CardBody, Button, Chip, Table, TableHeader, TableColumn, TableBody, TableRow, TableCell, Spinner } from "@nextui-org/react";
 import { FiDownload, FiDollarSign } from "react-icons/fi";
-import { handleDownloadPayslip } from "@/src/hooks/usePayroll";
+import { downloadPayslip } from "@/src/services/apis/payrollService";
 
 const MONTHS = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"];
 
+const STATUS_COLORS = {
+    draft: "default",
+    approved: "success",
+    paid: "success",
+    processing: "warning",
+};
+
+const STATUS_LABELS = {
+    draft: "Brouillon",
+    approved: "Approuvé",
+    paid: "Payé",
+    processing: "En cours",
+};
+
 export default function PayrollSection({ employeeId, paymentHistory }) {
     const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+    const [downloading, setDownloading] = useState(null);
 
     const { payslips = [], summary = {} } = paymentHistory || {};
 
     const handleDownload = async (payslipId) => {
         try {
-            await handleDownloadPayslip(employeeId, payslipId);
+            setDownloading(payslipId);
+            await downloadPayslip(employeeId, payslipId);
         } catch (error) {
             console.error("Download error:", error);
+        } finally {
+            setDownloading(null);
         }
     };
 
@@ -83,6 +101,9 @@ export default function PayrollSection({ employeeId, paymentHistory }) {
                                             <p className="text-xs text-default-400">
                                                 {MONTHS[payslip.payroll_period?.month - 1]} {payslip.payroll_period?.year}
                                             </p>
+                                            <Chip size="sm" color={STATUS_COLORS[payslip.status]} variant="flat">
+                                                {STATUS_LABELS[payslip.status]}
+                                            </Chip>
                                         </div>
                                     </TableCell>
                                     <TableCell>
@@ -99,9 +120,16 @@ export default function PayrollSection({ employeeId, paymentHistory }) {
                                     </TableCell>
                                     <TableCell>{payslip.payment_date ? new Date(payslip.payment_date).toLocaleDateString("fr-FR") : "-"}</TableCell>
                                     <TableCell>
-                                        <div className="flex justify-center">
-                                            <Button size="sm" color="danger" variant="flat" startContent={<FiDownload />} onPress={() => handleDownload(payslip.id)}>
-                                                Bulletin
+                                        <div className="flex justify-center gap-2">
+                                            <Button 
+                                                size="sm" 
+                                                color="danger" 
+                                                variant="flat" 
+                                                startContent={downloading === payslip.id ? <Spinner size="sm" color="danger" /> : <FiDownload />}
+                                                onPress={() => handleDownload(payslip.id)}
+                                                isDisabled={downloading === payslip.id || !payslip.pdf_url}
+                                            >
+                                                {downloading === payslip.id ? "Téléchargement..." : "Bulletin"}
                                             </Button>
                                         </div>
                                     </TableCell>
