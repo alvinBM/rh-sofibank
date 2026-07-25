@@ -2,7 +2,7 @@
  * API Client centralisé pour toutes les requêtes vers l'API Express
  */
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3600/api';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
 
 class ApiClient {
   constructor() {

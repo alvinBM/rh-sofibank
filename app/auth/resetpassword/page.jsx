@@ -99,7 +99,7 @@ export default function ResetPassword() {
             </div>
             <div className="flex flex-col items-center pb-6 px-4">
                 <Link href="/">
-                    <Image alt="Logo" height={50} width={250} radius="sm" src={"../logo_sofibank.png"} />
+                    <Image alt="Logo" height={150} width={150} radius="sm" src={"../logo.png"} />
                 </Link>
                 <p className="text-xl font-medium mt-5 text-default-700">Mot de passe oublié ?</p>
             </div>

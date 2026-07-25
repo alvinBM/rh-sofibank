@@ -35,7 +35,7 @@ const MultiStepSidebar = React.forwardRef(({ children, className, currentPage, o
                 </Button>
                 <div>
                     <div className="w-full text-left">
-                        <Image alt="LOGO" height={50} width={250} radius="sm" src={"../../logo_sofibank.png"} />
+                        <Image alt="LOGO" height={150} width={150} radius="sm" src={"../../logo.png"} />
                     </div>
                     <div className="mt-1 text-base font-medium leading-6 text-default-500">Suivez les étapes suivantes pour configurer votre compte</div>
                 </div>

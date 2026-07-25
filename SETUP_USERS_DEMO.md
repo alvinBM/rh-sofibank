@@ -1,6 +1,6 @@
 # Guide de Création des Utilisateurs de Démonstration
 
-Ce guide explique comment créer les utilisateurs de démonstration pour tester le SIRH SOFIBANQUE.
+Ce guide explique comment créer les utilisateurs de démonstration pour tester le SIRH.
 
 ## Étape 1 : Créer les utilisateurs dans Supabase Auth
 

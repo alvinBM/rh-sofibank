@@ -1,5 +1,5 @@
 /*
-  # Schéma de base SIRH SOFIBANQUE - RBAC et Tables Principales
+  # Schéma de base SIRH - RBAC et Tables Principales
   
   1. Tables RBAC (Role-Based Access Control)
     - `roles` : Rôles système (Super Admin, RH, Manager, Employé, etc.)

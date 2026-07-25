@@ -49,7 +49,7 @@ const LandingNavbar = React.forwardRef(({ classNames = {}, ...props }, ref) => {
                 {/* Left Content */}
                 <NavbarBrand>
                     <Link href="/">
-                        <Image alt="LOGO" height={70} width={200} radius="sm" src={"/logo_sofibank.png"} />
+                        <Image alt="LOGO" height={150} width={150} radius="sm" src={"/logo.png"} />
                     </Link>
                 </NavbarBrand>
 

@@ -1,4 +1,4 @@
-# SIRH SOFIBANQUE - Système d'Information des Ressources Humaines
+# SIRH - Système d'Information des Ressources Humaines
 
 Plateforme SIRH complète pour la digitalisation de la Direction des Ressources Humaines de SOFIBANQUE, conforme au cahier des charges "Digitalisation de la DRH" (Appel d'offre N° 001/PRJ_DRH/11/2025).
 
@@ -18,7 +18,7 @@ Plateforme SIRH complète pour la digitalisation de la Direction des Ressources 
 
 ## 🎯 Vue d'ensemble
 
-Le SIRH SOFIBANQUE est une application web centralisée qui digitalise l'ensemble des processus RH de la banque, couvrant 6 modules principaux :
+Le SIRH est une application web centralisée qui digitalise l'ensemble des processus RH de la banque, couvrant 6 modules principaux :
 
 1. **Acquisition des Talents & Onboarding** - Recrutement et intégration
 2. **Gestion des Rémunérations et Paie** - Payroll complet

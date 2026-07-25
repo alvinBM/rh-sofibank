@@ -68,7 +68,7 @@ export default function LandingFooter() {
         <footer className="flex w-full flex-col border-t-1 bg-gray-900">
             <div className="mx-auto flex w-full max-w-7xl flex-col items-center justify-center px-6 py-12 lg:px-8">
                 <div className="flex items-center justify-center">
-                    <Image alt="LOGO" height={20} width={100} radius="sm" src={"/logo_sofibank.png"} />
+                    <Image alt="LOGO" height={150} width={150} radius="sm" src={"/logo.png"} />
                 </div>
                 <Spacer y={4} />
                 <div className="flex flex-wrap justify-center gap-x-4 gap-y-1">
